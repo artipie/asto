@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * The storage.
@@ -50,6 +52,18 @@ public interface Storage {
      * @throws IOException If fails
      */
     boolean exists(String key) throws IOException;
+
+    /**
+     * Return the list of object names that start with this prefix, for
+     * example "foo/bar/".
+     *
+     * The prefix must end with a slash.
+     *
+     * @param prefix The prefix, ended with a slash
+     * @return List of object keys/names
+     * @throws IOException If fails
+     */
+    Collection<String> list(String prefix) throws IOException;
 
     /**
      * Saves the file to the specified key.
@@ -102,6 +116,34 @@ public interface Storage {
         public boolean exists(final String key) {
             final Path path = Paths.get(this.dir.toString(), key);
             return Files.exists(path);
+        }
+
+        @Override
+        public Collection<String> list(final String prefix) throws IOException {
+            if (!prefix.endsWith("/")) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "The prefix must end with a slash: \"%s\"",
+                        prefix
+                    )
+                );
+            }
+            final Path path = Paths.get(this.dir.toString(), prefix);
+            final Collection<String> keys = Files.walk(path)
+                .filter(Files::isRegularFile)
+                .map(Path::toString)
+                .map(
+                    p -> p.substring(
+                        path.toString().length() - prefix.length() + 1
+                    )
+                )
+                .collect(Collectors.toList());
+            Logger.info(
+                this,
+                "Found %d objects by the prefix \"%s\" in %s by %s: %s",
+                keys.size(), prefix, this.dir, path, keys
+            );
+            return keys;
         }
 
         @Override
