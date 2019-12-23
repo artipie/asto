@@ -24,6 +24,8 @@
 package com.yegor256.asto;
 
 import com.jcabi.log.Logger;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Single;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,9 +51,8 @@ public interface Storage {
      *
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
-     * @throws IOException If fails
      */
-    boolean exists(String key) throws IOException;
+    Single<Boolean> exists(String key);
 
     /**
      * Return the list of object names that start with this prefix, for
@@ -61,18 +62,17 @@ public interface Storage {
      *
      * @param prefix The prefix, ended with a slash
      * @return List of object keys/names
-     * @throws IOException If fails
      */
-    Collection<String> list(String prefix) throws IOException;
+    Single<Collection<String>> list(String prefix);
 
     /**
      * Saves the file to the specified key.
      *
      * @param key The key (file name)
      * @param content Where to get the content
-     * @throws IOException If fails
+     * @return Completion or error signal.
      */
-    void save(String key, Path content) throws IOException;
+    Completable save(String key, Path content);
 
     /**
      * Loads the file from the storage.
@@ -81,9 +81,9 @@ public interface Storage {
      *
      * @param key The key (file name)
      * @param content Where to put the content
-     * @throws IOException If fails
+     * @return Completion or error signal.
      */
-    void load(String key, Path content) throws IOException;
+    Completable load(String key, Path content);
 
     /**
      * Simple storage, in files.
@@ -113,60 +113,72 @@ public interface Storage {
         }
 
         @Override
-        public boolean exists(final String key) {
-            final Path path = Paths.get(this.dir.toString(), key);
-            return Files.exists(path);
+        public Single<Boolean> exists(final String key) {
+            return Single.fromCallable(
+                () -> {
+                    final Path path = Paths.get(this.dir.toString(), key);
+                    return Files.exists(path);
+                });
         }
 
         @Override
-        public Collection<String> list(final String prefix) throws IOException {
-            if (!prefix.endsWith("/")) {
-                throw new IllegalArgumentException(
-                    String.format(
-                        "The prefix must end with a slash: \"%s\"",
-                        prefix
-                    )
-                );
-            }
-            final Path path = Paths.get(this.dir.toString(), prefix);
-            final Collection<String> keys = Files.walk(path)
-                .filter(Files::isRegularFile)
-                .map(Path::toString)
-                .map(
-                    p -> p.substring(
-                        path.toString().length() - prefix.length() + 1
-                    )
-                )
-                .collect(Collectors.toList());
-            Logger.info(
-                this,
-                "Found %d objects by the prefix \"%s\" in %s by %s: %s",
-                keys.size(), prefix, this.dir, path, keys
-            );
-            return keys;
+        public Single<Collection<String>> list(final String prefix) {
+            return Single.fromCallable(
+                () -> {
+                    if (!prefix.endsWith("/")) {
+                        throw new IllegalArgumentException(
+                            String.format(
+                                "The prefix must end with a slash: \"%s\"",
+                                prefix
+                            )
+                        );
+                    }
+                    final Path path = Paths.get(this.dir.toString(), prefix);
+                    final Collection<String> keys = Files.walk(path)
+                        .filter(Files::isRegularFile)
+                        .map(Path::toString)
+                        .map(
+                            p -> p.substring(
+                                path.toString().length() - prefix.length() + 1
+                            )
+                        )
+                        .collect(Collectors.toList());
+                    Logger.info(
+                        this,
+                        "Found %d objects by the prefix \"%s\" in %s by %s: %s",
+                        keys.size(), prefix, this.dir, path, keys
+                    );
+                    return keys;
+                });
         }
 
         @Override
-        public void save(final String key, final Path path) throws IOException {
-            final Path target = Paths.get(this.dir.toString(), key);
-            target.getParent().toFile().mkdirs();
-            Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
-            Logger.info(
-                this,
-                "Saved %d bytes to %s: %s",
-                Files.size(target), key, target
-            );
+        public Completable save(final String key, final Path path) {
+            return Completable.fromAction(
+                () -> {
+                    final Path target = Paths.get(this.dir.toString(), key);
+                    target.getParent().toFile().mkdirs();
+                    Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
+                    Logger.info(
+                        this,
+                        "Saved %d bytes to %s: %s",
+                        Files.size(target), key, target
+                    );
+                });
         }
 
         @Override
-        public void load(final String key, final Path path) throws IOException {
-            final Path source = Paths.get(this.dir.toString(), key);
-            Files.copy(source, path, StandardCopyOption.REPLACE_EXISTING);
-            Logger.info(
-                this,
-                "Loaded %d bytes of %s: %s",
-                Files.size(source), key, source
-            );
+        public Completable load(final String key, final Path path) {
+            return Completable.fromAction(
+                () -> {
+                    final Path source = Paths.get(this.dir.toString(), key);
+                    Files.copy(source, path, StandardCopyOption.REPLACE_EXISTING);
+                    Logger.info(
+                        this,
+                        "Loaded %d bytes of %s: %s",
+                        Files.size(source), key, source
+                    );
+                });
         }
     }
 
