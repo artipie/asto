@@ -24,6 +24,8 @@
 package com.yegor256.asto;
 
 import com.jcabi.log.Logger;
+import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
+import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -52,7 +55,7 @@ public interface Storage {
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
      */
-    Single<Boolean> exists(String key);
+    CompletableFuture<Boolean> exists(String key);
 
     /**
      * Return the list of object names that start with this prefix, for
@@ -63,7 +66,7 @@ public interface Storage {
      * @param prefix The prefix, ended with a slash
      * @return List of object keys/names
      */
-    Single<Collection<String>> list(String prefix);
+    CompletableFuture<Collection<String>> list(String prefix);
 
     /**
      * Saves the file to the specified key.
@@ -72,7 +75,7 @@ public interface Storage {
      * @param content Where to get the content
      * @return Completion or error signal.
      */
-    Completable save(String key, Path content);
+    CompletableFuture<Void> save(String key, Path content);
 
     /**
      * Loads the file from the storage.
@@ -83,7 +86,7 @@ public interface Storage {
      * @param content Where to put the content
      * @return Completion or error signal.
      */
-    Completable load(String key, Path content);
+    CompletableFuture<Void> load(String key, Path content);
 
     /**
      * Simple storage, in files.
@@ -113,17 +116,17 @@ public interface Storage {
         }
 
         @Override
-        public Single<Boolean> exists(final String key) {
-            return Single.fromCallable(
+        public CompletableFuture<Boolean> exists(final String key) {
+            return (CompletableFuture<Boolean>) Single.fromCallable(
                 () -> {
                     final Path path = Paths.get(this.dir.toString(), key);
                     return Files.exists(path);
-                });
+                }).to(SingleInterop.get());
         }
 
         @Override
-        public Single<Collection<String>> list(final String prefix) {
-            return Single.fromCallable(
+        public CompletableFuture<Collection<String>> list(final String prefix) {
+            return (CompletableFuture<Collection<String>>) Single.fromCallable(
                 () -> {
                     if (!prefix.endsWith("/")) {
                         throw new IllegalArgumentException(
@@ -149,12 +152,12 @@ public interface Storage {
                         keys.size(), prefix, this.dir, path, keys
                     );
                     return keys;
-                });
+                }).to(SingleInterop.get());
         }
 
         @Override
-        public Completable save(final String key, final Path path) {
-            return Completable.fromAction(
+        public CompletableFuture<Void> save(final String key, final Path path) {
+            return ((CompletableFuture<Object>) Completable.fromAction(
                 () -> {
                     final Path target = Paths.get(this.dir.toString(), key);
                     target.getParent().toFile().mkdirs();
@@ -164,12 +167,13 @@ public interface Storage {
                         "Saved %d bytes to %s: %s",
                         Files.size(target), key, target
                     );
-                });
+                }).to(CompletableInterop.await()))
+                .thenApply(o -> null);
         }
 
         @Override
-        public Completable load(final String key, final Path path) {
-            return Completable.fromAction(
+        public CompletableFuture<Void> load(final String key, final Path path) {
+            return ((CompletableFuture<Object>) Completable.fromAction(
                 () -> {
                     final Path source = Paths.get(this.dir.toString(), key);
                     Files.copy(source, path, StandardCopyOption.REPLACE_EXISTING);
@@ -178,7 +182,8 @@ public interface Storage {
                         "Loaded %d bytes of %s: %s",
                         Files.size(source), key, source
                     );
-                });
+                }).to(CompletableInterop.await()))
+                .thenApply(o -> null);
         }
     }
 

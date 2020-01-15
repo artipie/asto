@@ -24,6 +24,9 @@ SOFTWARE.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <properties>
+    <rxjava.version>3.0.0-RC6</rxjava.version>
+  </properties>
   <parent>
     <groupId>com.jcabi</groupId>
     <artifactId>parent</artifactId>
@@ -85,7 +88,12 @@ SOFTWARE.
     <dependency>
       <groupId>io.reactivex.rxjava3</groupId>
       <artifactId>rxjava</artifactId>
-      <version>3.0.0-RC6</version>
+      <version>${rxjava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.akarnokd</groupId>
+      <artifactId>rxjava3-jdk8-interop</artifactId>
+      <version>${rxjava.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

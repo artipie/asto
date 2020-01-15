@@ -56,9 +56,9 @@ public final class StorageTest {
         final String content = "Hello, друг!";
         Files.write(input, content.getBytes());
         final String key = "a/b/test.deb";
-        storage.save(key, input).blockingAwait();
+        storage.save(key, input).get();
         final Path output = this.folder.newFile("b.deb").toPath();
-        storage.load(key, output).blockingAwait();
+        storage.load(key, output).get();
         MatcherAssert.assertThat(
             new String(Files.readAllBytes(output)),
             Matchers.equalTo(content)
