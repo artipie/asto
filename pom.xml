@@ -2,7 +2,7 @@
 <!--
 The MIT License (MIT)
 
-Copyright (c) 2019 Yegor Bugayenko
+Copyright (c) 2020 artipie.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,18 +32,18 @@ SOFTWARE.
     <artifactId>parent</artifactId>
     <version>0.49.5</version>
   </parent>
-  <groupId>com.yegor256</groupId>
+  <groupId>com.artipie</groupId>
   <artifactId>asto</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>asto</name>
   <description>A simple Java storage</description>
-  <url>https://github.com/yegor256/asto</url>
+  <url>https://github.com/artipie/asto</url>
   <inceptionYear>2019</inceptionYear>
   <licenses>
     <license>
       <name>MIT</name>
-      <url>https://github.com/yegor256/asto/blob/master/LICENSE.txt</url>
+      <url>https://github.com/artipie/asto/blob/master/LICENSE.txt</url>
     </license>
   </licenses>
   <developers>
@@ -62,12 +62,12 @@ SOFTWARE.
   </developers>
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/yegor256/asto/issues</url>
+    <url>https://github.com/artipie/asto/issues</url>
   </issueManagement>
   <scm>
-    <connection>scm:git:git@github.com:yegor256/asto.git</connection>
-    <developerConnection>scm:git:git@github.com:yegor256/asto.git</developerConnection>
-    <url>https://github.com/yegor256/asto</url>
+    <connection>scm:git:git@github.com:artipie/asto.git</connection>
+    <developerConnection>scm:git:git@github.com:artipie/asto.git</developerConnection>
+    <url>https://github.com/artipie/asto</url>
   </scm>
   <ciManagement>
     <system>rultor</system>
@@ -76,7 +76,7 @@ SOFTWARE.
   <distributionManagement>
     <site>
       <id>github-pages</id>
-      <url>https://github.com/yegor256/asto</url>
+      <url>https://github.com/artipie/asto</url>
     </site>
   </distributionManagement>
   <dependencies>

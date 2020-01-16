@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Yegor Bugayenko
+ * Copyright (c) 2020 artipie.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@
  */
 
 /**
- * Abstract storage, tests.
+ * Abstract Storage.
  *
  * @since 0.1
  */
-package com.yegor256.asto;
+package com.artipie.asto;
 

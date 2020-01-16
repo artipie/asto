@@ -1,13 +1,13 @@
 [![EO principles respected here](https://www.elegantobjects.org/badge.svg)](https://www.elegantobjects.org)
-[![DevOps By Rultor.com](http://www.rultor.com/b/yegor256/asto)](http://www.rultor.com/p/yegor256/asto)
+[![DevOps By Rultor.com](http://www.rultor.com/b/artipie/asto)](http://www.rultor.com/p/artipie/asto)
 [![We recommend IntelliJ IDEA](https://www.elegantobjects.org/intellij-idea.svg)](https://www.jetbrains.com/idea/)
 
-[![Build Status](https://img.shields.io/travis/yegor256/asto/master.svg)](https://travis-ci.org/yegor256/asto)
-[![Javadoc](http://www.javadoc.io/badge/com.yegor256/asto.svg)](http://www.javadoc.io/doc/com.yegor256/asto)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/yegor256/asto/blob/master/LICENSE.txt)
-[![Hits-of-Code](https://hitsofcode.com/github/yegor256/asto)](https://hitsofcode.com/view/github/yegor256/asto)
-[![Maven Central](https://img.shields.io/maven-central/v/com.yegor256/asto.svg)](https://maven-badges.herokuapp.com/maven-central/com.yegor256/asto)
-[![PDD status](http://www.0pdd.com/svg?name=yegor256/asto)](http://www.0pdd.com/p?name=yegor256/asto)
+[![Build Status](https://img.shields.io/travis/artipie/asto/master.svg)](https://travis-ci.org/artipie/asto)
+[![Javadoc](http://www.javadoc.io/badge/com.artipie/asto.svg)](http://www.javadoc.io/doc/com.artipie/asto)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/asto/blob/master/LICENSE.txt)
+[![Hits-of-Code](https://hitsofcode.com/github/artipie/asto)](https://hitsofcode.com/view/github/artipie/asto)
+[![Maven Central](https://img.shields.io/maven-central/v/com.artipie/asto.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto)
+[![PDD status](http://www.0pdd.com/svg?name=artipie/asto)](http://www.0pdd.com/p?name=artipie/asto)
 
 This is a simple storage, used in a few other projects.
 
@@ -15,13 +15,13 @@ This is the dependency you need:
 
 ```xml
 <dependency>
-  <groupId>com.yegor256</groupId>
+  <groupId>com.artipie</groupId>
   <artifactId>asto</artifactId>
   <version>[...]</version>
 </dependency>
 ```
 
-Read the [Javadoc](http://www.javadoc.io/doc/com.yegor256/asto)
+Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto)
 for more technical details.
 
 ## How to contribute
