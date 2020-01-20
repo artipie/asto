@@ -23,13 +23,14 @@
  */
 package com.artipie.asto;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import io.reactivex.rxjava3.core.Flowable;
+import java.util.List;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.reactivestreams.FlowAdapters;
 
 /**
  * Test case for {@link Storage}.
@@ -51,16 +52,24 @@ public final class StorageTest {
      */
     @Test
     public void savesAndLoads() throws Exception {
-        final Storage storage = new Storage.Simple();
-        final Path input = this.folder.newFile("a.deb").toPath();
+        final Storage storage = new Simple();
         final String content = "Hello, друг!";
-        Files.write(input, content.getBytes());
         final String key = "a/b/test.deb";
-        storage.save(key, input).get();
-        final Path output = this.folder.newFile("b.deb").toPath();
-        storage.load(key, output).get();
+        storage.save(
+            key,
+            FlowAdapters.toFlowPublisher(
+                Flowable.fromArray(
+                    new ByteArray(content.getBytes()).boxedBytes()
+                )
+            )
+        ).get();
+        final List<Byte> bytes = Flowable.fromPublisher(
+            FlowAdapters.toPublisher(
+                storage.value(key).get()
+            )
+        ).toList().blockingGet();
         MatcherAssert.assertThat(
-            new String(Files.readAllBytes(output)),
+            new String(new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes()),
             Matchers.equalTo(content)
         );
     }
