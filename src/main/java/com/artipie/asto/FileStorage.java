@@ -29,7 +29,6 @@ import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,7 +45,7 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.1
  */
-public final class Simple implements Storage {
+public final class FileStorage implements Storage {
 
     /**
      * Where we keep the data.
@@ -56,18 +55,9 @@ public final class Simple implements Storage {
     /**
      * Ctor.
      *
-     * @throws IOException If fails
-     */
-    public Simple() throws IOException {
-        this(Files.createTempDirectory("asto"));
-    }
-
-    /**
-     * Ctor.
-     *
      * @param path The path to the dir
      */
-    public Simple(final Path path) {
+    public FileStorage(final Path path) {
         this.dir = path;
     }
 

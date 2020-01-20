@@ -31,7 +31,7 @@ import java.util.concurrent.Flow;
  * The storage.
  *
  * You are supposed to implement this interface the way you want. It has
- * to abstract the binary storage. You may use {@link Simple} if you
+ * to abstract the binary storage. You may use {@link FileStorage} if you
  * want to work with files. Otherwise, for S3 or something else, you have
  * to implement it yourself.
  *

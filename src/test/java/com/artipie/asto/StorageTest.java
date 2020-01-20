@@ -24,6 +24,7 @@
 package com.artipie.asto;
 
 import io.reactivex.rxjava3.core.Flowable;
+import java.nio.file.Files;
 import java.util.List;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -52,7 +53,7 @@ public final class StorageTest {
      */
     @Test
     public void savesAndLoads() throws Exception {
-        final Storage storage = new Simple();
+        final Storage storage = new FileStorage(Files.createTempDirectory("temp"));
         final String content = "Hello, друг!";
         final String key = "a/b/test.deb";
         storage.save(
