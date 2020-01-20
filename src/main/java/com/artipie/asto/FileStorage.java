@@ -105,15 +105,13 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Void> save(final String key, final Flow.Publisher<Byte> content) {
         final Completable result = Flowable.fromPublisher(FlowAdapters.toPublisher(content))
             .toList()
-            .map(bytes -> bytes.toArray(new Byte[0]))
-            .map(ByteArray::new)
+            .map(bytes -> new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes())
             .flatMapCompletable(
-                byteArray ->
+                bytes ->
                     Completable.fromAction(
                         () -> {
                             final Path target = Paths.get(this.dir.toString(), key);
                             target.getParent().toFile().mkdirs();
-                            final byte[] bytes = byteArray.primitiveBytes();
                             Files.write(target, bytes, StandardOpenOption.CREATE_NEW);
                             Logger.info(
                                 this,
