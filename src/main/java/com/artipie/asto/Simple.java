@@ -46,7 +46,6 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.1
  */
-@SuppressWarnings("PMD.OptimizableToArrayCall")
 public final class Simple implements Storage {
 
     /**
@@ -116,7 +115,7 @@ public final class Simple implements Storage {
     public CompletableFuture<Void> save(final String key, final Flow.Publisher<Byte> content) {
         final Completable result = Flowable.fromPublisher(FlowAdapters.toPublisher(content))
             .toList()
-            .map(bytes -> bytes.toArray(new Byte[bytes.size()]))
+            .map(bytes -> bytes.toArray(new Byte[0]))
             .map(ByteArray::new)
             .flatMapCompletable(
                 byteArray ->
