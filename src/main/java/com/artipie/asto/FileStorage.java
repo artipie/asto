@@ -29,6 +29,7 @@ import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -74,23 +75,22 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Collection<String>> list(final String prefix) {
         return (CompletableFuture<Collection<String>>) Single.fromCallable(
             () -> {
-                if (!prefix.endsWith("/")) {
+                final String separator = FileSystems.getDefault().getSeparator();
+                if (!prefix.endsWith(separator)) {
                     throw new IllegalArgumentException(
                         String.format(
-                            "The prefix must end with a slash: \"%s\"",
-                            prefix
+                            "The prefix must end with '%s': \"%s\"",
+                            prefix,
+                            separator
                         )
                     );
                 }
                 final Path path = Paths.get(this.dir.toString(), prefix);
+                final int dirnamelen = path.toString().length() - prefix.length() + 1;
                 final Collection<String> keys = Files.walk(path)
                     .filter(Files::isRegularFile)
                     .map(Path::toString)
-                    .map(
-                        p -> p.substring(
-                            path.toString().length() - prefix.length() + 1
-                        )
-                    )
+                    .map(p -> p.substring(dirnamelen))
                     .collect(Collectors.toList());
                 Logger.info(
                     this,
