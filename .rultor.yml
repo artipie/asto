@@ -27,6 +27,6 @@ deploy:
     exit 1
 release:
   script: |-
-    mvn versions:set "-DnewVersion=${tag}"
+    mvn versions:set "-DnewVersion=${tag}" --settings ../settings.xml
     git commit -am "${tag}"
     mvn clean deploy -Pasto -Psonatype -Pqulice --errors --settings ../settings.xml
