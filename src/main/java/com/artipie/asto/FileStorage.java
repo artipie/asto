@@ -64,14 +64,14 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final String key) {
-        return (CompletableFuture<Boolean>) Single.fromCallable(
+        return Single.fromCallable(
             () -> Files.exists(Paths.get(this.dir.toString(), key))
-        ).to(SingleInterop.get());
+        ).to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Collection<String>> list(final String prefix) {
-        return (CompletableFuture<Collection<String>>) Single.fromCallable(
+        return Single.fromCallable(
             () -> {
                 final String separator = FileSystems.getDefault().getSeparator();
                 if (!prefix.endsWith(separator)) {
@@ -96,12 +96,12 @@ public final class FileStorage implements Storage {
                     keys.size(), prefix, this.dir, path, keys
                 );
                 return keys;
-            }).to(SingleInterop.get());
+            }).to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Void> save(final String key, final Flow.Publisher<Byte> content) {
-        final Completable result = Flowable.fromPublisher(FlowAdapters.toPublisher(content))
+        return Flowable.fromPublisher(FlowAdapters.toPublisher(content))
             .toList()
             .map(bytes -> new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes())
             .flatMapCompletable(
@@ -116,9 +116,12 @@ public final class FileStorage implements Storage {
                                 "Saved %d bytes to %s: %s",
                                 bytes, key, target
                             );
-                        }));
-        return ((CompletableFuture<Object>) result.to(CompletableInterop.await()))
-            .thenApply(o -> null);
+                        }
+                    )
+            )
+            .to(CompletableInterop.await())
+            .<Void>thenApply(o -> null)
+            .toCompletableFuture();
     }
 
     @Override
