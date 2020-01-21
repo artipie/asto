@@ -117,7 +117,6 @@ SOFTWARE.
         <configuration>
           <source>9</source>
           <target>9</target>
-          <release>8</release>
         </configuration>
       </plugin>
       <plugin>
@@ -134,6 +133,12 @@ SOFTWARE.
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <source>8</source>
+        </configuration>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -141,6 +146,11 @@ SOFTWARE.
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
           <version>2.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.1.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
