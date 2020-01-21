@@ -1,5 +1,5 @@
 docker:
-  image: yegor256/java8
+  image: g4s8/rultor-jdk11:alpine3.10
 assets:
   settings.xml: yegor256/home#assets/asto/settings.xml
   pubring.gpg: yegor256/home#assets/pubring.gpg
@@ -22,6 +22,6 @@ deploy:
     exit 1
 release:
   script: |-
-    mvn versions:set "-DnewVersion=${tag}"
+    mvn versions:set "-DnewVersion=${tag}" --settings ../settings.xml
     git commit -am "${tag}"
     mvn clean deploy -Pasto -Psonatype -Pqulice --errors --settings ../settings.xml
