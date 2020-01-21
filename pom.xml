@@ -117,6 +117,7 @@ SOFTWARE.
         <configuration>
           <source>9</source>
           <target>9</target>
+          <release>8</release>
         </configuration>
       </plugin>
       <plugin>
