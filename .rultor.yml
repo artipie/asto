@@ -1,3 +1,4 @@
+---
 docker:
   image: g4s8/rultor-jdk11:alpine3.10
 assets:
@@ -5,13 +6,9 @@ assets:
   pubring.gpg: yegor256/home#assets/pubring.gpg
   secring.gpg: yegor256/home#assets/secring.gpg
 install: |
-  sudo locale-gen en_US en_US.UTF-8
-  sudo dpkg-reconfigure locales
   export LC_ALL=en_US.UTF-8
   export LANG=en_US.UTF-8
   export LANGUAGE=en_US.UTF-8
-  sudo gem install --no-rdoc --no-ri pdd
-  sudo gem install --no-rdoc --no-ri xcop
 merge:
   script: |
     pdd -f /dev/null
