@@ -191,7 +191,7 @@ SOFTWARE.
             <version>1.6</version>
             <executions>
               <execution>
-                <id>sign-artifacts</id>
+                <id>jcabi-sign-artifacts</id>
                 <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
