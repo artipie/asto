@@ -45,7 +45,7 @@ public interface Storage {
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
      */
-    CompletableFuture<Boolean> exists(String key);
+    CompletableFuture<Boolean> exists(Key key);
 
     /**
      * Return the list of object names that start with this prefix, for
@@ -56,7 +56,7 @@ public interface Storage {
      * @param prefix The prefix, ended with a slash
      * @return List of object keys/names
      */
-    CompletableFuture<Collection<String>> list(String prefix);
+    CompletableFuture<Collection<Key>> list(String prefix);
 
     /**
      * Saves the bytes to the specified key.
@@ -65,7 +65,7 @@ public interface Storage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    CompletableFuture<Void> save(String key, Flow.Publisher<Byte> content);
+    CompletableFuture<Void> save(Key key, Flow.Publisher<Byte> content);
 
     /**
      * Obtain bytes by key.
@@ -73,5 +73,5 @@ public interface Storage {
      * @param key The key
      * @return Bytes.
      */
-    CompletableFuture<Flow.Publisher<Byte>> value(String key);
+    CompletableFuture<Flow.Publisher<Byte>> value(Key key);
 }

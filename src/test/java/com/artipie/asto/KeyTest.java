@@ -23,56 +23,29 @@
  */
 package com.artipie.asto;
 
-import io.reactivex.rxjava3.core.Flowable;
-import java.nio.file.Files;
-import java.util.List;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.reactivestreams.FlowAdapters;
 
 /**
- * Test case for {@link Storage}.
- *
- * @since 0.1
+ * Test case for {@link Path}.
+ * @since 1.0
  */
-public final class StorageTest {
+public final class KeyTest {
 
-    /**
-     * Temp folder for all tests.
-     */
-    @Rule
-    @SuppressWarnings("PMD.BeanMembersShouldSerialize")
-    public TemporaryFolder folder = new TemporaryFolder();
-
-    /**
-     * Fake storage works.
-     * @throws Exception If some problem inside
-     */
     @Test
-    public void savesAndLoads() throws Exception {
-        final Storage storage = new FileStorage(Files.createTempDirectory("temp"));
-        final String content = "Hello, друг!";
-        final Key key = new Key.From("a", "b", "test.deb");
-        storage.save(
-            key,
-            FlowAdapters.toFlowPublisher(
-                Flowable.fromArray(
-                    new ByteArray(content.getBytes()).boxedBytes()
-                )
-            )
-        ).get();
-        final List<Byte> bytes = Flowable.fromPublisher(
-            FlowAdapters.toPublisher(
-                storage.value(key).get()
-            )
-        ).toList().blockingGet();
+    public void resolvesKeyFromParts() {
         MatcherAssert.assertThat(
-            new String(new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes()),
-            Matchers.equalTo(content)
+            new Key.From("one", "two", "three").string(),
+            Matchers.equalTo("one/two/three")
         );
     }
 
+    @Test
+    public void resovlesKeyFromBasePath() {
+        MatcherAssert.assertThat(
+            new Key.From(new Key.From("black", "red"), "green", "yellow").string(),
+            Matchers.equalTo("black/red/green/yellow")
+        );
+    }
 }
