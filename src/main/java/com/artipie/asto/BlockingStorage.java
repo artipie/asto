@@ -55,7 +55,7 @@ public class BlockingStorage {
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
      */
-    public boolean exists(final String key) {
+    public boolean exists(final Key key) {
         return Single.fromFuture(this.storage.exists(key)).blockingGet();
     }
 
@@ -68,7 +68,7 @@ public class BlockingStorage {
      * @param prefix The prefix, ended with a slash
      * @return List of object keys/names
      */
-    public Collection<String> list(final String prefix) {
+    public Collection<Key> list(final String prefix) {
         return Single.fromFuture(this.storage.list(prefix)).blockingGet();
     }
 
@@ -78,7 +78,7 @@ public class BlockingStorage {
      * @param key The key
      * @param content The content
      */
-    public void save(final String key, final byte[] content) {
+    public void save(final Key key, final byte[] content) {
         Single.fromFuture(
             this.storage.save(
                 key,
@@ -99,7 +99,7 @@ public class BlockingStorage {
      * @param key The key
      * @return Value associated with the key
      */
-    public byte[] value(final String key) {
+    public byte[] value(final Key key) {
         return new ByteArray(
             Flowable.fromPublisher(
                 FlowAdapters.toPublisher(

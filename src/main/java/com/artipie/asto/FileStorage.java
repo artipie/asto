@@ -63,14 +63,14 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Boolean> exists(final String key) {
+    public CompletableFuture<Boolean> exists(final Key key) {
         return Single.fromCallable(
-            () -> Files.exists(Paths.get(this.dir.toString(), key))
+            () -> Files.exists(Paths.get(this.dir.toString(), key.string()))
         ).to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
-    public CompletableFuture<Collection<String>> list(final String prefix) {
+    public CompletableFuture<Collection<Key>> list(final String prefix) {
         return Single.fromCallable(
             () -> {
                 final String separator = FileSystems.getDefault().getSeparator();
@@ -85,10 +85,11 @@ public final class FileStorage implements Storage {
                 }
                 final Path path = Paths.get(this.dir.toString(), prefix);
                 final int dirnamelen = path.toString().length() - prefix.length() + 1;
-                final Collection<String> keys = Files.walk(path)
+                final Collection<Key> keys = Files.walk(path)
                     .filter(Files::isRegularFile)
                     .map(Path::toString)
                     .map(p -> p.substring(dirnamelen))
+                    .map(p -> new Key.From(p))
                     .collect(Collectors.toList());
                 Logger.info(
                     this,
@@ -100,7 +101,7 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Void> save(final String key, final Flow.Publisher<Byte> content) {
+    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<Byte> content) {
         return Flowable.fromPublisher(FlowAdapters.toPublisher(content))
             .toList()
             .map(bytes -> new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes())
@@ -108,7 +109,7 @@ public final class FileStorage implements Storage {
                 bytes ->
                     Completable.fromAction(
                         () -> {
-                            final Path target = Paths.get(this.dir.toString(), key);
+                            final Path target = Paths.get(this.dir.toString(), key.string());
                             target.getParent().toFile().mkdirs();
                             Files.write(target, bytes, StandardOpenOption.CREATE_NEW);
                             Logger.info(
@@ -125,8 +126,8 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<Byte>> value(final String key) {
-        final Path source = Paths.get(this.dir.toString(), key);
+    public CompletableFuture<Flow.Publisher<Byte>> value(final Key key) {
+        final Path source = Paths.get(this.dir.toString(), key.string());
         final Flowable<Byte> result =
             Single.fromCallable(
                 () -> {
