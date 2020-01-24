@@ -63,8 +63,8 @@ public final class RxStorage {
 
     /**
      * Return the list of object names that start with this prefix, for
-     * example "foo/bar/".
-     *
+     * example {@code foo/bar/}.
+     *<p>
      * The prefix must end with a slash.
      *
      * @param prefix The prefix, ended with a slash
