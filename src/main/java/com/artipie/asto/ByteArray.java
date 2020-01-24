@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @since 0.7
  */
-public class ByteArray {
+public final class ByteArray {
 
     /**
      * Bytes.
