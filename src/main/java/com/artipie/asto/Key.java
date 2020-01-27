@@ -43,6 +43,31 @@ public interface Key {
     String string();
 
     /**
+     * Default decorator.
+     * @since 0.7
+     */
+    abstract class Wrap implements Key {
+
+        /**
+         * Origin key.
+         */
+        private final Key origin;
+
+        /**
+         * Ctor.
+         * @param origin Origin key
+         */
+        protected Wrap(final Key origin) {
+            this.origin = origin;
+        }
+
+        @Override
+        public final String string() {
+            return this.origin.string();
+        }
+    }
+
+    /**
      * Key from something.
      * @since 0.6
      */
