@@ -21,25 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.rx;
 
-import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.Key;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
 
 /**
- * The storage.
+ * A reactive version of {@link com.artipie.asto.Storage}.
  *
- * You are supposed to implement this interface the way you want. It has
- * to abstract the binary storage. You may use {@link FileStorage} if you
- * want to work with files. Otherwise, for S3 or something else, you have
- * to implement it yourself.
- *
- * @since 0.1
+ * @since 0.10
  */
-public interface Storage {
+public interface RxStorage {
 
     /**
      * This file exists?
@@ -47,7 +43,7 @@ public interface Storage {
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
      */
-    CompletableFuture<Boolean> exists(Key key);
+    Single<Boolean> exists(Key key);
 
     /**
      * Return the list of object names that start with this prefix, for
@@ -58,7 +54,7 @@ public interface Storage {
      * @param prefix The prefix, ended with a slash
      * @return List of object keys/names
      */
-    CompletableFuture<Collection<Key>> list(String prefix);
+    Single<Collection<Key>> list(String prefix);
 
     /**
      * Saves the bytes to the specified key.
@@ -67,7 +63,7 @@ public interface Storage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    CompletableFuture<Void> save(Key key, Flow.Publisher<Byte> content);
+    Completable save(Key key, Flowable<Byte> content);
 
     /**
      * Obtain bytes by key.
@@ -75,7 +71,7 @@ public interface Storage {
      * @param key The key
      * @return Bytes.
      */
-    CompletableFuture<Flow.Publisher<Byte>> value(Key key);
+    Single<Flowable<Byte>> value(Key key);
 
     /**
      * Start a transaction with specified keys.
@@ -83,5 +79,5 @@ public interface Storage {
      * @param keys The keys regarding which transaction is atomic
      * @return Transaction
      */
-    CompletableFuture<TransactionStorage> transaction(List<Key> keys);
+    Single<RxTransactionStorage> transaction(List<Key> keys);
 }

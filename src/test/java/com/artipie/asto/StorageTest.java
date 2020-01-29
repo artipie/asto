@@ -23,6 +23,7 @@
  */
 package com.artipie.asto;
 
+import com.artipie.asto.fs.FileStorage;
 import io.reactivex.rxjava3.core.Flowable;
 import java.nio.file.Files;
 import java.util.List;

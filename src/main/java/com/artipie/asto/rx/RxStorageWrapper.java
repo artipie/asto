@@ -21,14 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.rx;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
 import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.Collection;
+import java.util.List;
 import org.reactivestreams.FlowAdapters;
 
 /**
@@ -36,7 +39,7 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.9
  */
-public final class RxStorage {
+public final class RxStorageWrapper implements RxStorage {
 
     /**
      * Wrapped storage.
@@ -47,7 +50,7 @@ public final class RxStorage {
      * Ctor.
      * @param storage The storage
      */
-    public RxStorage(final Storage storage) {
+    public RxStorageWrapper(final Storage storage) {
         this.storage = storage;
     }
 
@@ -102,5 +105,16 @@ public final class RxStorage {
                 key
             )
         ).map(flow -> Flowable.fromPublisher(FlowAdapters.toPublisher(flow)));
+    }
+
+    /**
+     * Start a transaction with specified keys.
+     *
+     * @param keys The keys regarding which transaction is atomic
+     * @return Transaction
+     */
+    public Single<RxTransactionStorage> transaction(final List<Key> keys) {
+        return SingleInterop.fromFuture(this.storage.transaction(keys))
+            .map(RxTransactionStorageWrapper::new);
     }
 }
