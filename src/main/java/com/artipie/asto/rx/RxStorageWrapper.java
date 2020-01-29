@@ -108,13 +108,16 @@ public final class RxStorageWrapper implements RxStorage {
     }
 
     /**
-     * Start a transaction with specified keys.
+     * Start a transaction with specified keys. These specified keys are the scope of
+     * a transaction. You will be able to perform storage operations like
+     * {@link RxStorage#save(Key, Flowable)} or {@link RxStorage#value(Key)} only in
+     * the scope of a transaction.
      *
      * @param keys The keys regarding which transaction is atomic
      * @return Transaction
      */
-    public Single<RxTransactionStorage> transaction(final List<Key> keys) {
+    public Single<RxTransaction> transaction(final List<Key> keys) {
         return SingleInterop.fromFuture(this.storage.transaction(keys))
-            .map(RxTransactionStorageWrapper::new);
+            .map(RxTransactionWrapper::new);
     }
 }

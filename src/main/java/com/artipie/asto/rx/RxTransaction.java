@@ -23,32 +23,24 @@
  */
 package com.artipie.asto.rx;
 
-import com.artipie.asto.Key;
-import com.artipie.asto.TransactionStorage;
+import com.artipie.asto.Transaction;
 import io.reactivex.rxjava3.core.Completable;
-import java.util.List;
 
 /**
- * A reactive version of {@link TransactionStorage}.
+ * A reactive version of {@link Transaction}.
  *
  * @since 0.10
  */
-public interface RxTransactionStorage extends RxStorage {
+public interface RxTransaction extends RxStorage {
 
     /**
-     * Do the same as {@link TransactionStorage#keys()}.
-     * @return The keys
-     */
-    List<Key> keys();
-
-    /**
-     * A reactive version of {@link TransactionStorage#commit()}.
+     * A reactive version of {@link Transaction#commit()}.
      * @return Completion or error signal
      */
     Completable commit();
 
     /**
-     * A reactive version of {@link TransactionStorage#rollback()}.
+     * A reactive version of {@link Transaction#rollback()}.
      * @return Completion or error signal
      */
     Completable rollback();

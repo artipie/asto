@@ -31,7 +31,7 @@ import java.util.concurrent.Flow;
 
 /**
  * The storage.
- *
+ * <p>
  * You are supposed to implement this interface the way you want. It has
  * to abstract the binary storage. You may use {@link FileStorage} if you
  * want to work with files. Otherwise, for S3 or something else, you have
@@ -78,10 +78,13 @@ public interface Storage {
     CompletableFuture<Flow.Publisher<Byte>> value(Key key);
 
     /**
-     * Start a transaction with specified keys.
+     * Start a transaction with specified keys. These specified keys are the scope of
+     * a transaction. You will be able to perform storage operations like
+     * {@link Storage#save(Key, Flow.Publisher)} or {@link Storage#value(Key)} only in
+     * the scope of a transaction.
      *
      * @param keys The keys regarding which transaction is atomic
      * @return Transaction
      */
-    CompletableFuture<TransactionStorage> transaction(List<Key> keys);
+    CompletableFuture<Transaction> transaction(List<Key> keys);
 }

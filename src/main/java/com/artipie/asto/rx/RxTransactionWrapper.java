@@ -24,7 +24,7 @@
 package com.artipie.asto.rx;
 
 import com.artipie.asto.Key;
-import com.artipie.asto.TransactionStorage;
+import com.artipie.asto.Transaction;
 import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
 import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
 import io.reactivex.rxjava3.core.Completable;
@@ -35,28 +35,23 @@ import java.util.List;
 import org.reactivestreams.FlowAdapters;
 
 /**
- * A reactive wrapper of {@link RxTransactionStorage}.
+ * A reactive wrapper of {@link RxTransaction}.
  *
  * @since 0.10
  */
-public final class RxTransactionStorageWrapper implements RxTransactionStorage {
+public final class RxTransactionWrapper implements RxTransaction {
 
     /**
      * The wrapped storage.
      */
-    private final TransactionStorage wrapped;
+    private final Transaction wrapped;
 
     /**
      * Ctor.
      * @param wrapped The storage to wrapp
      */
-    public RxTransactionStorageWrapper(final TransactionStorage wrapped) {
+    public RxTransactionWrapper(final Transaction wrapped) {
         this.wrapped = wrapped;
-    }
-
-    @Override
-    public List<Key> keys() {
-        return this.wrapped.keys();
     }
 
     @Override
@@ -96,8 +91,8 @@ public final class RxTransactionStorageWrapper implements RxTransactionStorage {
     }
 
     @Override
-    public Single<RxTransactionStorage> transaction(final List<Key> keys) {
+    public Single<RxTransaction> transaction(final List<Key> keys) {
         return SingleInterop.fromFuture(this.wrapped.transaction(keys))
-            .map(RxTransactionStorageWrapper::new);
+            .map(RxTransactionWrapper::new);
     }
 }

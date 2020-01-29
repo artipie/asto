@@ -79,5 +79,5 @@ public interface RxStorage {
      * @param keys The keys regarding which transaction is atomic
      * @return Transaction
      */
-    Single<RxTransactionStorage> transaction(List<Key> keys);
+    Single<RxTransaction> transaction(List<Key> keys);
 }

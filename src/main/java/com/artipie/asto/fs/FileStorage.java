@@ -26,7 +26,7 @@ package com.artipie.asto.fs;
 import com.artipie.asto.ByteArray;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.TransactionStorage;
+import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
 import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
@@ -151,9 +151,7 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<TransactionStorage> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(
-            new FileSystemTransactionStorage(this, keys)
-        );
+    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+        return CompletableFuture.completedFuture(new FileSystemTransaction(this));
     }
 }

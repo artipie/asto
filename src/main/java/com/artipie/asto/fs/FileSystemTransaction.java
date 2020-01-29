@@ -25,7 +25,7 @@ package com.artipie.asto.fs;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.TransactionStorage;
+import com.artipie.asto.Transaction;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -36,7 +36,7 @@ import java.util.concurrent.Flow;
  *
  * @since 0.10
  */
-public final class FileSystemTransactionStorage implements TransactionStorage {
+public final class FileSystemTransaction implements Transaction {
 
     /**
      * The parent storage.
@@ -44,27 +44,13 @@ public final class FileSystemTransactionStorage implements TransactionStorage {
     private final Storage parent;
 
     /**
-     * Keys the transaction involve.
-     */
-    private final List<Key> tkeys;
-
-    /**
      * Ctor.
      *
      * @param parent The parent
-     * @param tkeys The tkeys
      */
-    public FileSystemTransactionStorage(
-        final Storage parent,
-        final List<Key> tkeys) {
+    public FileSystemTransaction(
+        final Storage parent) {
         this.parent = parent;
-        this.tkeys = tkeys;
-    }
-
-    @Override
-    public List<Key> keys() {
-        // @checkstyle HiddenFieldCheck (1 line)
-        return this.tkeys;
     }
 
     @Override
@@ -88,7 +74,7 @@ public final class FileSystemTransactionStorage implements TransactionStorage {
     }
 
     @Override
-    public CompletableFuture<TransactionStorage> transaction(
+    public CompletableFuture<Transaction> transaction(
         // @checkstyle HiddenFieldCheck (1 line)
         final List<Key> keys) {
         return CompletableFuture.completedFuture(this);

@@ -23,21 +23,14 @@
  */
 package com.artipie.asto;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Transaction.
+ * Transaction is an atomic operation performed under a certain scope.
  *
  * @since 0.10.0
  */
-public interface TransactionStorage extends Storage {
-
-    /**
-     * Keys the transaction performed on.
-     * @return The keys
-     */
-    List<Key> keys();
+public interface Transaction extends Storage {
 
     /**
      * Commit the transaction.
