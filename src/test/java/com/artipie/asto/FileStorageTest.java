@@ -23,8 +23,10 @@
  */
 package com.artipie.asto;
 
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.rxjava3.core.Flowable;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import org.hamcrest.MatcherAssert;
@@ -39,7 +41,7 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.1
  */
-public final class StorageTest {
+public final class FileStorageTest {
 
     /**
      * Temp folder for all tests.
@@ -76,4 +78,20 @@ public final class StorageTest {
         );
     }
 
+    @Test
+    public void blockingWrapperWorks() throws IOException {
+        final BlockingStorage storage = new BlockingStorage(
+            new FileStorage(
+                Files.createTempDirectory("temp")
+            )
+        );
+        final String content = "Hello, друг!";
+        final Key key = new Key.From("a", "b", "test.deb");
+        storage.save(key, new ByteArray(content.getBytes()).primitiveBytes());
+        final byte[] bytes = storage.value(key);
+        MatcherAssert.assertThat(
+            new String(bytes),
+            Matchers.equalTo(content)
+        );
+    }
 }
