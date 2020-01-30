@@ -26,10 +26,10 @@ package com.artipie.asto.blocking;
 import com.artipie.asto.ByteArray;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.rx.RxStorage;
+import com.artipie.asto.rx.RxStorageWrapper;
 import io.reactivex.rxjava3.core.Flowable;
-import io.reactivex.rxjava3.core.Single;
 import java.util.Collection;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * More primitive and easy to use wrapper to use {@code Storage}.
@@ -41,7 +41,7 @@ public class BlockingStorage {
     /**
      * Wrapped storage.
      */
-    private final Storage storage;
+    private final RxStorage storage;
 
     /**
      * Wrap a {@link Storage} in order get a blocking version of it.
@@ -49,7 +49,7 @@ public class BlockingStorage {
      * @param storage Storage to wrap
      */
     public BlockingStorage(final Storage storage) {
-        this.storage = storage;
+        this.storage = new RxStorageWrapper(storage);
     }
 
     /**
@@ -59,7 +59,7 @@ public class BlockingStorage {
      * @return TRUE if exists, FALSE otherwise
      */
     public boolean exists(final Key key) {
-        return Single.fromFuture(this.storage.exists(key)).blockingGet();
+        return this.storage.exists(key).blockingGet();
     }
 
     /**
@@ -72,7 +72,7 @@ public class BlockingStorage {
      * @return List of object keys/names
      */
     public Collection<Key> list(final String prefix) {
-        return Single.fromFuture(this.storage.list(prefix)).blockingGet();
+        return this.storage.list(prefix).blockingGet();
     }
 
     /**
@@ -82,18 +82,14 @@ public class BlockingStorage {
      * @param content The content
      */
     public void save(final Key key, final byte[] content) {
-        Single.fromFuture(
-            this.storage.save(
-                key,
-                FlowAdapters.toFlowPublisher(
-                    Flowable.fromArray(
-                        new ByteArray(
-                            content
-                        ).boxedBytes()
-                    )
-                )
+        this.storage.save(
+            key,
+            Flowable.fromArray(
+                new ByteArray(
+                    content
+                ).boxedBytes()
             )
-        ).blockingGet();
+        ).blockingAwait();
     }
 
     /**
@@ -104,13 +100,11 @@ public class BlockingStorage {
      */
     public byte[] value(final Key key) {
         return new ByteArray(
-            Flowable.fromPublisher(
-                FlowAdapters.toPublisher(
-                    Single.fromFuture(
-                        this.storage.value(key)
-                    ).blockingGet()
-                )
-            ).toList().blockingGet().toArray(new Byte[0])
+            this.storage.value(key)
+                .blockingGet()
+                .toList()
+                .blockingGet()
+                .toArray(new Byte[0])
         ).primitiveBytes();
     }
 }
