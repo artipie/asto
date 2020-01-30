@@ -120,7 +120,7 @@ public final class FileStorage implements Storage {
                             Logger.info(
                                 this,
                                 "Saved %d bytes to %s: %s",
-                                bytes, key, target
+                                bytes.length, key, target
                             );
                         }
                     )
