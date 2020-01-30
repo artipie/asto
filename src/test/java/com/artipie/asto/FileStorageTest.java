@@ -82,11 +82,11 @@ public final class FileStorageTest {
     public void blockingWrapperWorks() throws IOException {
         final BlockingStorage storage = new BlockingStorage(
             new FileStorage(
-                Files.createTempDirectory("temp")
+                Files.createTempDirectory("temp-blocking")
             )
         );
-        final String content = "Hello, друг!";
-        final Key key = new Key.From("a", "b", "test.deb");
+        final String content = "hello, friend!";
+        final Key key = new Key.From("t", "y", "testb.deb");
         storage.save(key, new ByteArray(content.getBytes()).primitiveBytes());
         final byte[] bytes = storage.value(key);
         MatcherAssert.assertThat(
