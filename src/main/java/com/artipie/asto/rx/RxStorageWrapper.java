@@ -21,25 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.rx;
 
-import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
+import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
+import org.reactivestreams.FlowAdapters;
 
 /**
- * The storage.
- * <p>
- * You are supposed to implement this interface the way you want. It has
- * to abstract the binary storage. You may use {@link FileStorage} if you
- * want to work with files. Otherwise, for S3 or something else, you have
- * to implement it yourself.
+ * Reactive wrapper over {@code Storage}.
  *
- * @since 0.1
+ * @since 0.9
  */
-public interface Storage {
+public final class RxStorageWrapper implements RxStorage {
+
+    /**
+     * Wrapped storage.
+     */
+    private final Storage storage;
+
+    /**
+     * Ctor.
+     * @param storage The storage
+     */
+    public RxStorageWrapper(final Storage storage) {
+        this.storage = storage;
+    }
 
     /**
      * This file exists?
@@ -47,18 +60,22 @@ public interface Storage {
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
      */
-    CompletableFuture<Boolean> exists(Key key);
+    public Single<Boolean> exists(final Key key) {
+        return SingleInterop.fromFuture(this.storage.exists(key));
+    }
 
     /**
      * Return the list of object names that start with this prefix, for
-     * example "foo/bar/".
-     *
+     * example {@code foo/bar/}.
+     *<p>
      * The prefix must end with a slash.
      *
      * @param prefix The prefix, ended with a slash
      * @return List of object keys/names
      */
-    CompletableFuture<Collection<Key>> list(String prefix);
+    public Single<Collection<Key>> list(final String prefix) {
+        return SingleInterop.fromFuture(this.storage.list(prefix));
+    }
 
     /**
      * Saves the bytes to the specified key.
@@ -67,7 +84,14 @@ public interface Storage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    CompletableFuture<Void> save(Key key, Flow.Publisher<Byte> content);
+    public Completable save(final Key key, final Flowable<Byte> content) {
+        return CompletableInterop.fromFuture(
+            this.storage.save(
+                key,
+                FlowAdapters.toFlowPublisher(content)
+            )
+        );
+    }
 
     /**
      * Obtain bytes by key.
@@ -75,16 +99,25 @@ public interface Storage {
      * @param key The key
      * @return Bytes.
      */
-    CompletableFuture<Flow.Publisher<Byte>> value(Key key);
+    public Single<Flowable<Byte>> value(final Key key) {
+        return SingleInterop.fromFuture(
+            this.storage.value(
+                key
+            )
+        ).map(flow -> Flowable.fromPublisher(FlowAdapters.toPublisher(flow)));
+    }
 
     /**
      * Start a transaction with specified keys. These specified keys are the scope of
      * a transaction. You will be able to perform storage operations like
-     * {@link Storage#save(Key, Flow.Publisher)} or {@link Storage#value(Key)} only in
+     * {@link RxStorage#save(Key, Flowable)} or {@link RxStorage#value(Key)} only in
      * the scope of a transaction.
      *
      * @param keys The keys regarding which transaction is atomic
      * @return Transaction
      */
-    CompletableFuture<Transaction> transaction(List<Key> keys);
+    public Single<RxTransaction> transaction(final List<Key> keys) {
+        return SingleInterop.fromFuture(this.storage.transaction(keys))
+            .map(RxTransactionWrapper::new);
+    }
 }

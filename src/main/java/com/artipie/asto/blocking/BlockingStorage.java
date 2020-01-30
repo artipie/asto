@@ -21,8 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.blocking;
 
+import com.artipie.asto.ByteArray;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.Collection;

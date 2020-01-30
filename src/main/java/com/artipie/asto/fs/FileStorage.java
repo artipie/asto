@@ -21,8 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.fs;
 
+import com.artipie.asto.ByteArray;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
 import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
@@ -36,6 +40,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
@@ -143,5 +148,10 @@ public final class FileStorage implements Storage {
                 bytes -> Flowable.fromIterable(Arrays.asList(new ByteArray(bytes).boxedBytes()))
             );
         return CompletableFuture.supplyAsync(() -> FlowAdapters.toFlowPublisher(result));
+    }
+
+    @Override
+    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+        return CompletableFuture.completedFuture(new FileSystemTransaction(this));
     }
 }
