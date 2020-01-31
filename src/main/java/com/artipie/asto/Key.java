@@ -23,8 +23,9 @@
  */
 package com.artipie.asto;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,6 +42,13 @@ public interface Key {
      * @return Key string
      */
     String string();
+
+    /**
+     * Creates child key with given name.
+     * @param name Child name.
+     * @return Child key.
+     */
+    Key child(String name);
 
     /**
      * Default decorator.
@@ -104,13 +112,18 @@ public interface Key {
          * Ctor.
          * @param parts Parts
          */
-        public From(final Collection<String> parts) {
-            this.parts = Collections.unmodifiableCollection(parts);
+        public From(final Iterable<String> parts) {
+            this.parts = Lists.newArrayList(parts);
         }
 
         @Override
         public String string() {
             return String.join("/", this.parts);
+        }
+
+        @Override
+        public Key child(final String name) {
+            return new From(Iterables.concat(this.parts, Collections.singleton(name)));
         }
     }
 }
