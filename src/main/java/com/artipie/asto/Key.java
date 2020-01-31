@@ -23,6 +23,7 @@
  */
 package com.artipie.asto;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -105,7 +106,7 @@ public interface Key {
          * @param parts Parts
          */
         public From(final Collection<String> parts) {
-            this.parts = Collections.unmodifiableCollection(parts);
+            this.parts = Collections.unmodifiableCollection(new ArrayList<>(parts));
         }
 
         @Override
