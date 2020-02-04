@@ -81,19 +81,14 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<Byte> flow() {
-        return this.fls.rxOpen(
-            this.file.toString(),
-            new OpenOptions().setRead(true)
-        ).flatMapPublisher(
-            asyncFile -> asyncFile.toFlowable()
-                .flatMap(
+        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setRead(true))
+            .flatMapPublisher(
+                asyncFile -> asyncFile.toFlowable().flatMap(
                     buffer -> Flowable.fromArray(
-                        new ByteArray(
-                            buffer.getBytes()
-                        ).boxedBytes()
+                        new ByteArray(buffer.getBytes()).boxedBytes()
                     )
                 )
-        );
+            );
     }
 
     /**
@@ -103,15 +98,13 @@ public class RxFile {
      */
     public Completable save(final Flowable<Byte> flow) {
         final int delay = 10;
-        return this.fls.rxOpen(
-            this.file.toString(),
-            new OpenOptions().setWrite(true)
-        ).flatMapCompletable(
-            asyncFile -> Completable.create(
-                emitter -> flow.buffer(RxFile.SAVE_BUFF_SIZE)
-                    .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
-                    .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
-            )
-        ).delay(delay, TimeUnit.MILLISECONDS);
+        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
+            .flatMapCompletable(
+                asyncFile -> Completable.create(
+                    emitter -> flow.buffer(RxFile.SAVE_BUFF_SIZE)
+                        .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
+                        .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
+                )
+            ).delay(delay, TimeUnit.MILLISECONDS);
     }
 }
