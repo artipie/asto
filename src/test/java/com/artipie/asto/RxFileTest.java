@@ -24,6 +24,8 @@
 package com.artipie.asto;
 
 import com.artipie.asto.fs.RxFile;
+import io.reactivex.Flowable;
+import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,5 +56,21 @@ public class RxFileTest {
             .blockingGet();
         MatcherAssert.assertThat(hello, Matchers.equalTo(content));
         temp.toFile().deleteOnExit();
+    }
+
+    /**
+     * Test that {@link RxFile#save(Flowable)} works.
+     * @throws IOException if fails
+     */
+    @Test
+    public void rxFileSaveWorks() throws IOException {
+        final Vertx vertx = Vertx.vertx();
+        final String hello = "hello-world!!!";
+        final Path temp = Files.createTempFile(hello, "saved.txt");
+        temp.toFile().delete();
+        new RxFile(temp, vertx.fileSystem())
+            .save(Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes())).blockingAwait();
+        MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
+        vertx.close();
     }
 }
