@@ -85,16 +85,14 @@ public class RxFile {
             this.file.toString(),
             new OpenOptions().setRead(true)
         ).flatMapPublisher(
-            asyncFile ->
-                asyncFile.toFlowable()
-                    .flatMap(
-                        buffer ->
-                            Flowable.fromArray(
-                                new ByteArray(
-                                    buffer.getBytes()
-                                ).boxedBytes()
-                            )
+            asyncFile -> asyncFile.toFlowable()
+                .flatMap(
+                    buffer -> Flowable.fromArray(
+                        new ByteArray(
+                            buffer.getBytes()
+                        ).boxedBytes()
                     )
+                )
         );
     }
 
@@ -109,13 +107,11 @@ public class RxFile {
             this.file.toString(),
             new OpenOptions().setWrite(true)
         ).flatMapCompletable(
-            asyncFile ->
-                Completable.create(
-                    emitter ->
-                        flow.buffer(RxFile.SAVE_BUFF_SIZE)
-                            .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
-                            .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
-                )
+            asyncFile -> Completable.create(
+                emitter -> flow.buffer(RxFile.SAVE_BUFF_SIZE)
+                    .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
+                    .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
+            )
         ).delay(delay, TimeUnit.MILLISECONDS);
     }
 }
