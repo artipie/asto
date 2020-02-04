@@ -25,11 +25,11 @@ package com.artipie.asto.rx;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
-import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Flowable;
-import io.reactivex.rxjava3.core.Single;
+import hu.akarnokd.rxjava2.interop.CompletableInterop;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 import java.util.Collection;
 import java.util.List;
 import org.reactivestreams.FlowAdapters;
