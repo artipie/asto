@@ -11,7 +11,21 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/asto.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/asto)](http://www.0pdd.com/p?name=artipie/asto)
 
-This is a simple storage, used in a few other projects.
+Asto stands for Abstract Storage, an abstraction over physical data storage system.
+The main entity of the library is an interface `com.artipie.asto.Storage`, a contract
+which requires to implement the following functionalities:
+
+* put/get operations
+* transaction support
+* list files in a directory
+* check if a file/directory exists
+
+Supported abstractions:
+
+- [x] [File system](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/fs/FileStorage.html) 
+- [ ] S3
+- [ ] PostgreSQL
+
 
 This is the dependency you need:
 
