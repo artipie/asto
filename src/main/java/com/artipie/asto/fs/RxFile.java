@@ -39,8 +39,6 @@ import java.nio.file.Path;
  * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
  *
  * @since 0.12
- * @checkstyle NonStaticMethodCheck (500 lines)
- * @checkstyle AnonInnerLengthCheck (500 lines)
  */
 public class RxFile {
 
