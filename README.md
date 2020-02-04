@@ -26,6 +26,28 @@ This is the dependency you need:
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto)
 for more technical details.
 
+Create a `hello.txt` file with `"Hello World!"` content on file-system-based
+storage in blocking way:
+```java
+final BlockingStorage storage = new BlockingStorage(
+    new FileStorage(
+        Files.createTempDirectory("temp-blocking")
+    )
+).save(new Key.From("hello.txt"), "Hello World!".getBytes());
+``` 
+
+The same with RxJava2 way:
+```java
+new RxStorageWrapper(
+    new FileStorage(
+        Files.createTempDirectory("temp-rx")
+    )
+).save(
+    new Key.From("hello.txt"),
+    Flowable.fromArray(new ByteArray("Hello World!".getBytes()).boxedBytes())
+);
+```
+
 ## How to contribute
 
 Fork repository, make changes, send us a pull request. We will review
