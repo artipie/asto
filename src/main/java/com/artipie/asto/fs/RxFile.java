@@ -23,21 +23,20 @@
  */
 package com.artipie.asto.fs;
 
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Flowable;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.CompletionHandler;
+import com.artipie.asto.ByteArray;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.vertx.core.file.OpenOptions;
+import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
  * and {@link RxFile#save(Flowable)} methods respectively.
+ * <p>
+ * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
  *
  * @since 0.12
  * @checkstyle NonStaticMethodCheck (500 lines)
@@ -46,16 +45,36 @@ import org.reactivestreams.Subscription;
 public class RxFile {
 
     /**
+     * Default size of save buffer.
+     */
+    private static final int SAVE_BUFF_SIZE = 1024 * 8;
+
+    /**
      * The file location of file system.
      */
     private final Path file;
+
+    /**
+     * The file system.
+     */
+    private final FileSystem fls;
 
     /**
      * Ctor.
      * @param file The wrapped file.
      */
     public RxFile(final Path file) {
+        this(file, Vertx.vertx().fileSystem());
+    }
+
+    /**
+     * Ctor.
+     * @param file The wrapped file.
+     * @param fls The file system.
+     */
+    public RxFile(final Path file, final FileSystem fls) {
         this.file = file;
+        this.fls = fls;
     }
 
     /**
@@ -63,7 +82,21 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<Byte> flow() {
-        return Flowable.fromPublisher(new RxFile.FromFilePublisher());
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions().setRead(true)
+        ).flatMapPublisher(
+            asyncFile ->
+                asyncFile.toFlowable()
+                    .flatMap(
+                        buffer ->
+                            Flowable.fromArray(
+                                new ByteArray(
+                                    buffer.getBytes()
+                                ).boxedBytes()
+                            )
+                    )
+        );
     }
 
     /**
@@ -72,101 +105,17 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<Byte> flow) {
-        return Completable.error(new IllegalStateException("Not implemented"));
-    }
-
-    /**
-     * Publisher of file bytes.
-     *
-     * @since 0.12
-     */
-    class FromFilePublisher implements Publisher<Byte> {
-
-        /**
-         * The requested amount of bytes.
-         */
-        private Long requested = 0L;
-
-        /**
-         * The requested to read position in a file.
-         */
-        private Long rpos = 0L;
-
-        /**
-         * An actual amount of bytes which has been read.
-         */
-        private Long apos = 0L;
-
-        /**
-         * Is the stream is cancelled.
-         */
-        private Boolean cancelled = false;
-
-        @Override
-        public void subscribe(final Subscriber<? super Byte> subscriber) {
-            final FromFilePublisher publisher = this;
-            try {
-                final AsynchronousFileChannel chan = AsynchronousFileChannel.open(
-                    RxFile.this.file,
-                    StandardOpenOption.READ
-                );
-                final long size = chan.size();
-                subscriber.onSubscribe(
-                    new Subscription() {
-                        @Override
-                        public void request(final long req) {
-                            synchronized (publisher) {
-                                if (!FromFilePublisher.this.cancelled) {
-                                    FromFilePublisher.this.requested += req;
-                                    final long remain = size - rpos;
-                                    final long toread;
-                                    if (FromFilePublisher.this.requested > remain) {
-                                        toread = remain;
-                                    } else {
-                                        toread = FromFilePublisher.this.requested;
-                                    }
-                                    final ByteBuffer allocate = ByteBuffer.allocate((int) toread);
-                                    chan.read(
-                                        allocate,
-                                        FromFilePublisher.this.rpos,
-                                        allocate,
-                                        new CompletionHandler<>() {
-                                            @Override
-                                            public void completed(final Integer read,
-                                                final ByteBuffer res) {
-                                                for (int idx = 0; idx < read; idx += 1) {
-                                                    subscriber.onNext(res.get(idx));
-                                                }
-                                                synchronized (publisher) {
-                                                    FromFilePublisher.this.apos += read;
-                                                    if (FromFilePublisher.this.apos == size) {
-                                                        subscriber.onComplete();
-                                                    }
-                                                }
-                                            }
-
-                                            @Override
-                                            public void failed(final Throwable throwable,
-                                                final ByteBuffer res) {
-                                                subscriber.onError(throwable);
-                                            }
-                                        });
-                                    FromFilePublisher.this.requested -= toread;
-                                    FromFilePublisher.this.rpos += toread;
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void cancel() {
-                            synchronized (publisher) {
-                                FromFilePublisher.this.cancelled = true;
-                            }
-                        }
-                    });
-            } catch (final IOException exc) {
-                subscriber.onError(exc);
-            }
-        }
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions().setWrite(true)
+        ).flatMapCompletable(
+            asyncFile ->
+                Completable.create(
+                    emitter ->
+                        flow.buffer(RxFile.SAVE_BUFF_SIZE)
+                            .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
+                            .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
+                )
+        );
     }
 }

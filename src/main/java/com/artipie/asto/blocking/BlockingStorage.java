@@ -28,7 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.Flowable;
 import java.util.Collection;
 
 /**

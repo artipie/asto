@@ -25,7 +25,7 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.Flowable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;

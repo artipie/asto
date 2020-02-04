@@ -86,14 +86,14 @@ SOFTWARE.
       <version>0.18.1</version>
     </dependency>
     <dependency>
-      <groupId>io.reactivex.rxjava3</groupId>
-      <artifactId>rxjava</artifactId>
-      <version>${rxjava.version}</version>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+      <version>3.8.5</version>
     </dependency>
     <dependency>
       <groupId>com.github.akarnokd</groupId>
-      <artifactId>rxjava3-jdk8-interop</artifactId>
-      <version>${rxjava.version}</version>
+      <artifactId>rxjava2-jdk8-interop</artifactId>
+      <version>0.3.7</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

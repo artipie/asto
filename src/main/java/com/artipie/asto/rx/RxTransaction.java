@@ -24,7 +24,7 @@
 package com.artipie.asto.rx;
 
 import com.artipie.asto.Transaction;
-import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.Completable;
 
 /**
  * A reactive version of {@link Transaction}.
