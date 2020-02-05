@@ -40,6 +40,8 @@ This is the dependency you need:
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto)
 for more technical details.
 
+# Quick start
+
 Create a `hello.txt` file with `"Hello World!"` content on file-system-based
 storage in blocking way:
 ```java
