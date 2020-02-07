@@ -23,13 +23,14 @@
  */
 package com.artipie.asto.fs;
 
-import com.artipie.asto.ByteArray;
+import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -42,11 +43,6 @@ import java.util.concurrent.TimeUnit;
  * @since 0.12
  */
 public class RxFile {
-
-    /**
-     * Default size of save buffer.
-     */
-    private static final int SAVE_BUFF_SIZE = 1024 * 8;
 
     /**
      * The file location of file system.
@@ -80,13 +76,11 @@ public class RxFile {
      * Read file content as a flow of bytes.
      * @return A flow of bytes
      */
-    public Flowable<Byte> flow() {
+    public Flowable<ByteBuffer> flow() {
         return this.fls.rxOpen(this.file.toString(), new OpenOptions().setRead(true))
             .flatMapPublisher(
-                asyncFile -> asyncFile.toFlowable().flatMap(
-                    buffer -> Flowable.fromArray(
-                        new ByteArray(buffer.getBytes()).boxedBytes()
-                    )
+                asyncFile -> asyncFile.toFlowable().map(
+                    buffer -> ByteBuffer.wrap(buffer.getBytes())
                 )
             );
     }
@@ -96,13 +90,12 @@ public class RxFile {
      * @param flow The flow of bytes
      * @return Completion or error signal
      */
-    public Completable save(final Flowable<Byte> flow) {
+    public Completable save(final Flowable<ByteBuffer> flow) {
         final int delay = 10;
         return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
             .flatMapCompletable(
                 asyncFile -> Completable.create(
-                    emitter -> flow.buffer(RxFile.SAVE_BUFF_SIZE)
-                        .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
+                    emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
                         .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
                 )
             ).delay(delay, TimeUnit.MILLISECONDS);

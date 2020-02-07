@@ -30,6 +30,7 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import org.reactivestreams.FlowAdapters;
@@ -84,7 +85,7 @@ public final class RxStorageWrapper implements RxStorage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    public Completable save(final Key key, final Flowable<Byte> content) {
+    public Completable save(final Key key, final Flowable<ByteBuffer> content) {
         return CompletableInterop.fromFuture(
             this.storage.save(
                 key,
@@ -99,7 +100,7 @@ public final class RxStorageWrapper implements RxStorage {
      * @param key The key
      * @return Bytes.
      */
-    public Single<Flowable<Byte>> value(final Key key) {
+    public Single<Flowable<ByteBuffer>> value(final Key key) {
         return SingleInterop.fromFuture(
             this.storage.value(
                 key

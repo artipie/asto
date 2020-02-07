@@ -26,6 +26,7 @@ package com.artipie.asto.fs;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -64,12 +65,12 @@ public final class FileSystemTransaction implements Transaction {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<Byte> content) {
+    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
         return this.parent.save(key, content);
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<Byte>> value(final Key key) {
+    public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
         return this.parent.value(key);
     }
 
