@@ -11,7 +11,21 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/asto.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/asto)](http://www.0pdd.com/p?name=artipie/asto)
 
-This is a simple storage, used in a few other projects.
+Asto stands for Abstract Storage, an abstraction over physical data storage system.
+The main entity of the library is an interface `com.artipie.asto.Storage`, a contract
+which requires to implement the following functionalities:
+
+* put/get operations
+* transaction support
+* list files in a directory
+* check if a file/directory exists
+
+Supported abstractions:
+
+- [x] [File system](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/fs/FileStorage.html) 
+- [ ] S3
+- [ ] PostgreSQL
+
 
 This is the dependency you need:
 
@@ -25,6 +39,30 @@ This is the dependency you need:
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto)
 for more technical details.
+
+# Quick start
+
+Create a `hello.txt` file with `"Hello World!"` content on file-system-based
+storage in blocking way:
+```java
+final BlockingStorage storage = new BlockingStorage(
+    new FileStorage(
+        Files.createTempDirectory("temp-blocking")
+    )
+).save(new Key.From("hello.txt"), "Hello World!".getBytes());
+``` 
+
+The same with RxJava2 way:
+```java
+new RxStorageWrapper(
+    new FileStorage(
+        Files.createTempDirectory("temp-rx")
+    )
+).save(
+    new Key.From("hello.txt"),
+    Flowable.fromArray(new ByteArray("Hello World!".getBytes()).boxedBytes())
+);
+```
 
 ## How to contribute
 
