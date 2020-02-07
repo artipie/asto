@@ -2,7 +2,7 @@
 docker:
   image: g4s8/rultor-jdk11:alpine3.10
 assets:
-  settings.xml: yegor256/home#assets/asto/settings.xml
+  settings.xml: yegor256/home#assets/artipie/settings.xml
   pubring.gpg: yegor256/home#assets/pubring.gpg
   secring.gpg: yegor256/home#assets/secring.gpg
 env:
