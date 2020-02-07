@@ -10,7 +10,9 @@ jobs:
       with:
         java-version: 9.0.x
     - name: Build
-      run: mvn clean install -Pqulice
+      run: mvn clean install -B -Pqulice --file pom.xml
     - name: Deploy Snapshot
       if: github.ref == 'refs/heads/master'
-      run: mvn deploy -Dregistry=https://maven.pkg.github.com/artipie -Dtoken=$GH_TOKEN
+      run: mvn deploy
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
