@@ -21,42 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package com.artipie.asto;
 
 import java.nio.ByteBuffer;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
 /**
- * Remaining bytes in a byte buffer.
- * @since 0.13
+ * Test case for {@link Remaining}.
+ * @since 1.0
  */
-public class Remaining {
+public final class RemainingTest {
 
-    /**
-     * The buffer.
-     */
-    private final ByteBuffer buf;
-
-    /**
-     * Ctor.
-     * @param buf The byte buffer.
-     */
-    public Remaining(final ByteBuffer buf) {
-        this.buf = buf;
-    }
-
-    /**
-     * Obtain remaining bytes.
-     * <p>
-     * Read all remaining bytes from the buffer and reset position back after
-     * reading.
-     * </p>
-     * @return Remaining bytes.
-     */
-    public byte[] bytes() {
-        final byte[] bytes = new byte[this.buf.remaining()];
-        this.buf.mark();
-        this.buf.get(bytes);
-        this.buf.reset();
-        return bytes;
+    @Test
+    public void readTwice() throws Exception {
+        final ByteBuffer buf = ByteBuffer.allocate(32);
+        final byte[] array = new byte[]{1, 2, 3, 4};
+        buf.put(array);
+        buf.flip();
+        MatcherAssert.assertThat(
+            "unexpected remaining array", new Remaining(buf).bytes(), Matchers.equalTo(array)
+        );
+        MatcherAssert.assertThat(
+            "failed to read array twice", new Remaining(buf).bytes(), Matchers.equalTo(array)
+        );
     }
 }
