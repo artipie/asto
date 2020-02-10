@@ -27,8 +27,9 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.util.List;
+import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -57,23 +58,37 @@ public final class FileStorageTest {
     @Test
     public void savesAndLoads() throws Exception {
         final Storage storage = new FileStorage(Files.createTempDirectory("temp"));
-        final String content = "Hello, друг!";
+        final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
         storage.save(
             key,
             FlowAdapters.toFlowPublisher(
                 Flowable.fromArray(
                     new ByteArray(content.getBytes()).boxedBytes()
-                )
+                ).map(
+                    b -> {
+                        final ByteBuffer buf = ByteBuffer.allocate(1);
+                        buf.put(b);
+                        buf.rewind();
+                        return buf;
+                    })
             )
         ).get();
-        final List<Byte> bytes = Flowable.fromPublisher(
-            FlowAdapters.toPublisher(
-                storage.value(key).get()
-            )
-        ).toList().blockingGet();
         MatcherAssert.assertThat(
-            new String(new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes()),
+            new String(
+                new ByteArray(Flowable.fromPublisher(
+                    FlowAdapters.toPublisher(
+                        storage.value(key).get()
+                    )
+                )
+                    .toList()
+                    .blockingGet()
+                    .stream()
+                    .map(buf -> new Remaining(buf).bytes())
+                    .flatMap(byteArr -> Arrays.stream(new ByteArray(byteArr).boxedBytes()))
+                    .toArray(Byte[]::new)
+                ).primitiveBytes()
+            ),
             Matchers.equalTo(content)
         );
     }

@@ -24,6 +24,7 @@
 package com.artipie.asto;
 
 import com.artipie.asto.fs.FileStorage;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +68,7 @@ public interface Storage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    CompletableFuture<Void> save(Key key, Flow.Publisher<Byte> content);
+    CompletableFuture<Void> save(Key key, Flow.Publisher<ByteBuffer> content);
 
     /**
      * Obtain bytes by key.
@@ -75,7 +76,7 @@ public interface Storage {
      * @param key The key
      * @return Bytes.
      */
-    CompletableFuture<Flow.Publisher<Byte>> value(Key key);
+    CompletableFuture<Flow.Publisher<ByteBuffer>> value(Key key);
 
     /**
      * Start a transaction with specified keys. These specified keys are the scope of

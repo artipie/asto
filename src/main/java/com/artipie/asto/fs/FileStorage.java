@@ -23,22 +23,19 @@
  */
 package com.artipie.asto.fs;
 
-import com.artipie.asto.ByteArray;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -94,7 +91,7 @@ public final class FileStorage implements Storage {
                     .filter(Files::isRegularFile)
                     .map(Path::toString)
                     .map(p -> p.substring(dirnamelen))
-                    .map(p -> new Key.From(p))
+                    .map(Key.From::new)
                     .collect(Collectors.toList());
                 Logger.info(
                     this,
@@ -106,48 +103,28 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<Byte> content) {
-        return Flowable.fromPublisher(FlowAdapters.toPublisher(content))
-            .toList()
-            .map(bytes -> new ByteArray(bytes.toArray(new Byte[0])).primitiveBytes())
+    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
+        return Single.fromCallable(
+            () -> {
+                final Path file = Paths.get(this.dir.toString(), key.string());
+                file.getParent().toFile().mkdirs();
+                return file;
+            })
             .flatMapCompletable(
-                bytes ->
-                    Completable.fromAction(
-                        () -> {
-                            final Path target = Paths.get(this.dir.toString(), key.string());
-                            target.getParent().toFile().mkdirs();
-                            Files.write(target, bytes, StandardOpenOption.CREATE_NEW);
-                            Logger.info(
-                                this,
-                                "Saved %d bytes to %s: %s",
-                                bytes.length, key, target
-                            );
-                        }
-                    )
-            )
-            .to(CompletableInterop.await())
+                file -> new RxFile(file)
+                    .save(Flowable.fromPublisher(FlowAdapters.toPublisher(content)))
+            ).to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<Byte>> value(final Key key) {
-        final Path source = Paths.get(this.dir.toString(), key.string());
-        final Flowable<Byte> result =
-            Single.fromCallable(
-                () -> {
-                    final byte[] bytes = Files.readAllBytes(source);
-                    Logger.info(
-                        this,
-                        "Loaded %d bytes of %s: %s",
-                        bytes.length, key, source
-                    );
-                    return bytes;
-                }
-            ).flatMapPublisher(
-                bytes -> Flowable.fromIterable(Arrays.asList(new ByteArray(bytes).boxedBytes()))
-            );
-        return CompletableFuture.supplyAsync(() -> FlowAdapters.toFlowPublisher(result));
+    public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
+        return CompletableFuture.supplyAsync(
+            () -> FlowAdapters.toFlowPublisher(
+                new RxFile(Paths.get(this.dir.toString(), key.string())).flow()
+            )
+        );
     }
 
     @Override

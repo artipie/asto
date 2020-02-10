@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public interface RxStorage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    Completable save(Key key, Flowable<Byte> content);
+    Completable save(Key key, Flowable<ByteBuffer> content);
 
     /**
      * Obtain bytes by key.
@@ -71,7 +72,7 @@ public interface RxStorage {
      * @param key The key
      * @return Bytes.
      */
-    Single<Flowable<Byte>> value(Key key);
+    Single<Flowable<ByteBuffer>> value(Key key);
 
     /**
      * Start a transaction with specified keys.

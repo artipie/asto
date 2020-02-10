@@ -25,10 +25,13 @@ package com.artipie.asto.blocking;
 
 import com.artipie.asto.ByteArray;
 import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
 import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -84,11 +87,7 @@ public class BlockingStorage {
     public void save(final Key key, final byte[] content) {
         this.storage.save(
             key,
-            Flowable.fromArray(
-                new ByteArray(
-                    content
-                ).boxedBytes()
-            )
+            Flowable.fromArray(ByteBuffer.wrap(content))
         ).blockingAwait();
     }
 
@@ -104,7 +103,10 @@ public class BlockingStorage {
                 .blockingGet()
                 .toList()
                 .blockingGet()
-                .toArray(new Byte[0])
+                .stream()
+                .map(buf -> new Remaining(buf).bytes())
+                .flatMap(byteArr -> Arrays.stream(new ByteArray(byteArr).boxedBytes()))
+                .toArray(Byte[]::new)
         ).primitiveBytes();
     }
 }

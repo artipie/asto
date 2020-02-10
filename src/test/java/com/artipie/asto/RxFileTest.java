@@ -27,8 +27,10 @@ import com.artipie.asto.fs.RxFile;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -52,6 +54,11 @@ public class RxFileTest {
             .flow()
             .rebatchRequests(1)
             .toList()
+            .map(
+                list -> list.stream().map(buf -> new Remaining(buf).bytes())
+                    .flatMap(byteArr -> Arrays.stream(new ByteArray(byteArr).boxedBytes()))
+                    .toArray(Byte[]::new)
+            )
             .map(bytes -> new String(new ByteArray(bytes).primitiveBytes()))
             .blockingGet();
         MatcherAssert.assertThat(hello, Matchers.equalTo(content));
@@ -69,7 +76,15 @@ public class RxFileTest {
         final Path temp = Files.createTempFile(hello, "saved.txt");
         temp.toFile().delete();
         new RxFile(temp, vertx.fileSystem())
-            .save(Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes())).blockingAwait();
+            .save(
+                Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
+                    aByte -> {
+                        final byte[] bytes = new byte[1];
+                        bytes[0] = aByte;
+                        return ByteBuffer.wrap(bytes);
+                    }
+                )
+            ).blockingAwait();
         MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
         vertx.close();
     }

@@ -60,7 +60,7 @@ new RxStorageWrapper(
     )
 ).save(
     new Key.From("hello.txt"),
-    Flowable.fromArray(new ByteArray("Hello World!".getBytes()).boxedBytes())
+    ByteBuffer.wrap("Hello World!".getBytes())
 );
 ```
 
