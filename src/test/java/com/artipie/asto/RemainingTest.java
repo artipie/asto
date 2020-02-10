@@ -26,7 +26,7 @@ package com.artipie.asto;
 
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.Test;
 
 /**
@@ -42,10 +42,10 @@ public final class RemainingTest {
         buf.put(array);
         buf.flip();
         MatcherAssert.assertThat(
-            "unexpected remaining array", new Remaining(buf).bytes(), Matchers.equalTo(array)
+            "unexpected remaining array", new Remaining(buf).bytes(), new IsEqual<>(array)
         );
         MatcherAssert.assertThat(
-            "failed to read array twice", new Remaining(buf).bytes(), Matchers.equalTo(array)
+            "failed to read array twice", new Remaining(buf).bytes(), new IsEqual<>(array)
         );
     }
 }
