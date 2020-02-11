@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -91,6 +92,20 @@ public final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
+    }
+
+    @Test
+    public void saveOverwrites() throws Exception {
+        final byte[] original = "1".getBytes();
+        final byte[] updated = "2".getBytes();
+        Assume.assumeThat(updated, Matchers.not(Matchers.equalTo(original)));
+        final BlockingStorage storage = new BlockingStorage(
+            new FileStorage(this.folder.newFolder().toPath())
+        );
+        final Key key = new Key.From("foo");
+        storage.save(key, original);
+        storage.save(key, updated);
+        MatcherAssert.assertThat(storage.value(key), Matchers.equalTo(updated));
     }
 
     @Test
