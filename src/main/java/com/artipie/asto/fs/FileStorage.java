@@ -130,7 +130,7 @@ public final class FileStorage implements Storage {
                 dest -> new RxFile(this.path(source)).move(dest)
             )
             .to(CompletableInterop.await())
-            .<Void>thenApply(o -> null)
+            .<Void>thenApply(file -> null)
             .toCompletableFuture();
     }
 
