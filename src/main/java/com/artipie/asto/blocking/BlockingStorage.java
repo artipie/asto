@@ -92,6 +92,16 @@ public class BlockingStorage {
     }
 
     /**
+     * Moves value from one location to another.
+     *
+     * @param source Source key.
+     * @param destination Destination key.
+     */
+    public void move(final Key source, final Key destination) {
+        this.storage.move(source, destination).blockingAwait();
+    }
+
+    /**
      * Obtain value for the specified key.
      *
      * @param key The key

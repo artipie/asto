@@ -109,4 +109,17 @@ public final class FileStorageTest {
             Matchers.equalTo(content)
         );
     }
+
+    @Test
+    public void move() throws Exception {
+        final byte[] data = "data".getBytes();
+        final BlockingStorage storage = new BlockingStorage(
+            new FileStorage(this.folder.newFolder().toPath())
+        );
+        final Key source = new Key.From("from");
+        storage.save(source, data);
+        final Key destination = new Key.From("to");
+        storage.move(source, destination);
+        MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+    }
 }

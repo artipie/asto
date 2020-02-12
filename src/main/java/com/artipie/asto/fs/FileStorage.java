@@ -29,6 +29,7 @@ import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import java.nio.ByteBuffer;
@@ -36,6 +37,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +69,7 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
         return Single.fromCallable(
-            () -> Files.exists(Paths.get(this.dir.toString(), key.string()))
+            () -> Files.exists(this.path(key))
         ).to(SingleInterop.get()).toCompletableFuture();
     }
 
@@ -106,7 +108,7 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
         return Single.fromCallable(
             () -> {
-                final Path file = Paths.get(this.dir.toString(), key.string());
+                final Path file = this.path(key);
                 file.getParent().toFile().mkdirs();
                 return file;
             })
@@ -119,10 +121,25 @@ public final class FileStorage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Void> move(final Key source, final Key destination) {
+        return Completable.fromCallable(
+            () -> {
+                final Path from = this.path(source);
+                final Path dest = this.path(destination);
+                dest.getParent().toFile().mkdirs();
+                Files.move(from, dest, StandardCopyOption.REPLACE_EXISTING);
+                return null;
+            })
+            .to(CompletableInterop.await())
+            .<Void>thenApply(o -> null)
+            .toCompletableFuture();
+    }
+
+    @Override
     public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> FlowAdapters.toFlowPublisher(
-                new RxFile(Paths.get(this.dir.toString(), key.string())).flow()
+                new RxFile(this.path(key)).flow()
             )
         );
     }
@@ -130,5 +147,15 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         return CompletableFuture.completedFuture(new FileSystemTransaction(this));
+    }
+
+    /**
+     * Resolves key to file system path.
+     *
+     * @param key Key to be resolved to path.
+     * @return Path created from key.
+     */
+    private Path path(final Key key) {
+        return Paths.get(this.dir.toString(), key.string());
     }
 }
