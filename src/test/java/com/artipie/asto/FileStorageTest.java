@@ -28,13 +28,12 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.reactivestreams.FlowAdapters;
 
 /**
@@ -42,22 +41,11 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.1
  */
-public final class FileStorageTest {
+final class FileStorageTest {
 
-    /**
-     * Temp folder for all tests.
-     */
-    @Rule
-    @SuppressWarnings("PMD.BeanMembersShouldSerialize")
-    public TemporaryFolder folder = new TemporaryFolder();
-
-    /**
-     * Fake storage works.
-     * @throws Exception If some problem inside
-     */
     @Test
-    public void savesAndLoads() throws Exception {
-        final Storage storage = new FileStorage(Files.createTempDirectory("temp"));
+    void savesAndLoads(@TempDir final Path tmp) throws Exception {
+        final Storage storage = new FileStorage(tmp);
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
         storage.save(
@@ -94,12 +82,8 @@ public final class FileStorageTest {
     }
 
     @Test
-    public void blockingWrapperWorks() throws IOException {
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(
-                Files.createTempDirectory("temp-blocking")
-            )
-        );
+    void blockingWrapperWorks(@TempDir final Path tmp) throws IOException {
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
         storage.save(key, new ByteArray(content.getBytes()).primitiveBytes());

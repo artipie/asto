@@ -25,16 +25,16 @@ package com.artipie.asto;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link Path}.
  * @since 1.0
  */
-public final class KeyTest {
+final class KeyTest {
 
     @Test
-    public void resolvesKeyFromParts() {
+    void resolvesKeyFromParts() {
         MatcherAssert.assertThat(
             new Key.From("one", "two", "three").string(),
             Matchers.equalTo("one/two/three")
@@ -42,7 +42,7 @@ public final class KeyTest {
     }
 
     @Test
-    public void resovlesKeyFromBasePath() {
+    void resovlesKeyFromBasePath() {
         MatcherAssert.assertThat(
             new Key.From(new Key.From("black", "red"), "green", "yellow").string(),
             Matchers.equalTo("black/red/green/yellow")
