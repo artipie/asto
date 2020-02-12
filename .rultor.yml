@@ -1,4 +1,3 @@
----
 docker:
   image: g4s8/rultor-jdk11:alpine3.10
 assets:
@@ -11,18 +10,24 @@ install: |
   export LC_ALL=en_US.UTF-8
   export LANG=en_US.UTF-8
   export LANGUAGE=en_US.UTF-8
+  sudo gem install pdd -v 0.20.5
+  sudo gem install xcop
 merge:
   script: |
-    pdd -f /dev/null
-    mvn clean install -Pqulice --errors --settings ../settings.xml
+    echo We don't merge via Rultor
+    exit 1
 deploy:
   script: |
     echo There is nothing to deploy
     exit 1
 release:
   script: |-
+    pdd -f /dev/null
     gpg --import /home/r/pubring.gpg
     gpg --allow-secret-key-import --no-tty --batch --import /home/r/secring.gpg
     mvn versions:set "-DnewVersion=${tag}" --settings ../settings.xml
     git commit -am "${tag}"
-    mvn clean deploy -Partipie,sonatype,qulice,gpg-sign --errors --settings ../settings.xml
+    mvn clean deploy -Partipie,publish,sonatype,qulice,gpg-sign --errors --settings ../settings.xml
+architect:
+  - g4s8
+  - yegor256
