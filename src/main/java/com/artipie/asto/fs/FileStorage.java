@@ -29,7 +29,6 @@ import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import java.nio.ByteBuffer;
@@ -37,7 +36,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -122,14 +120,15 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return Completable.fromCallable(
+        return Single.fromCallable(
             () -> {
-                final Path from = this.path(source);
                 final Path dest = this.path(destination);
                 dest.getParent().toFile().mkdirs();
-                Files.move(from, dest, StandardCopyOption.REPLACE_EXISTING);
-                return null;
+                return dest;
             })
+            .flatMapCompletable(
+                dest -> new RxFile(this.path(source)).move(dest)
+            )
             .to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
