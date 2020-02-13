@@ -91,13 +91,12 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        final int delay = 10;
         return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
             .flatMapCompletable(
                 asyncFile -> Completable.create(
                     emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
-                        .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
+                        .subscribe(asyncFile.toSubscriber().onWriteStreamEnd(emitter::onComplete))
                 )
-            ).delay(delay, TimeUnit.MILLISECONDS);
+            );
     }
 }
