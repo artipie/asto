@@ -33,7 +33,6 @@ import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
@@ -92,14 +91,13 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        final int delay = 10;
         return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
             .flatMapCompletable(
                 asyncFile -> Completable.create(
                     emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
                         .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
                 )
-            ).delay(delay, TimeUnit.MILLISECONDS);
+            );
     }
 
     /**
