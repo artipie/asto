@@ -66,7 +66,8 @@ final class RxFileTest {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
         final Path temp = Files.createTempFile(hello, "saved.txt");
-        for (int idx = 0; idx < 100; idx += 1) {
+        final int iterations = 100;
+        for (int idx = 0; idx < iterations; idx += 1) {
             temp.toFile().delete();
             new RxFile(temp, vertx.fileSystem())
                 .save(
