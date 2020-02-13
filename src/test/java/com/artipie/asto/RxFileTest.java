@@ -33,18 +33,14 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link RxFile}.
  * @since 0.11.1
  */
-public class RxFileTest {
+final class RxFileTest {
 
-    /**
-     * Test that {@link RxFile#flow()} works.
-     * @throws IOException if fails
-     */
     @Test
     public void rxFileFlowWorks() throws IOException {
         final String hello = "hello-world";
@@ -65,10 +61,6 @@ public class RxFileTest {
         temp.toFile().deleteOnExit();
     }
 
-    /**
-     * Test that {@link RxFile#save(Flowable)} works.
-     * @throws IOException if fails
-     */
     @Test
     public void rxFileSaveWorks() throws IOException {
         final Vertx vertx = Vertx.vertx();
