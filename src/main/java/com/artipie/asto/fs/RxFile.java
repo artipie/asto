@@ -95,7 +95,10 @@ public class RxFile {
             .flatMapCompletable(
                 asyncFile -> Completable.create(
                     emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
-                        .subscribe(asyncFile.toSubscriber().onWriteStreamEnd(emitter::onComplete))
+                        .subscribe(asyncFile.toSubscriber()
+                            .onWriteStreamEnd(emitter::onComplete)
+                            .onWriteStreamError(emitter::onError)
+                        )
                 )
             );
     }
