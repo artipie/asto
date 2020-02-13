@@ -63,6 +63,7 @@ final class RxFileTest {
     }
 
     @Test
+    // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     public void rxFileSaveWorks() throws IOException {
         final Vertx vertx = Vertx.vertx();
