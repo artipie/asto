@@ -67,6 +67,15 @@ public interface RxStorage {
     Completable save(Key key, Flowable<ByteBuffer> content);
 
     /**
+     * Moves value from one location to another.
+     *
+     * @param source Source key.
+     * @param destination Destination key.
+     * @return Completion or error signal.
+     */
+    Completable move(Key source, Key destination);
+
+    /**
      * Obtain bytes by key.
      *
      * @param key The key
