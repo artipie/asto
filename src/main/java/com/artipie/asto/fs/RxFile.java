@@ -32,7 +32,6 @@ import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
