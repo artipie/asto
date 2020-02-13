@@ -27,7 +27,7 @@ package com.artipie.asto;
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link Remaining}.
