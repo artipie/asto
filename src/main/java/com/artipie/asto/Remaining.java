@@ -78,16 +78,4 @@ public final class Remaining {
         }
         return bytes;
     }
-
-    /**
-     * Buffer read strategy.
-     * @since 0.14
-     */
-    public interface ReadStrategy {
-        /**
-         * Apply strategy to data buffer.
-         * @param data Output data
-         */
-        void apply(byte[] data);
-    }
 }
