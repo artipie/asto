@@ -71,6 +71,15 @@ public interface Storage {
     CompletableFuture<Void> save(Key key, Flow.Publisher<ByteBuffer> content);
 
     /**
+     * Moves value from one location to another.
+     *
+     * @param source Source key.
+     * @param destination Destination key.
+     * @return Completion or error signal.
+     */
+    CompletableFuture<Void> move(Key source, Key destination);
+
+    /**
      * Obtain bytes by key.
      *
      * @param key The key
