@@ -100,11 +100,9 @@ final class FileStorageTest {
     }
 
     @Test
-    public void move() throws Exception {
+    void move(@TempDir final Path tmp) {
         final byte[] data = "data".getBytes();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(this.folder.newFolder().toPath())
-        );
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final Key source = new Key.From("from");
         storage.save(source, data);
         final Key destination = new Key.From("to");
