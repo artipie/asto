@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -62,25 +63,23 @@ final class RxFileTest {
     }
 
     @Test
+    @RepeatedTest(100)
     public void rxFileSaveWorks() throws IOException {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
         final Path temp = Files.createTempFile(hello, "saved.txt");
-        final int iterations = 100;
-        for (int idx = 0; idx < iterations; idx += 1) {
-            temp.toFile().delete();
-            new RxFile(temp, vertx.fileSystem())
-                .save(
-                    Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
-                        aByte -> {
-                            final byte[] bytes = new byte[1];
-                            bytes[0] = aByte;
-                            return ByteBuffer.wrap(bytes);
-                        }
-                    )
-                ).blockingAwait();
-            MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
-        }
+        temp.toFile().delete();
+        new RxFile(temp, vertx.fileSystem())
+            .save(
+                Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
+                    aByte -> {
+                        final byte[] bytes = new byte[1];
+                        bytes[0] = aByte;
+                        return ByteBuffer.wrap(bytes);
+                    }
+                )
+            ).blockingAwait();
+        MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
         vertx.close();
     }
 }
