@@ -65,6 +65,11 @@ public final class FileSystemTransaction implements Transaction {
     }
 
     @Override
+    public CompletableFuture<Void> move(final Key source, final Key destination) {
+        return this.parent.move(source, destination);
+    }
+
+    @Override
     public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
         return this.parent.save(key, content);
     }

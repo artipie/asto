@@ -98,4 +98,15 @@ final class FileStorageTest {
             Matchers.equalTo(content)
         );
     }
+
+    @Test
+    void move(@TempDir final Path tmp) {
+        final byte[] data = "data".getBytes();
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key source = new Key.From("from");
+        storage.save(source, data);
+        final Key destination = new Key.From("to");
+        storage.move(source, destination);
+        MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+    }
 }
