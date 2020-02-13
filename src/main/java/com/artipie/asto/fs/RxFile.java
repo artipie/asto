@@ -26,6 +26,7 @@ package com.artipie.asto.fs;
 import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
@@ -100,5 +101,18 @@ public class RxFile {
                         )
                 )
             );
+    }
+
+    /**
+     * Move file to new location.
+     * @param target Target path the file is moved to.
+     * @return Completion or error signal
+     */
+    public Completable move(final Path target) {
+        return this.fls.rxMove(
+            this.file.toString(),
+            target.toString(),
+            new CopyOptions().setReplaceExisting(true)
+        );
     }
 }

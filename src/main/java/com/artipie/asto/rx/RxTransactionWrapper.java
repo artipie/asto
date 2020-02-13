@@ -86,6 +86,13 @@ public final class RxTransactionWrapper implements RxTransaction {
     }
 
     @Override
+    public Completable move(final Key source, final Key destination) {
+        return CompletableInterop.fromFuture(
+            this.wrapped.move(source, destination)
+        );
+    }
+
+    @Override
     public Single<Flowable<ByteBuffer>> value(final Key key) {
         return SingleInterop.fromFuture(this.wrapped.value(key))
             .map(flow -> Flowable.fromPublisher(FlowAdapters.toPublisher(flow)));
