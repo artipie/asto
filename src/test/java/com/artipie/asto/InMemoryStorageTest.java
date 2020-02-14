@@ -41,6 +41,32 @@ import org.reactivestreams.FlowAdapters;
 public final class InMemoryStorageTest {
 
     @Test
+    void shouldExistForSavedKey() throws Exception {
+        final Storage storage = this.storage();
+        final Key key = new Key.From("shouldExistForSavedKey");
+        final byte[] data = "some data".getBytes();
+        new BlockingStorage(storage).save(key, data);
+        MatcherAssert.assertThat(storage.exists(key).get(), Matchers.equalTo(true));
+    }
+
+    @Test
+    void shouldNotExistForUnknownKey() throws Exception {
+        final Storage storage = this.storage();
+        final Key key = new Key.From("shouldNotExistForUnknownKey");
+        MatcherAssert.assertThat(storage.exists(key).get(), Matchers.equalTo(false));
+    }
+
+    @Test
+    void shouldNotExistForParentOfSavedKey() throws Exception {
+        final Storage storage = this.storage();
+        final Key parent = new Key.From("shouldNotExistForParentOfSavedKey");
+        final Key key = new Key.From(parent, "child");
+        final byte[] data = "content".getBytes();
+        new BlockingStorage(storage).save(key, data);
+        MatcherAssert.assertThat(storage.exists(parent).get(), Matchers.equalTo(false));
+    }
+
+    @Test
     void shouldSave() {
         final BlockingStorage storage = new BlockingStorage(this.storage());
         final byte[] data = "0".getBytes();
