@@ -35,7 +35,7 @@ import org.reactivestreams.FlowAdapters;
 /**
  * Tests for {@link InMemoryStorage}.
  *
- * @since 0.1
+ * @since 0.14
  */
 public final class InMemoryStorageTest {
 

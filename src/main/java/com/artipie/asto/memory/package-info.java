@@ -25,6 +25,6 @@
 /**
  * In memory implementation of Storage.
  *
- * @since 0.10
+ * @since 0.14
  */
 package com.artipie.asto.memory;

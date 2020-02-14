@@ -41,7 +41,7 @@ import org.reactivestreams.FlowAdapters;
 /**
  * Simple implementation of Storage that holds all data in memory.
  *
- * @since 0.1
+ * @since 0.14
  */
 public final class InMemoryStorage implements Storage {
 
@@ -64,14 +64,16 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
         return CompletableFuture.runAsync(
             () -> {
-                final byte[] bytes = Flowable.fromPublisher(FlowAdapters.toPublisher(content))
-                    .map(buf -> new Remaining(buf).bytes())
-                    .toList()
-                    .blockingGet()
-                    .stream()
-                    .reduce((b1, b2) -> Bytes.concat(b1, b2))
-                    .orElse(new byte[0]);
-                this.data.put(key.string(), bytes);
+                this.data.put(
+                    key.string(),
+                    Flowable.fromPublisher(FlowAdapters.toPublisher(content))
+                        .map(buf -> new Remaining(buf).bytes())
+                        .toList()
+                        .blockingGet()
+                        .stream()
+                        .reduce((b1, b2) -> Bytes.concat(b1, b2))
+                        .orElse(new byte[0])
+                );
             }
         );
     }
@@ -91,7 +93,9 @@ public final class InMemoryStorage implements Storage {
                         String.format("No value for key: %s", key.string())
                     );
                 }
-                return FlowAdapters.toFlowPublisher(Flowable.fromArray(ByteBuffer.wrap(bytes)));
+                return FlowAdapters.toFlowPublisher(
+                    Flowable.fromArray(ByteBuffer.wrap(bytes))
+                );
             }
         );
     }
