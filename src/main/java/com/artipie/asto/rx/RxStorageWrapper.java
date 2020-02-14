@@ -94,6 +94,13 @@ public final class RxStorageWrapper implements RxStorage {
         );
     }
 
+    @Override
+    public Completable move(final Key source, final Key destination) {
+        return CompletableInterop.fromFuture(
+            this.storage.move(source, destination)
+        );
+    }
+
     /**
      * Obtain bytes by key.
      *

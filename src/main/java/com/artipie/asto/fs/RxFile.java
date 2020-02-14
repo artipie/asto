@@ -26,13 +26,13 @@ package com.artipie.asto.fs;
 import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
@@ -91,13 +91,25 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        final int delay = 10;
         return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
             .flatMapCompletable(
                 asyncFile -> Completable.create(
                     emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
                         .subscribe(asyncFile.toSubscriber().onComplete(emitter::onComplete))
                 )
-            ).delay(delay, TimeUnit.MILLISECONDS);
+            );
+    }
+
+    /**
+     * Move file to new location.
+     * @param target Target path the file is moved to.
+     * @return Completion or error signal
+     */
+    public Completable move(final Path target) {
+        return this.fls.rxMove(
+            this.file.toString(),
+            target.toString(),
+            new CopyOptions().setReplaceExisting(true)
+        );
     }
 }
