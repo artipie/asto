@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -108,5 +110,23 @@ final class FileStorageTest {
         final Key destination = new Key.From("to");
         storage.move(source, destination);
         MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+    }
+
+    @Test
+    void list(@TempDir final Path tmp) {
+        final byte[] data = "some data".getBytes();
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        storage.save(new Key.From("a", "b", "c", "1"), data);
+        storage.save(new Key.From("a", "b", "2"), data);
+        storage.save(new Key.From("a", "z"), data);
+        storage.save(new Key.From("z"), data);
+        final Collection<String> keys = storage.list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(
+            keys,
+            Matchers.equalTo(Arrays.asList("a\\b\\2", "a\\b\\c\\1"))
+        );
     }
 }

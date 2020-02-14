@@ -51,15 +51,13 @@ public interface Storage {
     CompletableFuture<Boolean> exists(Key key);
 
     /**
-     * Return the list of object names that start with this prefix, for
+     * Return the list of keys that start with this prefix, for
      * example "foo/bar/".
      *
-     * The prefix must end with a slash.
-     *
-     * @param prefix The prefix, ended with a slash
-     * @return List of object keys/names
+     * @param prefix The prefix.
+     * @return Collection of relative keys.
      */
-    CompletableFuture<Collection<Key>> list(String prefix);
+    CompletableFuture<Collection<Key>> list(Key prefix);
 
     /**
      * Saves the bytes to the specified key.

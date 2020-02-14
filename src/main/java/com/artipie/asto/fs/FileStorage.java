@@ -32,7 +32,6 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import java.nio.ByteBuffer;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -72,21 +71,11 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final String prefix) {
+    public CompletableFuture<Collection<Key>> list(final Key prefix) {
         return Single.fromCallable(
             () -> {
-                final String separator = FileSystems.getDefault().getSeparator();
-                if (!prefix.endsWith(separator)) {
-                    throw new IllegalArgumentException(
-                        String.format(
-                            "The prefix must end with '%s': \"%s\"",
-                            prefix,
-                            separator
-                        )
-                    );
-                }
-                final Path path = Paths.get(this.dir.toString(), prefix);
-                final int dirnamelen = path.toString().length() - prefix.length() + 1;
+                final Path path = this.path(prefix);
+                final int dirnamelen = path.toString().length() - prefix.string().length();
                 final Collection<Key> keys = Files.walk(path)
                     .filter(Files::isRegularFile)
                     .map(Path::toString)

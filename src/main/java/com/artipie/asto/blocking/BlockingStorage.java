@@ -66,15 +66,13 @@ public class BlockingStorage {
     }
 
     /**
-     * Return the list of object names that start with this prefix, for
+     * Return the list of keys that start with this prefix, for
      * example "foo/bar/".
-     * <p>
-     * The prefix must end with a slash.
      *
-     * @param prefix The prefix, ended with a slash
-     * @return List of object keys/names
+     * @param prefix The prefix.
+     * @return Collection of relative keys.
      */
-    public Collection<Key> list(final String prefix) {
+    public Collection<Key> list(final Key prefix) {
         return this.storage.list(prefix).blockingGet();
     }
 
