@@ -36,16 +36,18 @@ import org.junit.jupiter.api.Test;
 public final class RemainingTest {
 
     @Test
-    public void readTwice() throws Exception {
+    public void readTwiceWithRestoreStrategy() throws Exception {
         final ByteBuffer buf = ByteBuffer.allocate(32);
         final byte[] array = new byte[]{1, 2, 3, 4};
         buf.put(array);
         buf.flip();
         MatcherAssert.assertThat(
-            "unexpected remaining array", new Remaining(buf).bytes(), new IsEqual<>(array)
+            "unexpected remaining array",
+            new Remaining(buf, true).bytes(), new IsEqual<>(array)
         );
         MatcherAssert.assertThat(
-            "failed to read array twice", new Remaining(buf).bytes(), new IsEqual<>(array)
+            "failed to read array twice",
+            new Remaining(buf, true).bytes(), new IsEqual<>(array)
         );
     }
 }
