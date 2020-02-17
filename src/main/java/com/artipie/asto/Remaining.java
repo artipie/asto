@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
  * Remaining bytes in a byte buffer.
  * @since 0.13
  */
-public class Remaining {
+public final class Remaining {
 
     /**
      * The buffer.
@@ -37,11 +37,26 @@ public class Remaining {
     private final ByteBuffer buf;
 
     /**
+     * Restore buffer position.
+     */
+    private final boolean restore;
+
+    /**
      * Ctor.
      * @param buf The byte buffer.
      */
     public Remaining(final ByteBuffer buf) {
+        this(buf, false);
+    }
+
+    /**
+     * Ctor.
+     * @param buf The byte buffer.
+     * @param restore Restore position.
+     */
+    public Remaining(final ByteBuffer buf, final boolean restore) {
         this.buf = buf;
+        this.restore = restore;
     }
 
     /**
@@ -54,9 +69,13 @@ public class Remaining {
      */
     public byte[] bytes() {
         final byte[] bytes = new byte[this.buf.remaining()];
-        this.buf.mark();
+        if (this.restore) {
+            this.buf.mark();
+        }
         this.buf.get(bytes);
-        this.buf.reset();
+        if (this.restore) {
+            this.buf.reset();
+        }
         return bytes;
     }
 }
