@@ -129,4 +129,14 @@ final class FileStorageTest {
             Matchers.equalTo(Arrays.asList("a\\b\\2", "a\\b\\c\\1"))
         );
     }
+
+    @Test
+    void listEmpty(@TempDir final Path tmp) {
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Collection<String> keys = storage.list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(keys, Matchers.empty());
+    }
 }

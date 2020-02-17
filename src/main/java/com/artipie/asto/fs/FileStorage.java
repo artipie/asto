@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
@@ -75,13 +76,18 @@ public final class FileStorage implements Storage {
         return Single.fromCallable(
             () -> {
                 final Path path = this.path(prefix);
-                final int dirnamelen = path.toString().length() - prefix.string().length();
-                final Collection<Key> keys = Files.walk(path)
-                    .filter(Files::isRegularFile)
-                    .map(Path::toString)
-                    .map(p -> p.substring(dirnamelen))
-                    .map(Key.From::new)
-                    .collect(Collectors.toList());
+                final Collection<Key> keys;
+                if (Files.exists(path)) {
+                    final int dirnamelen = path.toString().length() - prefix.string().length();
+                    keys = Files.walk(path)
+                        .filter(Files::isRegularFile)
+                        .map(Path::toString)
+                        .map(p -> p.substring(dirnamelen))
+                        .map(Key.From::new)
+                        .collect(Collectors.toList());
+                } else {
+                    keys = Collections.emptyList();
+                }
                 Logger.info(
                     this,
                     "Found %d objects by the prefix \"%s\" in %s by %s: %s",
