@@ -87,7 +87,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-rx-java2</artifactId>
-      <version>${vertx.version}</version>
+      <version>4.0.0-20200212.102327-71</version>
       <exclusions>
         <exclusion>
           <groupId>io.vertx</groupId>
@@ -98,7 +98,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
-      <version>${vertx.version}</version>
+      <version>4.0.0-20200215.112057-298</version>
     </dependency>
     <dependency>
       <groupId>com.github.akarnokd</groupId>
