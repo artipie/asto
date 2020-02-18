@@ -27,7 +27,6 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
-import com.google.common.primitives.Bytes;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -63,18 +62,20 @@ public final class InMemoryStorage implements Storage {
     @Override
     public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
         return CompletableFuture.runAsync(
-            () -> {
-                this.data.put(
-                    key.string(),
-                    Flowable.fromPublisher(FlowAdapters.toPublisher(content))
-                        .map(buf -> new Remaining(buf).bytes())
-                        .toList()
-                        .blockingGet()
-                        .stream()
-                        .reduce((b1, b2) -> Bytes.concat(b1, b2))
-                        .orElse(new byte[0])
-                );
-            }
+            () -> this.data.put(
+                key.string(),
+                Flowable.fromPublisher(FlowAdapters.toPublisher(content))
+                    .toList()
+                    .blockingGet()
+                    .stream()
+                    .reduce(
+                        (left, right) -> ByteBuffer.allocate(left.remaining() + right.remaining())
+                            .put(left)
+                            .put(right)
+                    )
+                    .map(buf -> new Remaining(buf).bytes())
+                    .orElse(new byte[0])
+            )
         );
     }
 
