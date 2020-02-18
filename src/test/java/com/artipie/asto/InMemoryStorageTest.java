@@ -26,6 +26,7 @@ package com.artipie.asto;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -46,6 +47,26 @@ public final class InMemoryStorageTest {
         final Key key = new Key.From("shouldSave");
         storage.save(key, data);
         MatcherAssert.assertThat(storage.value(key), Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldSaveFromMultipleBuffers() throws Exception {
+        final Storage storage = this.storage();
+        final Key key = new Key.From("shouldSaveFromMultipleBuffers");
+        storage.save(
+            key,
+            FlowAdapters.toFlowPublisher(
+                Flowable.fromArray(
+                    ByteBuffer.wrap("12".getBytes()),
+                    ByteBuffer.wrap("34".getBytes()),
+                    ByteBuffer.wrap("5".getBytes())
+                )
+            )
+        ).get();
+        MatcherAssert.assertThat(
+            new BlockingStorage(storage).value(key),
+            Matchers.equalTo("12345".getBytes())
+        );
     }
 
     @Test

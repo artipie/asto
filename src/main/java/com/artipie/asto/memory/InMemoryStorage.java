@@ -69,9 +69,13 @@ public final class InMemoryStorage implements Storage {
                     .blockingGet()
                     .stream()
                     .reduce(
-                        (left, right) -> ByteBuffer.allocate(left.remaining() + right.remaining())
-                            .put(left)
-                            .put(right)
+                        (left, right) -> {
+                            final ByteBuffer concat = ByteBuffer.allocate(
+                                left.remaining() + right.remaining()
+                            ).put(left).put(right);
+                            concat.flip();
+                            return concat;
+                        }
                     )
                     .map(buf -> new Remaining(buf).bytes())
                     .orElse(new byte[0])
