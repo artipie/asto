@@ -32,6 +32,7 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -84,6 +85,7 @@ public final class FileStorage implements Storage {
                         .filter(Files::isRegularFile)
                         .map(Path::toString)
                         .map(p -> p.substring(dirnamelen))
+                        .map(s -> s.split(FileSystems.getDefault().getSeparator()))
                         .map(Key.From::new)
                         .sorted(Comparator.comparing(Key.From::string))
                         .collect(Collectors.toList());

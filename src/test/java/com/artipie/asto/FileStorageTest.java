@@ -126,7 +126,7 @@ final class FileStorageTest {
             .collect(Collectors.toList());
         MatcherAssert.assertThat(
             keys,
-            Matchers.equalTo(Arrays.asList("a\\b\\2", "a\\b\\c\\1"))
+            Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
         );
     }
 
