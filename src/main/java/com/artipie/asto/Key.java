@@ -23,10 +23,9 @@
  */
 package com.artipie.asto;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -77,7 +76,15 @@ public interface Key {
         /**
          * Parts.
          */
-        private final Iterable<String> parts;
+        private final List<String> parts;
+
+        /**
+         * Ctor.
+         * @param parts Parts delimited by `/` symbol
+         */
+        public From(final String parts) {
+            this(parts.split("/"));
+        }
 
         /**
          * Ctor.
@@ -95,8 +102,8 @@ public interface Key {
         public From(final Key base, final String... parts) {
             this(
                 Stream.concat(
-                    Arrays.asList(base.string().split("/")).stream(),
-                    Arrays.asList(parts).stream()
+                    new From(base.string()).parts.stream(),
+                    Arrays.stream(parts)
                 ).collect(Collectors.toList())
             );
         }
@@ -106,11 +113,16 @@ public interface Key {
          * @param parts Parts
          */
         public From(final Collection<String> parts) {
-            this.parts = Collections.unmodifiableCollection(new ArrayList<>(parts));
+            this.parts = List.copyOf(parts);
         }
 
         @Override
         public String string() {
+            for (final String part : this.parts) {
+                if (part.contains("/")) {
+                    throw new IllegalStateException(String.format("Invalid part: %s", part));
+                }
+            }
             return String.join("/", this.parts);
         }
     }
