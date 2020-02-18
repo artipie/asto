@@ -41,10 +41,6 @@ import org.reactivestreams.FlowAdapters;
 /**
  * Test case for {@link Storage}.
  * @since 0.1
- * @todo #53:30min The combination of RxFile and TempDir Junit5 rule
- *  doesn't work on Windows. It seems that Junit unable to cleanup
- *  temporary directory. Fix RxFile implementation and remove disable
- *  annotation.
  */
 final class FileStorageTest {
 
