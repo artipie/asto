@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -83,7 +84,7 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
-        MatcherAssert.assertThat(tmp.toFile().delete(), new IsEqual<>(true));
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
