@@ -28,14 +28,13 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
-import org.junit.jupiter.api.io.TempDir;
 import org.reactivestreams.FlowAdapters;
 
 /**
@@ -46,11 +45,12 @@ import org.reactivestreams.FlowAdapters;
  *  temporary directory. Fix RxFile implementation and remove disable
  *  annotation.
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 final class FileStorageTest {
 
     @Test
-    void savesAndLoads(@TempDir final Path tmp) throws Exception {
+    void savesAndLoads() throws Exception {
+        final Path tmp = Files.createTempDirectory("tmp-save");
+        tmp.toFile().deleteOnExit();
         final Storage storage = new FileStorage(tmp);
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
@@ -88,7 +88,9 @@ final class FileStorageTest {
     }
 
     @Test
-    void saveOverwrites(@TempDir final Path tmp) {
+    void saveOverwrites() throws IOException {
+        final Path tmp = Files.createTempDirectory("tmp-save-over-writes");
+        tmp.toFile().deleteOnExit();
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
@@ -103,7 +105,9 @@ final class FileStorageTest {
     }
 
     @Test
-    void blockingWrapperWorks(@TempDir final Path tmp) throws IOException {
+    void blockingWrapperWorks() throws IOException {
+        final Path tmp = Files.createTempDirectory("tmp-blocking");
+        tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
@@ -116,7 +120,9 @@ final class FileStorageTest {
     }
 
     @Test
-    void move(@TempDir final Path tmp) {
+    void move() throws IOException {
+        final Path tmp = Files.createTempDirectory("tmp-move");
+        tmp.toFile().deleteOnExit();
         final byte[] data = "data".getBytes();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final Key source = new Key.From("from");
