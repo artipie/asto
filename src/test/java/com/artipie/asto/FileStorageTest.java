@@ -37,6 +37,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.FlowAdapters;
 
 /**
@@ -45,11 +46,20 @@ import org.reactivestreams.FlowAdapters;
  */
 final class FileStorageTest {
 
+    @Test
+    void windowsBuggyTest() throws IOException {
+        final Path tmp = Files.createTempDirectory("tmp-save2");
+        final Path resolve = tmp.resolve("y");
+        Files.write(resolve, "hello".getBytes());
+        FileUtils.deleteDirectory(tmp.toFile());
+    }
+
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void savesAndLoads() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-save");
+        tmp.toFile().deleteOnExit();
         final Storage storage = new FileStorage(tmp, vertx.fileSystem());
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
@@ -84,7 +94,6 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
-        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
