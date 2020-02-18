@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package com.artipie.asto.blocking;
 
 import com.artipie.asto.Key;
@@ -29,7 +30,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import org.apache.commons.io.FileUtils;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
@@ -48,21 +51,40 @@ public final class BlockingStorageTest {
     private Path temp;
 
     @BeforeEach
-    public void before() throws IOException  {
+    public void before() throws IOException {
         this.temp = Files.createTempDirectory("BlockingStorageTest");
     }
 
     @AfterEach
     public void after() throws IOException {
-        FileUtils.deleteDirectory(this.temp.toFile());
+        final Map<Path, Exception> exceptions = new LinkedHashMap<>();
+        Files.walk(this.temp)
+            .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
+            .forEachOrdered(
+                path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (final IOException ex) {
+                        exceptions.put(path, ex);
+                    }
+                }
+            );
+        if (!exceptions.isEmpty()) {
+            throw new IOException(
+                exceptions.toString(),
+                exceptions.values().iterator().next()
+            );
+        }
     }
 
     @Test
     void shouldFailOnCleanup() throws IOException {
         final String content = "Hello world";
-        final String name = "file.txt";
+        final String name = "inside/file.txt";
+        final Path file = this.temp.resolve(name);
+        Files.createDirectories(file.getParent());
         Files.writeString(
-            this.temp.resolve(name),
+            file,
             content,
             StandardOpenOption.WRITE,
             StandardOpenOption.CREATE,
