@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -62,6 +63,8 @@ final class RxFileTest {
     }
 
     @Test
+    // @checkstyle MagicNumberCheck (1 line)
+    @RepeatedTest(100)
     public void rxFileSaveWorks() throws IOException {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
