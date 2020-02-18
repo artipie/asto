@@ -125,4 +125,30 @@ final class FileStorageTest {
         storage.move(source, destination);
         MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
     }
+
+    @Test
+    void shouldExistForSavedKey(@TempDir final Path tmp) {
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key key = new Key.From("some", "key");
+        final byte[] data = "some data".getBytes();
+        storage.save(key, data);
+        MatcherAssert.assertThat(storage.exists(key), Matchers.equalTo(true));
+    }
+
+    @Test
+    void shouldNotExistForUnknownKey(@TempDir final Path tmp) {
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key key = new Key.From("unknown");
+        MatcherAssert.assertThat(storage.exists(key), Matchers.equalTo(false));
+    }
+
+    @Test
+    void shouldNotExistForParentOfSavedKey(@TempDir final Path tmp) {
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key parent = new Key.From("a", "b");
+        final Key key = new Key.From(parent, "c");
+        final byte[] data = "content".getBytes();
+        storage.save(key, data);
+        MatcherAssert.assertThat(storage.exists(parent), Matchers.equalTo(false));
+    }
 }
