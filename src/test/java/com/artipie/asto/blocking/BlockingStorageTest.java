@@ -33,7 +33,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
@@ -51,15 +50,22 @@ public final class BlockingStorageTest {
      */
     private Path temp;
 
+    /**
+     * A file inside of {@link #temp}.
+     */
+    private Path file;
+
     @BeforeEach
     public void before() throws IOException {
         this.temp = Files.createTempDirectory("BlockingStorageTest");
+        this.file = this.temp.resolve("file.txt");
     }
 
     @AfterEach
     public void after() throws IOException {
         try {
-            FileUtils.deleteDirectory(this.temp.toFile());
+            Files.deleteIfExists(this.file);
+            Files.deleteIfExists(this.temp);
         } catch (final IOException ex) {
             final List<String> files = Files.walk(this.temp)
                 .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
@@ -72,9 +78,8 @@ public final class BlockingStorageTest {
     @Test
     void shouldFailOnCleanup() throws IOException {
         final String content = "Hello world";
-        final String name = "file.txt";
         Files.writeString(
-            this.temp.resolve(name),
+            this.file,
             content,
             StandardOpenOption.WRITE,
             StandardOpenOption.CREATE,
@@ -82,7 +87,7 @@ public final class BlockingStorageTest {
         );
         final BlockingStorage asto = new BlockingStorage(new FileStorage(this.temp));
         MatcherAssert.assertThat(
-            new String(asto.value(new Key.From(name))),
+            new String(asto.value(new Key.From(this.file.getFileName().toString()))),
             new IsEqual<>(content)
         );
     }
