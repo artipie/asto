@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -83,6 +84,21 @@ final class FileStorageTest {
                 ).primitiveBytes()
             ),
             Matchers.equalTo(content)
+        );
+    }
+
+    @Test
+    void saveOverwrites(@TempDir final Path tmp) {
+        final byte[] original = "1".getBytes();
+        final byte[] updated = "2".getBytes();
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key key = new Key.From("foo");
+        storage.save(key, original);
+        storage.save(key, updated);
+        MatcherAssert.assertThat(
+            "Value read from storage should be updated",
+            storage.value(key),
+            new IsEqual<>(updated)
         );
     }
 
