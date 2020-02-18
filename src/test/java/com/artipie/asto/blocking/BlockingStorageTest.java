@@ -30,11 +30,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
@@ -59,29 +58,14 @@ public final class BlockingStorageTest {
 
     @AfterEach
     public void after() throws IOException {
-        final List<Path> deleted = new ArrayList<>(10);
-        final Map<Path, Exception> exceptions = new LinkedHashMap<>();
-        Files.walk(this.temp)
-            .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
-            .forEachOrdered(
-                path -> {
-                    try {
-                        Files.delete(path);
-                        deleted.add(path);
-                    } catch (final IOException ex) {
-                        exceptions.put(path, ex);
-                    }
-                }
-            );
-        if (!exceptions.isEmpty()) {
-            throw new IOException(
-                String.format(
-                    "\n%s\n\n%s",
-                    deleted,
-                    exceptions.toString()
-                ),
-                exceptions.values().iterator().next()
-            );
+        try {
+            FileUtils.deleteDirectory(this.temp.toFile());
+        } catch (final IOException ex) {
+            final List<String> files = Files.walk(this.temp)
+                .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
+                .map(Object::toString)
+                .collect(Collectors.toList());
+            throw new IOException(files.toString(), ex);
         }
     }
 
