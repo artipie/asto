@@ -49,7 +49,6 @@ final class FileStorageTest {
     void savesAndLoads() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-save");
-        tmp.toFile().deleteOnExit();
         final Storage storage = new FileStorage(tmp, vertx.fileSystem());
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
@@ -84,6 +83,7 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
+        MatcherAssert.assertThat(tmp.toFile().delete(), new IsEqual<>(true));
         vertx.rxClose().blockingAwait();
     }
 
