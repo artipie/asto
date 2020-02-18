@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -57,6 +59,7 @@ public final class BlockingStorageTest {
 
     @AfterEach
     public void after() throws IOException {
+        final List<Path> deleted = new ArrayList<>(10);
         final Map<Path, Exception> exceptions = new LinkedHashMap<>();
         Files.walk(this.temp)
             .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
@@ -64,6 +67,7 @@ public final class BlockingStorageTest {
                 path -> {
                     try {
                         Files.delete(path);
+                        deleted.add(path);
                     } catch (final IOException ex) {
                         exceptions.put(path, ex);
                     }
@@ -71,7 +75,11 @@ public final class BlockingStorageTest {
             );
         if (!exceptions.isEmpty()) {
             throw new IOException(
-                exceptions.toString(),
+                String.format(
+                    "\n%s\n\n%s",
+                    deleted,
+                    exceptions.toString()
+                ),
                 exceptions.values().iterator().next()
             );
         }
@@ -80,11 +88,9 @@ public final class BlockingStorageTest {
     @Test
     void shouldFailOnCleanup() throws IOException {
         final String content = "Hello world";
-        final String name = "inside/file.txt";
-        final Path file = this.temp.resolve(name);
-        Files.createDirectories(file.getParent());
+        final String name = "file.txt";
         Files.writeString(
-            file,
+            this.temp.resolve(name),
             content,
             StandardOpenOption.WRITE,
             StandardOpenOption.CREATE,
