@@ -33,7 +33,6 @@ import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.reactivestreams.FlowAdapters;
 
@@ -45,7 +44,6 @@ import org.reactivestreams.FlowAdapters;
  *  temporary directory. Fix RxFile implementation and remove disable
  *  annotation.
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 final class FileStorageTest {
 
     @Test
