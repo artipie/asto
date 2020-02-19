@@ -25,6 +25,7 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.fs.RxFile;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
@@ -53,7 +54,9 @@ final class FileStorageTest {
         final Path xxx = yyy.resolve("x");
         final Path zzz = xxx.resolve("z");
         zzz.getParent().toFile().mkdirs();
-        Files.write(zzz, "hello".getBytes());
+        final Vertx vertx = Vertx.vertx();
+        new RxFile(zzz, vertx.fileSystem()).save(Flowable.fromArray(ByteBuffer.wrap("123".getBytes()))).blockingAwait();
+        vertx.close();
         FileUtils.deleteDirectory(tmp.toFile());
     }
 
