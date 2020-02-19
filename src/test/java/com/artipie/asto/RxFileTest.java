@@ -35,6 +35,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Test case for {@link RxFile}.
@@ -43,9 +44,9 @@ import org.junit.jupiter.api.Test;
 final class RxFileTest {
 
     @Test
-    public void rxFileFlowWorks() throws IOException {
+    public void rxFileFlowWorks(@TempDir final Path tmp) throws IOException {
         final String hello = "hello-world";
-        final Path temp = Files.createTempFile(hello, ".txt");
+        final Path temp = tmp.resolve("txt-file");
         Files.write(temp, hello.getBytes());
         final String content = new RxFile(temp)
             .flow()
@@ -59,17 +60,15 @@ final class RxFileTest {
             .map(bytes -> new String(new ByteArray(bytes).primitiveBytes()))
             .blockingGet();
         MatcherAssert.assertThat(hello, Matchers.equalTo(content));
-        temp.toFile().delete();
     }
 
     @Test
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    public void rxFileSaveWorks() throws IOException {
+    public void rxFileSaveWorks(@TempDir final Path tmp) throws IOException {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
-        final Path temp = Files.createTempFile(hello, "saved.txt");
-        temp.toFile().delete();
+        final Path temp = tmp.resolve("saved.txt");
         new RxFile(temp, vertx.fileSystem())
             .save(
                 Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
@@ -81,7 +80,6 @@ final class RxFileTest {
                 )
             ).blockingAwait();
         MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
-        temp.toFile().delete();
         vertx.close();
     }
 }
