@@ -37,25 +37,50 @@ import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.FlowAdapters;
 
 /**
  * Test case for {@link Storage}.
+ *
  * @since 0.1
  */
 final class FileStorageTest {
 
+    /**
+     * Vert.x used to create tested FileStorage.
+     */
+    private Vertx vertx;
+
+    /**
+     * File storage used in tests.
+     */
+    private FileStorage storage;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        this.vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-save");
+        tmp.toFile().deleteOnExit();
+        this.storage = new FileStorage(tmp, this.vertx.fileSystem());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (this.vertx != null) {
+            this.vertx.rxClose().blockingAwait();
+        }
+    }
+
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void savesAndLoads() throws Exception {
-        final Vertx vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp-save");
-        tmp.toFile().deleteOnExit();
-        final Storage storage = new FileStorage(tmp, vertx.fileSystem());
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
-        storage.save(
+        this.storage.save(
             key,
             FlowAdapters.toFlowPublisher(
                 Flowable.fromArray(
@@ -73,7 +98,7 @@ final class FileStorageTest {
             new String(
                 new ByteArray(Flowable.fromPublisher(
                     FlowAdapters.toPublisher(
-                        storage.value(key).get()
+                        this.storage.value(key).get()
                     )
                 )
                     .toList()
@@ -86,78 +111,59 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void saveOverwrites() throws IOException {
-        final Vertx vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp-save-over-writes");
-        tmp.toFile().deleteOnExit();
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
-        );
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key key = new Key.From("foo");
-        storage.save(key, original);
-        storage.save(key, updated);
+        blocking.save(key, original);
+        blocking.save(key, updated);
         MatcherAssert.assertThat(
             "Value read from storage should be updated",
-            storage.value(key),
+            blocking.value(key),
             new IsEqual<>(updated)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void blockingWrapperWorks() throws IOException {
-        final Vertx vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp-blocking");
-        tmp.toFile().deleteOnExit();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
-        );
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
-        storage.save(key, new ByteArray(content.getBytes()).primitiveBytes());
-        final byte[] bytes = storage.value(key);
+        blocking.save(key, new ByteArray(content.getBytes()).primitiveBytes());
+        final byte[] bytes = blocking.value(key);
         MatcherAssert.assertThat(
             new String(bytes),
             Matchers.equalTo(content)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void move() throws IOException {
-        final Vertx vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp-move");
-        tmp.toFile().deleteOnExit();
         final byte[] data = "data".getBytes();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
-        );
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key source = new Key.From("from");
-        storage.save(source, data);
+        blocking.save(source, data);
         final Key destination = new Key.From("to");
-        storage.move(source, destination);
-        MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
-        vertx.rxClose().blockingAwait();
+        blocking.move(source, destination);
+        MatcherAssert.assertThat(blocking.value(destination), Matchers.equalTo(data));
     }
 
     @Test
-    void list(@TempDir final Path tmp) {
+    void list() throws Exception {
         final byte[] data = "some data".getBytes();
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
-        storage.save(new Key.From("a", "b", "c", "1"), data);
-        storage.save(new Key.From("a", "b", "2"), data);
-        storage.save(new Key.From("a", "z"), data);
-        storage.save(new Key.From("z"), data);
-        final Collection<String> keys = storage.list(new Key.From("a", "b"))
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        blocking.save(new Key.From("a", "b", "c", "1"), data);
+        blocking.save(new Key.From("a", "b", "2"), data);
+        blocking.save(new Key.From("a", "z"), data);
+        blocking.save(new Key.From("z"), data);
+        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
             .stream()
             .map(Key::string)
             .collect(Collectors.toList());
@@ -168,9 +174,9 @@ final class FileStorageTest {
     }
 
     @Test
-    void listEmpty(@TempDir final Path tmp) {
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
-        final Collection<String> keys = storage.list(new Key.From("a", "b"))
+    void listEmpty() throws Exception {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
             .stream()
             .map(Key::string)
             .collect(Collectors.toList());

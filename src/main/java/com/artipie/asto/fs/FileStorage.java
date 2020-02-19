@@ -103,7 +103,11 @@ public final class FileStorage implements Storage {
                         .filter(Files::isRegularFile)
                         .map(Path::toString)
                         .map(p -> p.substring(dirnamelen))
-                        .map(s -> s.split(FileSystems.getDefault().getSeparator()))
+                        .map(
+                            s -> s.split(
+                                FileSystems.getDefault().getSeparator().replace("\\", "\\\\")
+                            )
+                        )
                         .map(Key.From::new)
                         .sorted(Comparator.comparing(Key.From::string))
                         .collect(Collectors.toList());
