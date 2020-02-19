@@ -49,8 +49,11 @@ final class FileStorageTest {
     @Test
     void windowsBuggyTest() throws IOException {
         final Path tmp = Files.createTempDirectory("tmp-save2");
-        final Path resolve = tmp.resolve("y");
-        Files.write(resolve, "hello".getBytes());
+        final Path yyy = tmp.resolve("y");
+        final Path xxx = yyy.resolve("x");
+        final Path zzz = xxx.resolve("z");
+        zzz.getParent().toFile().mkdirs();
+        Files.write(zzz, "hello".getBytes());
         FileUtils.deleteDirectory(tmp.toFile());
     }
 
