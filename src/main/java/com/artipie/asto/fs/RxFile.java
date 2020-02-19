@@ -77,11 +77,17 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setRead(true))
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions()
+                .setRead(true)
+                .setWrite(false)
+                .setCreate(false)
+        )
             .flatMapPublisher(
                 asyncFile -> asyncFile.toFlowable().map(
                     buffer -> ByteBuffer.wrap(buffer.getBytes())
-                )
+                ).doOnTerminate(() -> asyncFile.rxClose().subscribe())
             );
     }
 
@@ -91,7 +97,12 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions().setRead(false)
+                .setCreate(true)
+                .setWrite(true)
+        )
             .flatMapCompletable(
                 asyncFile -> Completable.create(
                     emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
