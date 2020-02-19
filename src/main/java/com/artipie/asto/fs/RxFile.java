@@ -87,7 +87,7 @@ public class RxFile {
             .flatMapPublisher(
                 asyncFile -> asyncFile.toFlowable().map(
                     buffer -> ByteBuffer.wrap(buffer.getBytes())
-                )
+                ).doOnTerminate(asyncFile::close)
             );
     }
 
