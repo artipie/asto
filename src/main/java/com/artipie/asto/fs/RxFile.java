@@ -80,12 +80,9 @@ public class RxFile {
         return this.fls.rxOpen(
             this.file.toString(),
             new OpenOptions()
-                .setWrite(false)
                 .setRead(true)
-                .setDsync(true)
-                .setSync(true)
+                .setWrite(false)
                 .setCreate(false)
-                .setCreateNew(false)
         )
             .flatMapPublisher(
                 asyncFile -> asyncFile.toFlowable().map(
