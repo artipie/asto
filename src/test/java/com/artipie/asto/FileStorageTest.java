@@ -61,6 +61,21 @@ final class FileStorageTest {
         vertx.close();
     }
 
+    @Test
+    void windowsBuggyTestt() throws IOException {
+        final Path tmp = Files.createTempDirectory("tmp-save3");
+        final Path yyy = tmp.resolve("yy");
+        final Path xxx = yyy.resolve("xx");
+        final Path zzz = xxx.resolve("zz");
+        zzz.getParent().toFile().mkdirs();
+        Files.write(zzz, "1234".getBytes());
+        final Vertx vertx = Vertx.vertx();
+        new RxFile(zzz, vertx.fileSystem())
+            .flow().toList().blockingGet();
+        FileUtils.deleteDirectory(tmp.toFile());
+        vertx.close();
+    }
+
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void savesAndLoads() throws Exception {
