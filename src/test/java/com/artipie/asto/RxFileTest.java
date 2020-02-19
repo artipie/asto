@@ -59,7 +59,7 @@ final class RxFileTest {
             .map(bytes -> new String(new ByteArray(bytes).primitiveBytes()))
             .blockingGet();
         MatcherAssert.assertThat(hello, Matchers.equalTo(content));
-        temp.toFile().deleteOnExit();
+        temp.toFile().delete();
     }
 
     @Test
@@ -81,6 +81,7 @@ final class RxFileTest {
                 )
             ).blockingAwait();
         MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
+        temp.toFile().delete();
         vertx.close();
     }
 }
