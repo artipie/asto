@@ -70,7 +70,7 @@ final class RxFileTest {
         final String hello = "hello-world!!!";
         final Path temp = Files.createTempFile(hello, "saved.txt");
         temp.toFile().delete();
-        new RxFile(temp, vertx.fileSystem())
+        new RxFile(temp)
             .save(
                 Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
                     aByte -> {

@@ -21,25 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package com.artipie.asto.fs;
 
-import com.artipie.asto.Remaining;
+import com.artipie.asto.io.RxByteBuffers;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.vertx.core.file.CopyOptions;
-import io.vertx.core.file.OpenOptions;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.buffer.Buffer;
-import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
  * and {@link RxFile#save(Flowable)} methods respectively.
- * <p>
- * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
- *
  * @since 0.12
  */
 public class RxFile {
@@ -50,26 +44,26 @@ public class RxFile {
     private final Path file;
 
     /**
-     * The file system.
+     * RxIO operations.
      */
-    private final FileSystem fls;
+    private final RxByteBuffers channel;
 
     /**
      * Ctor.
      * @param file The wrapped file.
+     * @param channel RxIO operations
      */
-    public RxFile(final Path file) {
-        this(file, Vertx.vertx().fileSystem());
+    public RxFile(final Path file, final RxByteBuffers channel) {
+        this.file = file;
+        this.channel = channel;
     }
 
     /**
-     * Ctor.
+     * A constructor with default args.
      * @param file The wrapped file.
-     * @param fls The file system.
      */
-    public RxFile(final Path file, final FileSystem fls) {
-        this.file = file;
-        this.fls = fls;
+    public RxFile(final Path file) {
+        this(file, new RxByteBuffers());
     }
 
     /**
@@ -77,12 +71,7 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setRead(true))
-            .flatMapPublisher(
-                asyncFile -> asyncFile.toFlowable().map(
-                    buffer -> ByteBuffer.wrap(buffer.getBytes())
-                )
-            );
+        return this.channel.path(this.file);
     }
 
     /**
@@ -91,16 +80,8 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
-            .flatMapCompletable(
-                asyncFile -> Completable.create(
-                    emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
-                        .subscribe(asyncFile.toSubscriber()
-                            .onWriteStreamEnd(emitter::onComplete)
-                            .onWriteStreamError(emitter::onError)
-                        )
-                )
-            );
+        return this.channel.path(flow, this.file)
+            .to(Completable::fromPublisher);
     }
 
     /**
@@ -109,10 +90,8 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable move(final Path target) {
-        return this.fls.rxMove(
-            this.file.toString(),
-            target.toString(),
-            new CopyOptions().setReplaceExisting(true)
+        return Completable.fromAction(
+            () -> Files.copy(this.file, target)
         );
     }
 }

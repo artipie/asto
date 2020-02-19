@@ -26,7 +26,6 @@ package com.artipie.asto;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
-import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -47,10 +46,9 @@ final class FileStorageTest {
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void savesAndLoads() throws Exception {
-        final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-save");
         tmp.toFile().deleteOnExit();
-        final Storage storage = new FileStorage(tmp, vertx.fileSystem());
+        final Storage storage = new FileStorage(tmp);
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
         storage.save(
@@ -84,19 +82,17 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void saveOverwrites() throws IOException {
-        final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-save-over-writes");
         tmp.toFile().deleteOnExit();
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
         final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
+            new FileStorage(tmp)
         );
         final Key key = new Key.From("foo");
         storage.save(key, original);
@@ -106,17 +102,15 @@ final class FileStorageTest {
             storage.value(key),
             new IsEqual<>(updated)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void blockingWrapperWorks() throws IOException {
-        final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-blocking");
         tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
+            new FileStorage(tmp)
         );
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
@@ -126,24 +120,21 @@ final class FileStorageTest {
             new String(bytes),
             Matchers.equalTo(content)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void move() throws IOException {
-        final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-move");
         tmp.toFile().deleteOnExit();
         final byte[] data = "data".getBytes();
         final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
+            new FileStorage(tmp)
         );
         final Key source = new Key.From("from");
         storage.save(source, data);
         final Key destination = new Key.From("to");
         storage.move(source, destination);
         MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
-        vertx.rxClose().blockingAwait();
     }
 }

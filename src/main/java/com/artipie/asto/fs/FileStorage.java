@@ -31,8 +31,6 @@ import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -58,28 +56,12 @@ public final class FileStorage implements Storage {
     private final Path dir;
 
     /**
-     * The Vert.x.
-     */
-    private final FileSystem fls;
-
-    /**
-     * Ctor.
-     *
-     * @param path The path to the dir.
-     */
-    public FileStorage(final Path path) {
-        this(path, Vertx.vertx().fileSystem());
-    }
-
-    /**
      * Ctor.
      *
      * @param path The path to the dir
-     * @param fls The file system
      */
-    public FileStorage(final Path path, final FileSystem fls) {
+    public FileStorage(final Path path) {
         this.dir = path;
-        this.fls = fls;
     }
 
     @Override
@@ -129,7 +111,7 @@ public final class FileStorage implements Storage {
                 return file;
             })
             .flatMapCompletable(
-                file -> new RxFile(file, this.fls)
+                file -> new RxFile(file)
                     .save(Flowable.fromPublisher(FlowAdapters.toPublisher(content)))
             ).to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
@@ -145,7 +127,7 @@ public final class FileStorage implements Storage {
                 return dest;
             })
             .flatMapCompletable(
-                dest -> new RxFile(this.path(source), this.fls).move(dest)
+                dest -> new RxFile(this.path(source)).move(dest)
             )
             .to(CompletableInterop.await())
             .<Void>thenApply(file -> null)
@@ -156,7 +138,7 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> FlowAdapters.toFlowPublisher(
-                new RxFile(this.path(key), this.fls).flow()
+                new RxFile(this.path(key)).flow()
             )
         );
     }
