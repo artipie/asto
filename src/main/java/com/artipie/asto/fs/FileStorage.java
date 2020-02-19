@@ -87,7 +87,10 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
         return Single.fromCallable(
-            () -> Files.exists(this.path(key))
+            () -> {
+                final Path path = this.path(key);
+                return Files.exists(path) && !Files.isDirectory(path);
+            }
         ).to(SingleInterop.get()).toCompletableFuture();
     }
 

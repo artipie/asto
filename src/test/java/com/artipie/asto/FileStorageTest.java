@@ -63,7 +63,7 @@ final class FileStorageTest {
     @BeforeEach
     void setUp() throws Exception {
         this.vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp-save");
+        final Path tmp = Files.createTempDirectory("tmp");
         tmp.toFile().deleteOnExit();
         this.storage = new FileStorage(tmp, this.vertx.fileSystem());
     }
@@ -157,7 +157,7 @@ final class FileStorageTest {
 
     @Test
     void list() throws Exception {
-        final byte[] data = "some data".getBytes();
+        final byte[] data = "some data!".getBytes();
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         blocking.save(new Key.From("a", "b", "c", "1"), data);
         blocking.save(new Key.From("a", "b", "2"), data);
@@ -181,5 +181,31 @@ final class FileStorageTest {
             .map(Key::string)
             .collect(Collectors.toList());
         MatcherAssert.assertThat(keys, Matchers.empty());
+    }
+
+    @Test
+    void shouldExistForSavedKey() throws Exception {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        final Key key = new Key.From("some", "key");
+        blocking.save(key, "some data".getBytes());
+        MatcherAssert.assertThat(blocking.exists(key), Matchers.equalTo(true));
+    }
+
+    @Test
+    void shouldNotExistForUnknownKey() throws Exception {
+        MatcherAssert.assertThat(
+            this.storage.exists(new Key.From("unknown")).get(),
+            Matchers.equalTo(false)
+        );
+    }
+
+    @Test
+    void shouldNotExistForParentOfSavedKey() throws Exception {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        final Key parent = new Key.From("a", "b");
+        final Key key = new Key.From(parent, "c");
+        final byte[] data = "content".getBytes();
+        blocking.save(key, data);
+        MatcherAssert.assertThat(blocking.exists(parent), Matchers.equalTo(false));
     }
 }
