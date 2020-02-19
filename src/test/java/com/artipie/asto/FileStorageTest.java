@@ -26,32 +26,33 @@ package com.artipie.asto;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
+import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
-import org.junit.jupiter.api.io.TempDir;
 import org.reactivestreams.FlowAdapters;
 
 /**
  * Test case for {@link Storage}.
+ *
  * @since 0.1
- * @todo #53:30min The combination of RxFile and TempDir Junit5 rule
- *  doesn't work on Windows. It seems that Junit unable to cleanup
- *  temporary directory. Fix RxFile implementation and remove disable
- *  annotation.
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 final class FileStorageTest {
 
-    @Test
-    void savesAndLoads(@TempDir final Path tmp) throws Exception {
-        final Storage storage = new FileStorage(tmp);
+    // @checkstyle MagicNumberCheck (1 line)
+    @RepeatedTest(100)
+    void savesAndLoads() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-save");
+        tmp.toFile().deleteOnExit();
+        final Storage storage = new FileStorage(tmp, vertx.fileSystem());
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
         storage.save(
@@ -85,13 +86,20 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
+        vertx.rxClose().blockingAwait();
     }
 
-    @Test
-    void saveOverwrites(@TempDir final Path tmp) {
+    // @checkstyle MagicNumberCheck (1 line)
+    @RepeatedTest(100)
+    void saveOverwrites() throws IOException {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-save-over-writes");
+        tmp.toFile().deleteOnExit();
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final BlockingStorage storage = new BlockingStorage(
+            new FileStorage(tmp, vertx.fileSystem())
+        );
         final Key key = new Key.From("foo");
         storage.save(key, original);
         storage.save(key, updated);
@@ -100,11 +108,18 @@ final class FileStorageTest {
             storage.value(key),
             new IsEqual<>(updated)
         );
+        vertx.rxClose().blockingAwait();
     }
 
-    @Test
-    void blockingWrapperWorks(@TempDir final Path tmp) throws IOException {
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+    // @checkstyle MagicNumberCheck (1 line)
+    @RepeatedTest(100)
+    void blockingWrapperWorks() throws IOException {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-blocking");
+        tmp.toFile().deleteOnExit();
+        final BlockingStorage storage = new BlockingStorage(
+            new FileStorage(tmp, vertx.fileSystem())
+        );
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
         storage.save(key, new ByteArray(content.getBytes()).primitiveBytes());
@@ -113,42 +128,62 @@ final class FileStorageTest {
             new String(bytes),
             Matchers.equalTo(content)
         );
+        vertx.rxClose().blockingAwait();
     }
 
-    @Test
-    void move(@TempDir final Path tmp) {
+    // @checkstyle MagicNumberCheck (1 line)
+    @RepeatedTest(100)
+    void move() throws IOException {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-move");
+        tmp.toFile().deleteOnExit();
         final byte[] data = "data".getBytes();
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final BlockingStorage storage = new BlockingStorage(
+            new FileStorage(tmp, vertx.fileSystem())
+        );
         final Key source = new Key.From("from");
         storage.save(source, data);
         final Key destination = new Key.From("to");
         storage.move(source, destination);
         MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+        vertx.rxClose().blockingAwait();
     }
 
     @Test
-    void shouldExistForSavedKey(@TempDir final Path tmp) {
+    void shouldExistForSavedKey() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-shouldExistForSavedKey");
+        tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final Key key = new Key.From("some", "key");
         storage.save(key, "some data".getBytes());
         MatcherAssert.assertThat(storage.exists(key), Matchers.equalTo(true));
+        vertx.rxClose().blockingAwait();
     }
 
     @Test
-    void shouldNotExistForUnknownKey(@TempDir final Path tmp) throws Exception {
+    void shouldNotExistForUnknownKey() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-shouldNotExistForUnknownKey");
+        tmp.toFile().deleteOnExit();
         MatcherAssert.assertThat(
             new FileStorage(tmp).exists(new Key.From("unknown")).get(),
             Matchers.equalTo(false)
         );
+        vertx.rxClose().blockingAwait();
     }
 
     @Test
-    void shouldNotExistForParentOfSavedKey(@TempDir final Path tmp) {
+    void shouldNotExistForParentOfSavedKey() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-shouldNotExistForParentOfSavedKey");
+        tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final Key parent = new Key.From("a", "b");
         final Key key = new Key.From(parent, "c");
         final byte[] data = "content".getBytes();
         storage.save(key, data);
         MatcherAssert.assertThat(storage.exists(parent), Matchers.equalTo(false));
+        vertx.rxClose().blockingAwait();
     }
 }
