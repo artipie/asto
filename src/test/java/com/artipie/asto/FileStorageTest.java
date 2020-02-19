@@ -55,7 +55,8 @@ final class FileStorageTest {
         final Path zzz = xxx.resolve("z");
         zzz.getParent().toFile().mkdirs();
         final Vertx vertx = Vertx.vertx();
-        new RxFile(zzz, vertx.fileSystem()).save(Flowable.fromArray(ByteBuffer.wrap("123".getBytes()))).blockingAwait();
+        new RxFile(zzz, vertx.fileSystem())
+            .save(Flowable.fromArray(ByteBuffer.wrap("123".getBytes()))).blockingAwait();
         vertx.close();
         FileUtils.deleteDirectory(tmp.toFile());
     }
