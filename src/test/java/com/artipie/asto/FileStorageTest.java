@@ -27,7 +27,6 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
