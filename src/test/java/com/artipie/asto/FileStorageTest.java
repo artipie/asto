@@ -72,7 +72,8 @@ final class FileStorageTest {
         final Vertx vertx = Vertx.vertx();
         new RxFile(zzz, vertx.fileSystem())
             .flow().toList().blockingGet();
-        Thread.sleep(1000);
+        final int millis = 1000;
+        Thread.sleep(millis);
         FileUtils.deleteDirectory(tmp.toFile());
         vertx.close();
     }
