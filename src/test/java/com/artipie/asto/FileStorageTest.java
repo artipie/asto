@@ -36,10 +36,12 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.FlowAdapters;
 
 /**
  * Test case for {@link Storage}.
+ *
  * @since 0.1
  */
 final class FileStorageTest {
@@ -144,6 +146,44 @@ final class FileStorageTest {
         final Key destination = new Key.From("to");
         storage.move(source, destination);
         MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+        vertx.rxClose().blockingAwait();
+    }
+
+    @Test
+    void shouldExistForSavedKey() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-shouldExistForSavedKey");
+        tmp.toFile().deleteOnExit();
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key key = new Key.From("some", "key");
+        storage.save(key, "some data".getBytes());
+        MatcherAssert.assertThat(storage.exists(key), Matchers.equalTo(true));
+        vertx.rxClose().blockingAwait();
+    }
+
+    @Test
+    void shouldNotExistForUnknownKey() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-shouldNotExistForUnknownKey");
+        tmp.toFile().deleteOnExit();
+        MatcherAssert.assertThat(
+            new FileStorage(tmp).exists(new Key.From("unknown")).get(),
+            Matchers.equalTo(false)
+        );
+        vertx.rxClose().blockingAwait();
+    }
+
+    @Test
+    void shouldNotExistForParentOfSavedKey() throws Exception {
+        final Vertx vertx = Vertx.vertx();
+        final Path tmp = Files.createTempDirectory("tmp-shouldNotExistForParentOfSavedKey");
+        tmp.toFile().deleteOnExit();
+        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+        final Key parent = new Key.From("a", "b");
+        final Key key = new Key.From(parent, "c");
+        final byte[] data = "content".getBytes();
+        storage.save(key, data);
+        MatcherAssert.assertThat(storage.exists(parent), Matchers.equalTo(false));
         vertx.rxClose().blockingAwait();
     }
 }
