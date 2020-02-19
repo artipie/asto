@@ -62,7 +62,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void windowsBuggyTestt() throws IOException {
+    void windowsBuggyTestt() throws IOException, InterruptedException {
         final Path tmp = Files.createTempDirectory("tmp-save3");
         final Path yyy = tmp.resolve("yy");
         final Path xxx = yyy.resolve("xx");
@@ -72,6 +72,7 @@ final class FileStorageTest {
         final Vertx vertx = Vertx.vertx();
         new RxFile(zzz, vertx.fileSystem())
             .flow().toList().blockingGet();
+        Thread.sleep(1000);
         FileUtils.deleteDirectory(tmp.toFile());
         vertx.close();
     }
