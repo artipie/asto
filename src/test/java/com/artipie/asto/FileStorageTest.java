@@ -57,8 +57,8 @@ final class FileStorageTest {
         final Vertx vertx = Vertx.vertx();
         new RxFile(zzz, vertx.fileSystem())
             .save(Flowable.fromArray(ByteBuffer.wrap("123".getBytes()))).blockingAwait();
-        vertx.close();
         FileUtils.deleteDirectory(tmp.toFile());
+        vertx.close();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
