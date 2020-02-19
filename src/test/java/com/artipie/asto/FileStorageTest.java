@@ -129,7 +129,7 @@ final class FileStorageTest {
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void move(@TempDir final Path tmp) throws IOException {
+    void move(@TempDir final Path tmp) {
         final Vertx vertx = Vertx.vertx();
         final byte[] data = "data".getBytes();
         final BlockingStorage storage = new BlockingStorage(
