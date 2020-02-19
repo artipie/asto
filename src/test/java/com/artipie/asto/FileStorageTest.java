@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -51,7 +52,6 @@ final class FileStorageTest {
     void savesAndLoads() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-save");
-        tmp.toFile().deleteOnExit();
         final Storage storage = new FileStorage(tmp, vertx.fileSystem());
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
@@ -86,6 +86,7 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
@@ -94,7 +95,6 @@ final class FileStorageTest {
     void saveOverwrites() throws IOException {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-save-over-writes");
-        tmp.toFile().deleteOnExit();
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
         final BlockingStorage storage = new BlockingStorage(
@@ -108,6 +108,7 @@ final class FileStorageTest {
             storage.value(key),
             new IsEqual<>(updated)
         );
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
@@ -116,7 +117,6 @@ final class FileStorageTest {
     void blockingWrapperWorks() throws IOException {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-blocking");
-        tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(
             new FileStorage(tmp, vertx.fileSystem())
         );
@@ -128,6 +128,7 @@ final class FileStorageTest {
             new String(bytes),
             Matchers.equalTo(content)
         );
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
@@ -136,7 +137,6 @@ final class FileStorageTest {
     void move() throws IOException {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-move");
-        tmp.toFile().deleteOnExit();
         final byte[] data = "data".getBytes();
         final BlockingStorage storage = new BlockingStorage(
             new FileStorage(tmp, vertx.fileSystem())
@@ -146,6 +146,7 @@ final class FileStorageTest {
         final Key destination = new Key.From("to");
         storage.move(source, destination);
         MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
@@ -153,11 +154,11 @@ final class FileStorageTest {
     void shouldExistForSavedKey() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-shouldExistForSavedKey");
-        tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final Key key = new Key.From("some", "key");
         storage.save(key, "some data".getBytes());
         MatcherAssert.assertThat(storage.exists(key), Matchers.equalTo(true));
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
@@ -165,11 +166,11 @@ final class FileStorageTest {
     void shouldNotExistForUnknownKey() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-shouldNotExistForUnknownKey");
-        tmp.toFile().deleteOnExit();
         MatcherAssert.assertThat(
             new FileStorage(tmp).exists(new Key.From("unknown")).get(),
             Matchers.equalTo(false)
         );
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 
@@ -177,13 +178,13 @@ final class FileStorageTest {
     void shouldNotExistForParentOfSavedKey() throws Exception {
         final Vertx vertx = Vertx.vertx();
         final Path tmp = Files.createTempDirectory("tmp-shouldNotExistForParentOfSavedKey");
-        tmp.toFile().deleteOnExit();
         final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
         final Key parent = new Key.From("a", "b");
         final Key key = new Key.From(parent, "c");
         final byte[] data = "content".getBytes();
         storage.save(key, data);
         MatcherAssert.assertThat(storage.exists(parent), Matchers.equalTo(false));
+        FileUtils.deleteDirectory(tmp.toFile());
         vertx.rxClose().blockingAwait();
     }
 }
