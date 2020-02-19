@@ -77,13 +77,15 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions()
-            .setWrite(false)
-            .setRead(true)
-            .setDsync(true)
-            .setSync(true)
-            .setCreate(false)
-            .setCreateNew(false)
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions()
+                .setWrite(false)
+                .setRead(true)
+                .setDsync(true)
+                .setSync(true)
+                .setCreate(false)
+                .setCreateNew(false)
         )
             .flatMapPublisher(
                 asyncFile -> asyncFile.toFlowable().map(
