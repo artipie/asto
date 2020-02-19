@@ -28,6 +28,7 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
@@ -85,9 +86,25 @@ public class RxFile {
                 .setCreate(false)
         )
             .flatMapPublisher(
-                asyncFile -> asyncFile.toFlowable().map(
-                    buffer -> ByteBuffer.wrap(buffer.getBytes())
-                ).doOnTerminate(() -> asyncFile.rxClose().subscribe())
+                asyncFile -> {
+                    final Promise<Void> promise = Promise.promise();
+                    final Completable completable = Completable.create(
+                        emitter ->
+                            promise.future().setHandler(
+                                event -> {
+                                    if (event.succeeded()) {
+                                        emitter.onComplete();
+                                    } else {
+                                        emitter.onError(event.cause());
+                                    }
+                                }
+                            )
+                    );
+                    return asyncFile.toFlowable().map(
+                        buffer -> ByteBuffer.wrap(buffer.getBytes())
+                    ).doOnTerminate(() -> asyncFile.rxClose().subscribe(promise::complete))
+                        .mergeWith(completable);
+                }
             );
     }
 
