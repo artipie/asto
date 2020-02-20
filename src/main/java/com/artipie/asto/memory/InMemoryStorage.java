@@ -30,11 +30,12 @@ import com.artipie.asto.Transaction;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
+import java.util.stream.Collectors;
 import org.reactivestreams.FlowAdapters;
 
 /**
@@ -47,7 +48,7 @@ public final class InMemoryStorage implements Storage {
     /**
      * Values stored by key strings.
      */
-    private final Map<String, byte[]> data = new HashMap<>();
+    private final NavigableMap<String, byte[]> data = new TreeMap<>();
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
@@ -55,8 +56,18 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        throw new UnsupportedOperationException();
+    public CompletableFuture<Collection<Key>> list(final Key root) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                final String prefix = root.string();
+                return this.data.keySet()
+                    .stream()
+                    .dropWhile(key -> !key.startsWith(prefix))
+                    .takeWhile(key -> key.startsWith(prefix))
+                    .map(Key.From::new)
+                    .collect(Collectors.toList());
+            }
+        );
     }
 
     @Override

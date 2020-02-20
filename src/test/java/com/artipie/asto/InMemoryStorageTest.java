@@ -27,6 +27,9 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -39,6 +42,35 @@ import org.reactivestreams.FlowAdapters;
  * @since 0.14
  */
 public final class InMemoryStorageTest {
+
+    @Test
+    void shouldListNoKeysWhenEmpty() {
+        final BlockingStorage blocking = new BlockingStorage(this.storage());
+        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(keys, Matchers.empty());
+    }
+
+    @Test
+    void shouldListKeysInOrder() {
+        final byte[] data = "some data!".getBytes();
+        final BlockingStorage blocking = new BlockingStorage(this.storage());
+        blocking.save(new Key.From("1"), data);
+        blocking.save(new Key.From("a", "b", "c", "1"), data);
+        blocking.save(new Key.From("a", "b", "2"), data);
+        blocking.save(new Key.From("a", "z"), data);
+        blocking.save(new Key.From("z"), data);
+        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(
+            keys,
+            Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
+        );
+    }
 
     @Test
     void shouldSave() {
