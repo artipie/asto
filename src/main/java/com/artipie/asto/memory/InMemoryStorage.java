@@ -55,7 +55,7 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final String prefix) {
+    public CompletableFuture<Collection<Key>> list(final Key prefix) {
         throw new UnsupportedOperationException();
     }
 

@@ -65,16 +65,8 @@ public final class RxStorageWrapper implements RxStorage {
         return SingleInterop.fromFuture(this.storage.exists(key));
     }
 
-    /**
-     * Return the list of object names that start with this prefix, for
-     * example {@code foo/bar/}.
-     *<p>
-     * The prefix must end with a slash.
-     *
-     * @param prefix The prefix, ended with a slash
-     * @return List of object keys/names
-     */
-    public Single<Collection<Key>> list(final String prefix) {
+    @Override
+    public Single<Collection<Key>> list(final Key prefix) {
         return SingleInterop.fromFuture(this.storage.list(prefix));
     }
 
