@@ -28,6 +28,7 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
@@ -77,11 +78,33 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setRead(true))
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions()
+                .setRead(true)
+                .setWrite(false)
+                .setCreate(false)
+        )
             .flatMapPublisher(
-                asyncFile -> asyncFile.toFlowable().map(
-                    buffer -> ByteBuffer.wrap(buffer.getBytes())
-                )
+                asyncFile -> {
+                    final Promise<Void> promise = Promise.promise();
+                    final Completable completable = Completable.create(
+                        emitter ->
+                            promise.future().setHandler(
+                                event -> {
+                                    if (event.succeeded()) {
+                                        emitter.onComplete();
+                                    } else {
+                                        emitter.onError(event.cause());
+                                    }
+                                }
+                            )
+                    );
+                    return asyncFile.toFlowable().map(
+                        buffer -> ByteBuffer.wrap(buffer.getBytes())
+                    ).doOnTerminate(() -> asyncFile.rxClose().subscribe(promise::complete))
+                        .mergeWith(completable);
+                }
             );
     }
 
@@ -91,7 +114,12 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return this.fls.rxOpen(this.file.toString(), new OpenOptions().setWrite(true))
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions().setRead(false)
+                .setCreate(true)
+                .setWrite(true)
+        )
             .flatMapCompletable(
                 asyncFile -> Completable.create(
                     emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))

@@ -27,9 +27,7 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,6 +39,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.reactivestreams.FlowAdapters;
 
 /**
@@ -61,10 +60,8 @@ final class FileStorageTest {
     private FileStorage storage;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp(@TempDir final Path tmp) {
         this.vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp");
-        tmp.toFile().deleteOnExit();
         this.storage = new FileStorage(tmp, this.vertx.fileSystem());
     }
 
@@ -115,7 +112,7 @@ final class FileStorageTest {
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void saveOverwrites() throws IOException {
+    void saveOverwrites() {
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
         final BlockingStorage blocking = new BlockingStorage(this.storage);
@@ -131,7 +128,7 @@ final class FileStorageTest {
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void blockingWrapperWorks() throws IOException {
+    void blockingWrapperWorks() {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
@@ -145,7 +142,7 @@ final class FileStorageTest {
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void move() throws IOException {
+    void move() {
         final byte[] data = "data".getBytes();
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key source = new Key.From("from");
@@ -156,7 +153,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void list() throws Exception {
+    void list() {
         final byte[] data = "some data!".getBytes();
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         blocking.save(new Key.From("a", "b", "c", "1"), data);
@@ -174,7 +171,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void listEmpty() throws Exception {
+    void listEmpty() {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Collection<String> keys = blocking.list(new Key.From("a", "b"))
             .stream()
@@ -184,7 +181,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void shouldExistForSavedKey() throws Exception {
+    void shouldExistForSavedKey() {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key key = new Key.From("some", "key");
         blocking.save(key, "some data".getBytes());
@@ -200,7 +197,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void shouldNotExistForParentOfSavedKey() throws Exception {
+    void shouldNotExistForParentOfSavedKey() {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key parent = new Key.From("a", "b");
         final Key key = new Key.From(parent, "c");
