@@ -71,7 +71,7 @@ public final class RxTransactionWrapper implements RxTransaction {
     }
 
     @Override
-    public Single<Collection<Key>> list(final String prefix) {
+    public Single<Collection<Key>> list(final Key prefix) {
         return SingleInterop.fromFuture(this.wrapped.list(prefix));
     }
 

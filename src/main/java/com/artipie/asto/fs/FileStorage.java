@@ -39,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
@@ -93,27 +95,28 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final String prefix) {
+    public CompletableFuture<Collection<Key>> list(final Key prefix) {
         return Single.fromCallable(
             () -> {
-                final String separator = FileSystems.getDefault().getSeparator();
-                if (!prefix.endsWith(separator)) {
-                    throw new IllegalArgumentException(
-                        String.format(
-                            "The prefix must end with '%s': \"%s\"",
-                            prefix,
-                            separator
+                final Path path = this.path(prefix);
+                final Collection<Key> keys;
+                if (Files.exists(path)) {
+                    final int dirnamelen = path.toString().length() - prefix.string().length();
+                    keys = Files.walk(path)
+                        .filter(Files::isRegularFile)
+                        .map(Path::toString)
+                        .map(p -> p.substring(dirnamelen))
+                        .map(
+                            s -> s.split(
+                                FileSystems.getDefault().getSeparator().replace("\\", "\\\\")
+                            )
                         )
-                    );
+                        .map(Key.From::new)
+                        .sorted(Comparator.comparing(Key.From::string))
+                        .collect(Collectors.toList());
+                } else {
+                    keys = Collections.emptyList();
                 }
-                final Path path = Paths.get(this.dir.toString(), prefix);
-                final int dirnamelen = path.toString().length() - prefix.length() + 1;
-                final Collection<Key> keys = Files.walk(path)
-                    .filter(Files::isRegularFile)
-                    .map(Path::toString)
-                    .map(p -> p.substring(dirnamelen))
-                    .map(Key.From::new)
-                    .collect(Collectors.toList());
                 Logger.info(
                     this,
                     "Found %d objects by the prefix \"%s\" in %s by %s: %s",

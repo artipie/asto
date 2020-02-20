@@ -60,7 +60,7 @@ public final class FileSystemTransaction implements Transaction {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final String prefix) {
+    public CompletableFuture<Collection<Key>> list(final Key prefix) {
         return this.parent.list(prefix);
     }
 

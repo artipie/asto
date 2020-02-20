@@ -28,13 +28,15 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import org.apache.commons.io.FileUtils;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,14 +49,35 @@ import org.reactivestreams.FlowAdapters;
  */
 final class FileStorageTest {
 
+    /**
+     * Vert.x used to create tested FileStorage.
+     */
+    private Vertx vertx;
+
+    /**
+     * File storage used in tests.
+     */
+    private FileStorage storage;
+
+    @BeforeEach
+    void setUp(@TempDir final Path tmp) {
+        this.vertx = Vertx.vertx();
+        this.storage = new FileStorage(tmp, this.vertx.fileSystem());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (this.vertx != null) {
+            this.vertx.rxClose().blockingAwait();
+        }
+    }
+
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void savesAndLoads(@TempDir final Path tmp) throws Exception {
-        final Vertx vertx = Vertx.vertx();
-        final Storage storage = new FileStorage(tmp, vertx.fileSystem());
+    void savesAndLoads() throws Exception {
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
-        storage.save(
+        this.storage.save(
             key,
             FlowAdapters.toFlowPublisher(
                 Flowable.fromArray(
@@ -72,7 +95,7 @@ final class FileStorageTest {
             new String(
                 new ByteArray(Flowable.fromPublisher(
                     FlowAdapters.toPublisher(
-                        storage.value(key).get()
+                        this.storage.value(key).get()
                     )
                 )
                     .toList()
@@ -85,94 +108,101 @@ final class FileStorageTest {
             ),
             Matchers.equalTo(content)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void saveOverwrites(@TempDir final Path tmp) {
-        final Vertx vertx = Vertx.vertx();
+    void saveOverwrites() {
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
-        );
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key key = new Key.From("foo");
-        storage.save(key, original);
-        storage.save(key, updated);
+        blocking.save(key, original);
+        blocking.save(key, updated);
         MatcherAssert.assertThat(
             "Value read from storage should be updated",
-            storage.value(key),
+            blocking.value(key),
             new IsEqual<>(updated)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void blockingWrapperWorks(@TempDir final Path tmp) {
-        final Vertx vertx = Vertx.vertx();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
-        );
+    void blockingWrapperWorks() {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
-        storage.save(key, new ByteArray(content.getBytes()).primitiveBytes());
-        final byte[] bytes = storage.value(key);
+        blocking.save(key, new ByteArray(content.getBytes()).primitiveBytes());
+        final byte[] bytes = blocking.value(key);
         MatcherAssert.assertThat(
             new String(bytes),
             Matchers.equalTo(content)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
-    void move(@TempDir final Path tmp) {
-        final Vertx vertx = Vertx.vertx();
+    void move() {
         final byte[] data = "data".getBytes();
-        final BlockingStorage storage = new BlockingStorage(
-            new FileStorage(tmp, vertx.fileSystem())
-        );
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key source = new Key.From("from");
-        storage.save(source, data);
+        blocking.save(source, data);
         final Key destination = new Key.From("to");
-        storage.move(source, destination);
-        MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
-        vertx.rxClose().blockingAwait();
+        blocking.move(source, destination);
+        MatcherAssert.assertThat(blocking.value(destination), Matchers.equalTo(data));
     }
 
     @Test
-    void shouldExistForSavedKey() throws Exception {
-        final Vertx vertx = Vertx.vertx();
-        final Path tmp = Files.createTempDirectory("tmp-shouldExistForSavedKey");
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
-        final Key key = new Key.From("some", "key");
-        storage.save(key, "some data".getBytes());
-        MatcherAssert.assertThat(storage.exists(key), Matchers.equalTo(true));
-        FileUtils.deleteDirectory(tmp.toFile());
-        vertx.rxClose().blockingAwait();
-    }
-
-    @Test
-    void shouldNotExistForUnknownKey(@TempDir final Path tmp) throws Exception {
-        final Vertx vertx = Vertx.vertx();
+    void list() {
+        final byte[] data = "some data!".getBytes();
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        blocking.save(new Key.From("a", "b", "c", "1"), data);
+        blocking.save(new Key.From("a", "b", "2"), data);
+        blocking.save(new Key.From("a", "z"), data);
+        blocking.save(new Key.From("z"), data);
+        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
         MatcherAssert.assertThat(
-            new FileStorage(tmp).exists(new Key.From("unknown")).get(),
+            keys,
+            Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
+        );
+    }
+
+    @Test
+    void listEmpty() {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(keys, Matchers.empty());
+    }
+
+    @Test
+    void shouldExistForSavedKey() {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        final Key key = new Key.From("some", "key");
+        blocking.save(key, "some data".getBytes());
+        MatcherAssert.assertThat(blocking.exists(key), Matchers.equalTo(true));
+    }
+
+    @Test
+    void shouldNotExistForUnknownKey() throws Exception {
+        MatcherAssert.assertThat(
+            this.storage.exists(new Key.From("unknown")).get(),
             Matchers.equalTo(false)
         );
-        vertx.rxClose().blockingAwait();
     }
 
     @Test
-    void shouldNotExistForParentOfSavedKey(@TempDir final Path tmp) {
-        final Vertx vertx = Vertx.vertx();
-        final BlockingStorage storage = new BlockingStorage(new FileStorage(tmp));
+    void shouldNotExistForParentOfSavedKey() {
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key parent = new Key.From("a", "b");
         final Key key = new Key.From(parent, "c");
         final byte[] data = "content".getBytes();
-        storage.save(key, data);
-        MatcherAssert.assertThat(storage.exists(parent), Matchers.equalTo(false));
-        vertx.rxClose().blockingAwait();
+        blocking.save(key, data);
+        MatcherAssert.assertThat(blocking.exists(parent), Matchers.equalTo(false));
     }
 }
