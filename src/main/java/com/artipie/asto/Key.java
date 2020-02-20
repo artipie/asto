@@ -125,7 +125,7 @@ public interface Key {
         public String string() {
             for (final String part : this.parts) {
                 if (part.contains(From.DELIMITER)) {
-                    throw new IllegalStateException(String.format("Invalid part: %s", part));
+                    throw new IllegalStateException(String.format("Invalid part: '%s'", part));
                 }
             }
             return String.join(From.DELIMITER, this.parts);
