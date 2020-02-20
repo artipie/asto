@@ -74,6 +74,11 @@ public interface Key {
     final class From implements Key {
 
         /**
+         * Delimiter used to split string into parts and join parts into string.
+         */
+        private static final String DELIMITER = "/";
+
+        /**
          * Parts.
          */
         private final List<String> parts;
@@ -83,7 +88,7 @@ public interface Key {
          * @param parts Parts delimited by `/` symbol
          */
         public From(final String parts) {
-            this(parts.split("/"));
+            this(parts.split(From.DELIMITER));
         }
 
         /**
@@ -119,11 +124,11 @@ public interface Key {
         @Override
         public String string() {
             for (final String part : this.parts) {
-                if (part.contains("/")) {
+                if (part.contains(From.DELIMITER)) {
                     throw new IllegalStateException(String.format("Invalid part: %s", part));
                 }
             }
-            return String.join("/", this.parts);
+            return String.join(From.DELIMITER, this.parts);
         }
     }
 }
