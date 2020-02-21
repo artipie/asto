@@ -31,7 +31,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
-import java.util.NavigableMap;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
@@ -48,7 +48,14 @@ public final class InMemoryStorage implements Storage {
     /**
      * Values stored by key strings.
      */
-    private final NavigableMap<String, byte[]> data = new TreeMap<>();
+    private final Map<String, byte[]> data;
+
+    /**
+     * Ctor.
+     */
+    public InMemoryStorage() {
+        this.data = new TreeMap<>();
+    }
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
