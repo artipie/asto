@@ -87,13 +87,13 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Void> move(final Key source, final Key destination) {
         return CompletableFuture.runAsync(
             () -> {
-                final byte[] bytes = this.data.get(source.string());
-                if (bytes == null) {
+                final String key = source.string();
+                if (!this.data.containsKey(key)) {
                     throw new IllegalArgumentException(
                         String.format("No value for source key: %s", source.string())
                     );
                 }
-                this.data.put(destination.string(), bytes);
+                this.data.put(destination.string(), this.data.get(key));
                 this.data.remove(source.string());
             }
         );
