@@ -25,10 +25,13 @@ package com.artipie.asto;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link Path}.
+ * Test case for {@link Key}.
+ *
  * @since 1.0
  */
 final class KeyTest {
@@ -46,6 +49,26 @@ final class KeyTest {
         MatcherAssert.assertThat(
             new Key.From(new Key.From("black", "red"), "green", "yellow").string(),
             Matchers.equalTo("black/red/green/yellow")
+        );
+    }
+
+    @Test
+    void keyFromString() {
+        final String string = "a/b/c";
+        MatcherAssert.assertThat(
+            new Key.From(string).string(),
+            Matchers.equalTo(string)
+        );
+    }
+
+    @Test
+    void keyFromBadParts() {
+        MatcherAssert.assertThat(
+            Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> new Key.From("part1", "part/2").string()
+            ).getMessage(),
+            new IsEqual<>("Invalid part: 'part/2'")
         );
     }
 }
