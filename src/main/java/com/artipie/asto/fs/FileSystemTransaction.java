@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
+import org.reactivestreams.Publisher;
 
 /**
  * Transaction on {@link FileStorage}.
@@ -70,12 +70,12 @@ public final class FileSystemTransaction implements Transaction {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
+    public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
         return this.parent.save(key, content);
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
+    public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
         return this.parent.value(key);
     }
 

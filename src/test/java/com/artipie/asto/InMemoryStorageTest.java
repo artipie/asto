@@ -32,7 +32,6 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Tests for {@link InMemoryStorage}.
@@ -94,12 +93,10 @@ public final class InMemoryStorageTest {
         final Key key = new Key.From("shouldSaveFromMultipleBuffers");
         storage.save(
             key,
-            FlowAdapters.toFlowPublisher(
-                Flowable.fromArray(
-                    ByteBuffer.wrap("12".getBytes()),
-                    ByteBuffer.wrap("34".getBytes()),
-                    ByteBuffer.wrap("5".getBytes())
-                )
+            Flowable.fromArray(
+                ByteBuffer.wrap("12".getBytes()),
+                ByteBuffer.wrap("34".getBytes()),
+                ByteBuffer.wrap("5".getBytes())
             )
         ).get();
         MatcherAssert.assertThat(
@@ -112,7 +109,7 @@ public final class InMemoryStorageTest {
     void shouldSaveEmpty() throws Exception {
         final Storage storage = this.storage();
         final Key key = new Key.From("shouldSaveEmpty");
-        storage.save(key, FlowAdapters.toFlowPublisher(Flowable.empty())).get();
+        storage.save(key, Flowable.empty()).get();
         MatcherAssert.assertThat(
             new BlockingStorage(storage).value(key),
             Matchers.equalTo(new byte[0])

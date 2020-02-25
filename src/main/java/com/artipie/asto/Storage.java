@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
+import org.reactivestreams.Publisher;
 
 /**
  * The storage.
@@ -66,7 +66,7 @@ public interface Storage {
      * @param content Bytes to save
      * @return Completion or error signal.
      */
-    CompletableFuture<Void> save(Key key, Flow.Publisher<ByteBuffer> content);
+    CompletableFuture<Void> save(Key key, Publisher<ByteBuffer> content);
 
     /**
      * Moves value from one location to another.
@@ -83,12 +83,12 @@ public interface Storage {
      * @param key The key
      * @return Bytes.
      */
-    CompletableFuture<Flow.Publisher<ByteBuffer>> value(Key key);
+    CompletableFuture<Publisher<ByteBuffer>> value(Key key);
 
     /**
      * Start a transaction with specified keys. These specified keys are the scope of
      * a transaction. You will be able to perform storage operations like
-     * {@link Storage#save(Key, Flow.Publisher)} or {@link Storage#value(Key)} only in
+     * {@link Storage#save(Key, Publisher)} or {@link Storage#value(Key)} only in
      * the scope of a transaction.
      *
      * @param keys The keys regarding which transaction is atomic

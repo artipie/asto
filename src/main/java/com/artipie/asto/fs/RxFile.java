@@ -30,10 +30,11 @@ import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
@@ -114,21 +115,23 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return this.fls.rxOpen(
-            this.file.toString(),
-            new OpenOptions().setRead(false)
-                .setCreate(true)
-                .setWrite(true)
-        )
-            .flatMapCompletable(
-                asyncFile -> Completable.create(
-                    emitter -> flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
-                        .subscribe(asyncFile.toSubscriber()
-                            .onWriteStreamEnd(emitter::onComplete)
-                            .onWriteStreamError(emitter::onError)
-                        )
-                )
-            );
+        return Completable.fromAction(
+            () -> {
+                final byte[] bytes = flow.toList().blockingGet().stream()
+                    .reduce(
+                        (left, right) -> {
+                            final ByteBuffer concat = ByteBuffer.allocate(
+                                left.remaining() + right.remaining()
+                            ).put(left).put(right);
+                            concat.flip();
+                            return concat;
+                        }
+                    )
+                    .map(buf -> new Remaining(buf).bytes())
+                    .orElse(new byte[0]);
+                Files.write(this.file, bytes, StandardOpenOption.CREATE);
+            }
+        );
     }
 
     /**
