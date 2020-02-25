@@ -40,7 +40,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Test case for {@link Storage}.
@@ -79,25 +78,19 @@ final class FileStorageTest {
         final Key key = new Key.From("a", "b", "test.deb");
         this.storage.save(
             key,
-            FlowAdapters.toFlowPublisher(
-                Flowable.fromArray(
-                    new ByteArray(content.getBytes()).boxedBytes()
-                ).map(
-                    b -> {
-                        final ByteBuffer buf = ByteBuffer.allocate(1);
-                        buf.put(b);
-                        buf.rewind();
-                        return buf;
-                    })
-            )
+            Flowable.fromArray(
+                new ByteArray(content.getBytes()).boxedBytes()
+            ).map(
+                b -> {
+                    final ByteBuffer buf = ByteBuffer.allocate(1);
+                    buf.put(b);
+                    buf.rewind();
+                    return buf;
+                })
         ).get();
         MatcherAssert.assertThat(
             new String(
-                new ByteArray(Flowable.fromPublisher(
-                    FlowAdapters.toPublisher(
-                        this.storage.value(key).get()
-                    )
-                )
+                new ByteArray(Flowable.fromPublisher(this.storage.value(key).get())
                     .toList()
                     .blockingGet()
                     .stream()
