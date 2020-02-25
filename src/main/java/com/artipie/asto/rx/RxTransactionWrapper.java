@@ -33,7 +33,6 @@ import io.reactivex.Single;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * A reactive wrapper of {@link RxTransaction}.
@@ -80,7 +79,7 @@ public final class RxTransactionWrapper implements RxTransaction {
         return CompletableInterop.fromFuture(
             this.wrapped.save(
                 key,
-                FlowAdapters.toFlowPublisher(content)
+                content
             )
         );
     }
@@ -95,7 +94,7 @@ public final class RxTransactionWrapper implements RxTransaction {
     @Override
     public Single<Flowable<ByteBuffer>> value(final Key key) {
         return SingleInterop.fromFuture(this.wrapped.value(key))
-            .map(flow -> Flowable.fromPublisher(FlowAdapters.toPublisher(flow)));
+            .map(Flowable::fromPublisher);
     }
 
     @Override

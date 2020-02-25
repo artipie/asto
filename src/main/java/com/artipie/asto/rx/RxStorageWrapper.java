@@ -33,7 +33,6 @@ import io.reactivex.Single;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Reactive wrapper over {@code Storage}.
@@ -78,19 +77,12 @@ public final class RxStorageWrapper implements RxStorage {
      * @return Completion or error signal.
      */
     public Completable save(final Key key, final Flowable<ByteBuffer> content) {
-        return CompletableInterop.fromFuture(
-            this.storage.save(
-                key,
-                FlowAdapters.toFlowPublisher(content)
-            )
-        );
+        return CompletableInterop.fromFuture(this.storage.save(key, content));
     }
 
     @Override
     public Completable move(final Key source, final Key destination) {
-        return CompletableInterop.fromFuture(
-            this.storage.move(source, destination)
-        );
+        return CompletableInterop.fromFuture(this.storage.move(source, destination));
     }
 
     /**
@@ -100,11 +92,7 @@ public final class RxStorageWrapper implements RxStorage {
      * @return Bytes.
      */
     public Single<Flowable<ByteBuffer>> value(final Key key) {
-        return SingleInterop.fromFuture(
-            this.storage.value(
-                key
-            )
-        ).map(flow -> Flowable.fromPublisher(FlowAdapters.toPublisher(flow)));
+        return SingleInterop.fromFuture(this.storage.value(key)).map(Flowable::fromPublisher);
     }
 
     /**
