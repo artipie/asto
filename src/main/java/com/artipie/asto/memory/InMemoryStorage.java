@@ -30,13 +30,12 @@ import com.artipie.asto.Transaction;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
-import java.util.stream.Collectors;
-import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 /**
  * Simple implementation of Storage that holds all data in memory.
@@ -48,7 +47,7 @@ public final class InMemoryStorage implements Storage {
     /**
      * Values stored by key strings.
      */
-    private final Map<String, byte[]> data;
+    private final NavigableMap<String, byte[]> data;
 
     /**
      * Ctor.
@@ -67,22 +66,25 @@ public final class InMemoryStorage implements Storage {
         return CompletableFuture.supplyAsync(
             () -> {
                 final String prefix = root.string();
-                return this.data.keySet()
-                    .stream()
-                    .dropWhile(key -> !key.startsWith(prefix))
-                    .takeWhile(key -> key.startsWith(prefix))
-                    .map(Key.From::new)
-                    .collect(Collectors.toList());
+                final Collection<Key> keys = new LinkedList<>();
+                for (final String string : this.data.navigableKeySet().tailSet(prefix)) {
+                    if (string.startsWith(prefix)) {
+                        keys.add(new Key.From(string));
+                    } else {
+                        break;
+                    }
+                }
+                return keys;
             }
         );
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
+    public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
         return CompletableFuture.runAsync(
             () -> this.data.put(
                 key.string(),
-                Flowable.fromPublisher(FlowAdapters.toPublisher(content))
+                Flowable.fromPublisher(content)
                     .toList()
                     .blockingGet()
                     .stream()
@@ -107,7 +109,7 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
+    public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
                 final byte[] bytes = this.data.get(key.string());
@@ -116,9 +118,7 @@ public final class InMemoryStorage implements Storage {
                         String.format("No value for key: %s", key.string())
                     );
                 }
-                return FlowAdapters.toFlowPublisher(
-                    Flowable.fromArray(ByteBuffer.wrap(bytes))
-                );
+                return Flowable.fromArray(ByteBuffer.wrap(bytes));
             }
         );
     }
