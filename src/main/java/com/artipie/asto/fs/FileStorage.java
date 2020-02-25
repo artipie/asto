@@ -43,9 +43,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
-import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 /**
  * Simple storage, in files.
@@ -127,7 +126,7 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Flow.Publisher<ByteBuffer> content) {
+    public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
         return Single.fromCallable(
             () -> {
                 final Path file = this.path(key);
@@ -135,8 +134,7 @@ public final class FileStorage implements Storage {
                 return file;
             })
             .flatMapCompletable(
-                file -> new RxFile(file, this.fls)
-                    .save(Flowable.fromPublisher(FlowAdapters.toPublisher(content)))
+                file -> new RxFile(file, this.fls).save(Flowable.fromPublisher(content))
             ).to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
@@ -159,12 +157,8 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<ByteBuffer>> value(final Key key) {
-        return CompletableFuture.supplyAsync(
-            () -> FlowAdapters.toFlowPublisher(
-                new RxFile(this.path(key), this.fls).flow()
-            )
-        );
+    public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
+        return CompletableFuture.supplyAsync(() -> new RxFile(this.path(key), this.fls).flow());
     }
 
     @Override
