@@ -58,23 +58,27 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        throw new UnsupportedOperationException();
+        synchronized (this.data) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
     public CompletableFuture<Collection<Key>> list(final Key root) {
         return CompletableFuture.supplyAsync(
             () -> {
-                final String prefix = root.string();
-                final Collection<Key> keys = new LinkedList<>();
-                for (final String string : this.data.navigableKeySet().tailSet(prefix)) {
-                    if (string.startsWith(prefix)) {
-                        keys.add(new Key.From(string));
-                    } else {
-                        break;
+                synchronized (this.data) {
+                    final String prefix = root.string();
+                    final Collection<Key> keys = new LinkedList<>();
+                    for (final String string : this.data.navigableKeySet().tailSet(prefix)) {
+                        if (string.startsWith(prefix)) {
+                            keys.add(new Key.From(string));
+                        } else {
+                            break;
+                        }
                     }
+                    return keys;
                 }
-                return keys;
             }
         );
     }
@@ -82,24 +86,28 @@ public final class InMemoryStorage implements Storage {
     @Override
     public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
         return CompletableFuture.runAsync(
-            () -> this.data.put(
-                key.string(),
-                Flowable.fromPublisher(content)
-                    .toList()
-                    .blockingGet()
-                    .stream()
-                    .reduce(
-                        (left, right) -> {
-                            final ByteBuffer concat = ByteBuffer.allocate(
-                                left.remaining() + right.remaining()
-                            ).put(left).put(right);
-                            concat.flip();
-                            return concat;
-                        }
-                    )
-                    .map(buf -> new Remaining(buf).bytes())
-                    .orElse(new byte[0])
-            )
+            () -> {
+                synchronized (this.data) {
+                    this.data.put(
+                        key.string(),
+                        Flowable.fromPublisher(content)
+                            .toList()
+                            .blockingGet()
+                            .stream()
+                            .reduce(
+                                (left, right) -> {
+                                    final ByteBuffer concat = ByteBuffer.allocate(
+                                        left.remaining() + right.remaining()
+                                    ).put(left).put(right);
+                                    concat.flip();
+                                    return concat;
+                                }
+                            )
+                            .map(buf -> new Remaining(buf).bytes())
+                            .orElse(new byte[0])
+                    );
+                }
+            }
         );
     }
 
@@ -107,14 +115,16 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Void> move(final Key source, final Key destination) {
         return CompletableFuture.runAsync(
             () -> {
-                final String key = source.string();
-                if (!this.data.containsKey(key)) {
-                    throw new IllegalArgumentException(
-                        String.format("No value for source key: %s", source.string())
-                    );
+                synchronized (this.data) {
+                    final String key = source.string();
+                    if (!this.data.containsKey(key)) {
+                        throw new IllegalArgumentException(
+                            String.format("No value for source key: %s", source.string())
+                        );
+                    }
+                    this.data.put(destination.string(), this.data.get(key));
+                    this.data.remove(source.string());
                 }
-                this.data.put(destination.string(), this.data.get(key));
-                this.data.remove(source.string());
             }
         );
     }
@@ -123,19 +133,23 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
-                final byte[] bytes = this.data.get(key.string());
-                if (bytes == null) {
-                    throw new IllegalArgumentException(
-                        String.format("No value for key: %s", key.string())
-                    );
+                synchronized (this.data) {
+                    final byte[] bytes = this.data.get(key.string());
+                    if (bytes == null) {
+                        throw new IllegalArgumentException(
+                            String.format("No value for key: %s", key.string())
+                        );
+                    }
+                    return Flowable.fromArray(ByteBuffer.wrap(bytes));
                 }
-                return Flowable.fromArray(ByteBuffer.wrap(bytes));
             }
         );
     }
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        throw new UnsupportedOperationException();
+        synchronized (this.data) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
