@@ -29,7 +29,6 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -39,44 +38,6 @@ import org.junit.jupiter.api.Test;
  * @since 0.14
  */
 public final class InMemoryStorageTest {
-
-    @Test
-    void shouldExistForSavedKey() throws Exception {
-        final Storage storage = this.storage();
-        final Key key = new Key.From("shouldExistForSavedKey");
-        final byte[] data = "some data".getBytes();
-        new BlockingStorage(storage).save(key, data);
-        MatcherAssert.assertThat(
-            "Saved key should exist",
-            storage.exists(key).get(),
-            new IsEqual<>(true)
-        );
-    }
-
-    @Test
-    void shouldNotExistForUnknownKey() throws Exception {
-        final Storage storage = this.storage();
-        final Key key = new Key.From("shouldNotExistForUnknownKey");
-        MatcherAssert.assertThat(
-            "Key that was never saved should not exist",
-            storage.exists(key).get(),
-            new IsEqual<>(false)
-        );
-    }
-
-    @Test
-    void shouldNotExistForParentOfSavedKey() throws Exception {
-        final Storage storage = this.storage();
-        final Key parent = new Key.From("shouldNotExistForParentOfSavedKey");
-        final Key key = new Key.From(parent, "child");
-        final byte[] data = "content".getBytes();
-        new BlockingStorage(storage).save(key, data);
-        MatcherAssert.assertThat(
-            "Key that is parent of some existing key is not expected to exist",
-            storage.exists(parent).get(),
-            new IsEqual<>(false)
-        );
-    }
 
     @Test
     void shouldSave() {
