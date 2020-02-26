@@ -127,6 +127,37 @@ public final class InMemoryStorageTest {
         Assertions.assertThrows(RuntimeException.class, () -> storage.value(key));
     }
 
+    @Test
+    void shouldMove() {
+        final BlockingStorage storage = new BlockingStorage(this.storage());
+        final byte[] data = "source".getBytes();
+        final Key source = new Key.From("shouldMove-source");
+        final Key destination = new Key.From("shouldMove-destination");
+        storage.save(source, data);
+        storage.move(source, destination);
+        MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldMoveWhenDestinationExists() {
+        final BlockingStorage storage = new BlockingStorage(this.storage());
+        final byte[] data = "source data".getBytes();
+        final Key source = new Key.From("shouldMoveWhenDestinationExists-source");
+        final Key destination = new Key.From("shouldMoveWhenDestinationExists-destination");
+        storage.save(source, data);
+        storage.save(destination, "destination data".getBytes());
+        storage.move(source, destination);
+        MatcherAssert.assertThat(storage.value(destination), Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldFailToMoveAbsentValue() {
+        final BlockingStorage storage = new BlockingStorage(this.storage());
+        final Key source = new Key.From("shouldFailToMoveAbsentValue-source");
+        final Key destination = new Key.From("shouldFailToMoveAbsentValue-destination");
+        Assertions.assertThrows(RuntimeException.class, () -> storage.move(source, destination));
+    }
+
     private InMemoryStorage storage() {
         return new InMemoryStorage();
     }

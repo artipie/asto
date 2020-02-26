@@ -105,7 +105,18 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        throw new UnsupportedOperationException();
+        return CompletableFuture.runAsync(
+            () -> {
+                final String key = source.string();
+                if (!this.data.containsKey(key)) {
+                    throw new IllegalArgumentException(
+                        String.format("No value for source key: %s", source.string())
+                    );
+                }
+                this.data.put(destination.string(), this.data.get(key));
+                this.data.remove(source.string());
+            }
+        );
     }
 
     @Override
