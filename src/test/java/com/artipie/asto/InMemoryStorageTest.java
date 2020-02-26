@@ -58,7 +58,7 @@ public final class InMemoryStorageTest {
         final Storage storage = this.storage();
         final Key key = new Key.From("shouldNotExistForUnknownKey");
         MatcherAssert.assertThat(
-            "Key that was never saved should nto exist",
+            "Key that was never saved should not exist",
             storage.exists(key).get(),
             new IsEqual<>(false)
         );
