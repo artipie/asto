@@ -58,9 +58,13 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        synchronized (this.data) {
-            throw new UnsupportedOperationException();
-        }
+        return CompletableFuture.supplyAsync(
+            () -> {
+                synchronized (this.data) {
+                    return this.data.containsKey(key.string());
+                }
+            }
+        );
     }
 
     @Override
