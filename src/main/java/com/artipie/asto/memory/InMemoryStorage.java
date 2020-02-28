@@ -30,9 +30,10 @@ import com.artipie.asto.Transaction;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import org.reactivestreams.Publisher;
 
@@ -46,39 +47,71 @@ public final class InMemoryStorage implements Storage {
     /**
      * Values stored by key strings.
      */
-    private final Map<String, byte[]> data = new HashMap<>();
+    private final NavigableMap<String, byte[]> data;
 
-    @Override
-    public CompletableFuture<Boolean> exists(final Key key) {
-        return CompletableFuture.supplyAsync(() -> this.data.containsKey(key.string()));
+    /**
+     * Ctor.
+     */
+    public InMemoryStorage() {
+        this.data = new TreeMap<>();
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        throw new UnsupportedOperationException();
+    public CompletableFuture<Boolean> exists(final Key key) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                synchronized (this.data) {
+                    return this.data.containsKey(key.string());
+                }
+            }
+        );
+    }
+
+    @Override
+    public CompletableFuture<Collection<Key>> list(final Key root) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                synchronized (this.data) {
+                    final String prefix = root.string();
+                    final Collection<Key> keys = new LinkedList<>();
+                    for (final String string : this.data.navigableKeySet().tailSet(prefix)) {
+                        if (string.startsWith(prefix)) {
+                            keys.add(new Key.From(string));
+                        } else {
+                            break;
+                        }
+                    }
+                    return keys;
+                }
+            }
+        );
     }
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
         return CompletableFuture.runAsync(
-            () -> this.data.put(
-                key.string(),
-                Flowable.fromPublisher(content)
-                    .toList()
-                    .blockingGet()
-                    .stream()
-                    .reduce(
-                        (left, right) -> {
-                            final ByteBuffer concat = ByteBuffer.allocate(
-                                left.remaining() + right.remaining()
-                            ).put(left).put(right);
-                            concat.flip();
-                            return concat;
-                        }
-                    )
-                    .map(buf -> new Remaining(buf).bytes())
-                    .orElse(new byte[0])
-            )
+            () -> {
+                synchronized (this.data) {
+                    this.data.put(
+                        key.string(),
+                        Flowable.fromPublisher(content)
+                            .toList()
+                            .blockingGet()
+                            .stream()
+                            .reduce(
+                                (left, right) -> {
+                                    final ByteBuffer concat = ByteBuffer.allocate(
+                                        left.remaining() + right.remaining()
+                                    ).put(left).put(right);
+                                    concat.flip();
+                                    return concat;
+                                }
+                            )
+                            .map(buf -> new Remaining(buf).bytes())
+                            .orElse(new byte[0])
+                    );
+                }
+            }
         );
     }
 
@@ -86,14 +119,16 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Void> move(final Key source, final Key destination) {
         return CompletableFuture.runAsync(
             () -> {
-                final String key = source.string();
-                if (!this.data.containsKey(key)) {
-                    throw new IllegalArgumentException(
-                        String.format("No value for source key: %s", source.string())
-                    );
+                synchronized (this.data) {
+                    final String key = source.string();
+                    if (!this.data.containsKey(key)) {
+                        throw new IllegalArgumentException(
+                            String.format("No value for source key: %s", source.string())
+                        );
+                    }
+                    this.data.put(destination.string(), this.data.get(key));
+                    this.data.remove(source.string());
                 }
-                this.data.put(destination.string(), this.data.get(key));
-                this.data.remove(source.string());
             }
         );
     }
@@ -102,19 +137,23 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
-                final byte[] bytes = this.data.get(key.string());
-                if (bytes == null) {
-                    throw new IllegalArgumentException(
-                        String.format("No value for key: %s", key.string())
-                    );
+                synchronized (this.data) {
+                    final byte[] bytes = this.data.get(key.string());
+                    if (bytes == null) {
+                        throw new IllegalArgumentException(
+                            String.format("No value for key: %s", key.string())
+                        );
+                    }
+                    return Flowable.fromArray(ByteBuffer.wrap(bytes));
                 }
-                return Flowable.fromArray(ByteBuffer.wrap(bytes));
             }
         );
     }
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        throw new UnsupportedOperationException();
+        synchronized (this.data) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
