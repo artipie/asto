@@ -37,6 +37,14 @@ import org.junit.jupiter.api.Test;
 final class KeyTest {
 
     @Test
+    void resolvesKeysFromParts() {
+        MatcherAssert.assertThat(
+            new Key.From("one", "two", "three/four").string(),
+            Matchers.equalTo("one/two/three/four")
+        );
+    }
+
+    @Test
     void resolvesKeyFromParts() {
         MatcherAssert.assertThat(
             new Key.From("one", "two", "three").string(),
