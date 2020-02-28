@@ -26,7 +26,6 @@ package com.artipie.asto;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -39,8 +38,8 @@ final class KeyTest {
     @Test
     void resolvesKeysFromParts() {
         MatcherAssert.assertThat(
-            new Key.From("one", "two", "three/four").string(),
-            Matchers.equalTo("one/two/three/four")
+            new Key.From("one1", "two2", "three3/four4").string(),
+            new IsEqual<>("one1/two2/three3/four4")
         );
     }
 
@@ -66,17 +65,6 @@ final class KeyTest {
         MatcherAssert.assertThat(
             new Key.From(string).string(),
             Matchers.equalTo(string)
-        );
-    }
-
-    @Test
-    void keyFromBadParts() {
-        MatcherAssert.assertThat(
-            Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> new Key.From("part1", "part/2").string()
-            ).getMessage(),
-            new IsEqual<>("Invalid part: 'part/2'")
         );
     }
 }
