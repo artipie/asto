@@ -119,7 +119,10 @@ public interface Key {
          * @param parts Parts
          */
         public From(final Collection<String> parts) {
-            this.parts = new ArrayList<>(parts);
+            this.parts = new ArrayList<>(parts)
+                .stream()
+                .flatMap(part -> Arrays.stream(part.split("/")))
+                .collect(Collectors.toList());
         }
 
         @Override
