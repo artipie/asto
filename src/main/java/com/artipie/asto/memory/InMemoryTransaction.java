@@ -85,11 +85,11 @@ public final class InMemoryTransaction implements Transaction {
 
     @Override
     public CompletableFuture<Void> commit() {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.allOf();
     }
 
     @Override
     public CompletableFuture<Void> rollback() {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.allOf();
     }
 }
