@@ -129,7 +129,11 @@ public class RxFile {
                     )
                     .map(buf -> new Remaining(buf).bytes())
                     .orElse(new byte[0]);
-                Files.write(this.file, bytes, StandardOpenOption.CREATE);
+                Files.write(
+                    this.file,
+                    bytes,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
+                );
             }
         );
     }
