@@ -28,6 +28,7 @@ import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -63,6 +64,18 @@ final class RxFileTest {
     }
 
     @Test
+    public void rxFileTruncatesExistingFile(@TempDir final Path tmp) throws Exception {
+        final String one = "one";
+        final String two = "two111";
+        final Path target = tmp.resolve("target.txt");
+        new RxFile(target).save(pubFromString(two)).blockingAwait();
+        new RxFile(target).save(pubFromString(one)).blockingAwait();
+        MatcherAssert.assertThat(
+            new String(Files.readAllBytes(target), StandardCharsets.UTF_8),
+            Matchers.equalTo(one)
+        );
+    }
+
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     public void rxFileSaveWorks(@TempDir final Path tmp) throws IOException {
@@ -81,5 +94,14 @@ final class RxFileTest {
             ).blockingAwait();
         MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
         vertx.close();
+    }
+
+    /**
+     * Creates publisher of byte buffers from string using UTF8 encoding.
+     * @param str Source string
+     * @return Publisher
+     */
+    private static Flowable<ByteBuffer> pubFromString(final String str) {
+        return Flowable.fromArray(ByteBuffer.wrap(str.getBytes(StandardCharsets.UTF_8)));
     }
 }
