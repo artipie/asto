@@ -128,6 +128,9 @@ public interface Key {
         @Override
         public String string() {
             for (final String part : this.parts) {
+                if (part.isEmpty()) {
+                    throw new IllegalStateException("Empty parts are not allowed");
+                }
                 if (part.contains(From.DELIMITER)) {
                     throw new IllegalStateException(String.format("Invalid part: '%s'", part));
                 }

@@ -26,6 +26,7 @@ package com.artipie.asto;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -66,5 +67,10 @@ final class KeyTest {
             new Key.From(string).string(),
             Matchers.equalTo(string)
         );
+    }
+
+    @Test
+    void keyWithEmptyPart() {
+        Assertions.assertThrows(Exception.class, () -> new Key.From("", "something").string());
     }
 }
