@@ -152,8 +152,6 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        synchronized (this.data) {
-            throw new UnsupportedOperationException();
-        }
+        return CompletableFuture.completedFuture(new InMemoryTransaction(this));
     }
 }

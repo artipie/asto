@@ -24,21 +24,21 @@
 package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
-import com.artipie.asto.memory.InMemoryStorage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
- * Tests for {@link InMemoryStorage#exists(Key)}.
+ * Tests for {@link Storage#exists(Key)}.
  *
  * @since 0.14
  */
-public final class InMemoryStorageExistsTest {
+public final class StorageExistsTest {
 
-    @Test
-    void shouldExistForSavedKey() throws Exception {
-        final Storage storage = this.storage();
+    @ParameterizedTest
+    @ArgumentsSource(StorageArgumentProvider.class)
+    void shouldExistForSavedKey(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldExistForSavedKey");
         final byte[] data = "some data".getBytes();
         new BlockingStorage(storage).save(key, data);
@@ -49,9 +49,9 @@ public final class InMemoryStorageExistsTest {
         );
     }
 
-    @Test
-    void shouldNotExistForUnknownKey() throws Exception {
-        final Storage storage = this.storage();
+    @ParameterizedTest
+    @ArgumentsSource(StorageArgumentProvider.class)
+    void shouldNotExistForUnknownKey(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldNotExistForUnknownKey");
         MatcherAssert.assertThat(
             "Key that was never saved should not exist",
@@ -60,9 +60,9 @@ public final class InMemoryStorageExistsTest {
         );
     }
 
-    @Test
-    void shouldNotExistForParentOfSavedKey() throws Exception {
-        final Storage storage = this.storage();
+    @ParameterizedTest
+    @ArgumentsSource(StorageArgumentProvider.class)
+    void shouldNotExistForParentOfSavedKey(final Storage storage) throws Exception {
         final Key parent = new Key.From("shouldNotExistForParentOfSavedKey");
         final Key key = new Key.From(parent, "child");
         final byte[] data = "content".getBytes();
@@ -72,9 +72,5 @@ public final class InMemoryStorageExistsTest {
             storage.exists(parent).get(),
             new IsEqual<>(false)
         );
-    }
-
-    private InMemoryStorage storage() {
-        return new InMemoryStorage();
     }
 }

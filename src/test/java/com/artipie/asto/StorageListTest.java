@@ -24,24 +24,25 @@
 package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
-import com.artipie.asto.memory.InMemoryStorage;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
- * Tests for {@link InMemoryStorage#list(Key)}.
+ * Tests for {@link Storage#list(Key)}.
  *
  * @since 0.14
  */
-public final class InMemoryStorageListTest {
+public final class StorageListTest {
 
-    @Test
-    void shouldListNoKeysWhenEmpty() {
-        final BlockingStorage blocking = new BlockingStorage(this.storage());
+    @ParameterizedTest
+    @ArgumentsSource(StorageArgumentProvider.class)
+    void shouldListNoKeysWhenEmpty(final Storage storage) {
+        final BlockingStorage blocking = new BlockingStorage(storage);
         final Collection<String> keys = blocking.list(new Key.From("a", "b"))
             .stream()
             .map(Key::string)
@@ -49,10 +50,11 @@ public final class InMemoryStorageListTest {
         MatcherAssert.assertThat(keys, Matchers.empty());
     }
 
-    @Test
-    void shouldListKeysInOrder() {
+    @ParameterizedTest
+    @ArgumentsSource(StorageArgumentProvider.class)
+    void shouldListKeysInOrder(final Storage storage) {
         final byte[] data = "some data!".getBytes();
-        final BlockingStorage blocking = new BlockingStorage(this.storage());
+        final BlockingStorage blocking = new BlockingStorage(storage);
         blocking.save(new Key.From("1"), data);
         blocking.save(new Key.From("a", "b", "c", "1"), data);
         blocking.save(new Key.From("a", "b", "2"), data);
@@ -66,9 +68,5 @@ public final class InMemoryStorageListTest {
             keys,
             Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
         );
-    }
-
-    private InMemoryStorage storage() {
-        return new InMemoryStorage();
     }
 }
