@@ -25,9 +25,12 @@ package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
@@ -66,6 +69,17 @@ class S3StorageTest {
             downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
         }
         MatcherAssert.assertThat(downloaded, Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldGetObjectWhenLoad(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "data".getBytes();
+        final String key = "some/key";
+        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
+        MatcherAssert.assertThat(value, Matchers.equalTo(data));
     }
 
     private S3Storage storage(final String bucket) {
