@@ -23,14 +23,13 @@
  */
 package com.artipie.asto.memory;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.reactivestreams.Publisher;
 
 /**
  * Transaction on {@link InMemoryStorage}.
@@ -69,12 +68,12 @@ public final class InMemoryTransaction implements Transaction {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
+    public CompletableFuture<Void> save(final Key key, final Content content) {
         return this.parent.save(key, content);
     }
 
     @Override
-    public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
+    public CompletableFuture<Content> value(final Key key) {
         return this.parent.value(key);
     }
 

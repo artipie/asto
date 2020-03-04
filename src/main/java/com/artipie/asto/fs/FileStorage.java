@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
@@ -33,7 +34,6 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.file.FileSystem;
-import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,7 +44,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import org.reactivestreams.Publisher;
 
 /**
  * Simple storage, in files.
@@ -126,7 +125,7 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
+    public CompletableFuture<Void> save(final Key key, final Content content) {
         return Single.fromCallable(
             () -> {
                 final Path file = this.path(key);
@@ -134,7 +133,7 @@ public final class FileStorage implements Storage {
                 return file;
             })
             .flatMapCompletable(
-                file -> new RxFile(file, this.fls).save(Flowable.fromPublisher(content))
+                file -> new RxFile(file, this.fls).save(Flowable.fromPublisher(content.bytes()))
             ).to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
@@ -157,8 +156,10 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
-        return CompletableFuture.supplyAsync(() -> new RxFile(this.path(key), this.fls).flow());
+    public CompletableFuture<Content> value(final Key key) {
+        return CompletableFuture.supplyAsync(
+            () -> new RxFileContent(new RxFile(this.path(key), this.fls))
+        );
     }
 
     @Override

@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.memory;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import org.reactivestreams.Publisher;
 
 /**
  * Simple implementation of Storage that holds all data in memory.
@@ -47,7 +47,7 @@ public final class InMemoryStorage implements Storage {
     /**
      * Values stored by key strings.
      */
-    private final NavigableMap<String, byte[]> data;
+    private final NavigableMap<String, ByteArrayContent> data;
 
     /**
      * Ctor.
@@ -88,27 +88,29 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Void> save(final Key key, final Publisher<ByteBuffer> content) {
+    public CompletableFuture<Void> save(final Key key, final Content content) {
         return CompletableFuture.runAsync(
             () -> {
                 synchronized (this.data) {
                     this.data.put(
                         key.string(),
-                        Flowable.fromPublisher(content)
-                            .toList()
-                            .blockingGet()
-                            .stream()
-                            .reduce(
-                                (left, right) -> {
-                                    final ByteBuffer concat = ByteBuffer.allocate(
-                                        left.remaining() + right.remaining()
-                                    ).put(left).put(right);
-                                    concat.flip();
-                                    return concat;
-                                }
-                            )
-                            .map(buf -> new Remaining(buf).bytes())
-                            .orElse(new byte[0])
+                        new ByteArrayContent(
+                            Flowable.fromPublisher(content.bytes())
+                                .toList()
+                                .blockingGet()
+                                .stream()
+                                .reduce(
+                                    (left, right) -> {
+                                        final ByteBuffer concat = ByteBuffer.allocate(
+                                            left.remaining() + right.remaining()
+                                        ).put(left).put(right);
+                                        concat.flip();
+                                        return concat;
+                                    }
+                                )
+                                .map(buf -> new Remaining(buf).bytes())
+                                .orElse(new byte[0])
+                        )
                     );
                 }
             }
@@ -134,17 +136,17 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Publisher<ByteBuffer>> value(final Key key) {
+    public CompletableFuture<Content> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
                 synchronized (this.data) {
-                    final byte[] bytes = this.data.get(key.string());
-                    if (bytes == null) {
+                    final Content content = this.data.get(key.string());
+                    if (content == null) {
                         throw new IllegalArgumentException(
                             String.format("No value for key: %s", key.string())
                         );
                     }
-                    return Flowable.fromArray(ByteBuffer.wrap(bytes));
+                    return content;
                 }
             }
         );
