@@ -80,6 +80,9 @@ final class MultipartUpload {
      * @param bucket Bucket name.
      * @param key S3 object key.
      * @param id ID of this upload.
+     * @todo #87:60min Refactor MultipartUpload class, reduce number of fields.
+     *  MultipartUpload class is too big right now in terms of fields and could be decomposed.
+     *  S3Bucket or S3Object classes might be extracted here.
      * @checkstyle ParameterNumberCheck (2 line)
      */
     MultipartUpload(
