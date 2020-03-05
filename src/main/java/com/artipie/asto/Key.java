@@ -26,6 +26,7 @@ package com.artipie.asto;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +37,11 @@ import java.util.stream.Stream;
  * @since 0.6
  */
 public interface Key {
+
+    /**
+     * Root key.
+     */
+    Key ROOT = new Key.From(Collections.emptyList());
 
     /**
      * Key.
