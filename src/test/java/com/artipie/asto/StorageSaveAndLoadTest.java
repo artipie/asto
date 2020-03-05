@@ -31,10 +31,9 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.reactivestreams.Publisher;
 
 /**
- * Tests for {@link Storage#save(Key, Publisher)} and {@link Storage#value(Key)}.
+ * Tests for {@link Storage#save(Key, Content)} and {@link Storage#value(Key)}.
  *
  * @since 0.14
  */
@@ -56,10 +55,12 @@ public final class StorageSaveAndLoadTest {
         final Key key = new Key.From("shouldSaveFromMultipleBuffers");
         storage.save(
             key,
-            Flowable.fromArray(
-                ByteBuffer.wrap("12".getBytes()),
-                ByteBuffer.wrap("34".getBytes()),
-                ByteBuffer.wrap("5".getBytes())
+            new Content.From(
+                Flowable.fromArray(
+                    ByteBuffer.wrap("12".getBytes()),
+                    ByteBuffer.wrap("34".getBytes()),
+                    ByteBuffer.wrap("5".getBytes())
+                )
             )
         ).get();
         MatcherAssert.assertThat(
@@ -72,7 +73,7 @@ public final class StorageSaveAndLoadTest {
     @ArgumentsSource(StorageArgumentProvider.class)
     void shouldSaveEmpty(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldSaveEmpty");
-        storage.save(key, Flowable.empty()).get();
+        storage.save(key, new Content.From(Flowable.empty())).get();
         MatcherAssert.assertThat(
             new BlockingStorage(storage).value(key),
             Matchers.equalTo(new byte[0])

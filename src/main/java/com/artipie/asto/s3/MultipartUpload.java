@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.s3;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import hu.akarnokd.rxjava2.operators.FlowableTransformers;
@@ -102,7 +103,7 @@ final class MultipartUpload {
      * @param content Object content to be uploaded in parts.
      * @return Completion stage which is completed when responses received from S3 for all parts.
      */
-    public CompletionStage<Void> upload(final Publisher<ByteBuffer> content) {
+    public CompletionStage<Void> upload(final Content content) {
         final AtomicInteger part = new AtomicInteger();
         return Flowable.fromPublisher(content).compose(
             FlowableTransformers.bufferWhile(

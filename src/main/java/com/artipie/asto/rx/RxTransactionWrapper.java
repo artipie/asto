@@ -23,14 +23,13 @@
  */
 package com.artipie.asto.rx;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Transaction;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import io.reactivex.Single;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 
@@ -75,7 +74,7 @@ public final class RxTransactionWrapper implements RxTransaction {
     }
 
     @Override
-    public Completable save(final Key key, final Flowable<ByteBuffer> content) {
+    public Completable save(final Key key, final Content content) {
         return CompletableInterop.fromFuture(
             this.wrapped.save(
                 key,
@@ -92,9 +91,8 @@ public final class RxTransactionWrapper implements RxTransaction {
     }
 
     @Override
-    public Single<Flowable<ByteBuffer>> value(final Key key) {
-        return SingleInterop.fromFuture(this.wrapped.value(key))
-            .map(Flowable::fromPublisher);
+    public Single<Content> value(final Key key) {
+        return SingleInterop.fromFuture(this.wrapped.value(key));
     }
 
     @Override
