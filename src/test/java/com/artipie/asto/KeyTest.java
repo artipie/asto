@@ -53,7 +53,7 @@ final class KeyTest {
     }
 
     @Test
-    void resovlesKeyFromBasePath() {
+    void resolvesKeyFromBasePath() {
         MatcherAssert.assertThat(
             new Key.From(new Key.From("black", "red"), "green", "yellow").string(),
             Matchers.equalTo("black/red/green/yellow")
@@ -72,5 +72,10 @@ final class KeyTest {
     @Test
     void keyWithEmptyPart() {
         Assertions.assertThrows(Exception.class, () -> new Key.From("", "something").string());
+    }
+
+    @Test
+    void resolvesRootKey() {
+        MatcherAssert.assertThat(Key.ROOT.string(), Matchers.equalTo(""));
     }
 }
