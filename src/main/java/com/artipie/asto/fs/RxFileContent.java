@@ -57,6 +57,6 @@ final class RxFileContent implements Content {
 
     @Override
     public Optional<Long> size() {
-        return Optional.empty();
+        return Optional.of(this.file.size().blockingGet());
     }
 }

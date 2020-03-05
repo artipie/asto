@@ -26,6 +26,7 @@ package com.artipie.asto.fs;
 import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Promise;
@@ -149,5 +150,14 @@ public class RxFile {
             target.toString(),
             new CopyOptions().setReplaceExisting(true)
         );
+    }
+
+    /**
+     * Get file size.
+     *
+     * @return File size in bytes.
+     */
+    public Single<Long> size() {
+        return Single.fromCallable(() -> Files.size(this.file));
     }
 }

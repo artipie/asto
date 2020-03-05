@@ -96,6 +96,17 @@ final class RxFileTest {
         vertx.close();
     }
 
+    @Test()
+    public void rxFileSizeWorks(@TempDir final Path tmp) throws IOException {
+        final Vertx vertx = Vertx.vertx();
+        final byte[] data = "012345".getBytes();
+        final Path temp = tmp.resolve("size-test.txt");
+        Files.write(temp, data);
+        final Long size = new RxFile(temp, vertx.fileSystem()).size().blockingGet();
+        MatcherAssert.assertThat(size, Matchers.equalTo((long) data.length));
+        vertx.close();
+    }
+
     /**
      * Creates publisher of byte buffers from string using UTF8 encoding.
      * @param str Source string
