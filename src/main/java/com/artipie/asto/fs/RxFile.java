@@ -112,35 +112,36 @@ public class RxFile {
 
     /**
      * Save a flow of bytes to a file.
+     *
      * @param flow The flow of bytes
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return Completable.fromAction(
-            () -> {
-                final byte[] bytes = flow.toList().blockingGet().stream()
-                    .reduce(
-                        (left, right) -> {
-                            final ByteBuffer concat = ByteBuffer.allocate(
-                                left.remaining() + right.remaining()
-                            ).put(left).put(right);
-                            concat.flip();
-                            return concat;
-                        }
-                    )
-                    .map(buf -> new Remaining(buf).bytes())
-                    .orElse(new byte[0]);
-                Files.write(
-                    this.file,
-                    bytes,
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
-                );
+        return flow.reduce(
+            (left, right) -> {
+                final ByteBuffer concat = ByteBuffer.allocate(
+                    left.remaining() + right.remaining()
+                ).put(left).put(right);
+                concat.flip();
+                return concat;
             }
-        );
+        )
+            .map(buf -> new Remaining(buf).bytes())
+            .toSingle(new byte[0])
+            .flatMapCompletable(
+                bytes -> Completable.fromAction(
+                    () -> Files.write(
+                        this.file,
+                        bytes,
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
+                    )
+                )
+            );
     }
 
     /**
      * Move file to new location.
+     *
      * @param target Target path the file is moved to.
      * @return Completion or error signal
      */
