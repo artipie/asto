@@ -25,7 +25,6 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
-import com.artipie.asto.memory.ByteArrayContent;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Path;
@@ -78,11 +77,11 @@ final class FileStorageTest {
         final Key key = new Key.From("a", "b", "test.deb");
         this.storage.save(
             key,
-            new ByteArrayContent(content.getBytes())
+            new Content.From(content.getBytes())
         ).get();
         MatcherAssert.assertThat(
             new String(
-                new ByteArray(Flowable.fromPublisher(this.storage.value(key).get().bytes())
+                new ByteArray(Flowable.fromPublisher(this.storage.value(key).get())
                     .toList()
                     .blockingGet()
                     .stream()

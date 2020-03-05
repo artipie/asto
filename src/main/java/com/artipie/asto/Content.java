@@ -23,23 +23,19 @@
  */
 package com.artipie.asto;
 
+import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Optional;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 /**
  * Content that can be stored in {@link Storage}.
  *
  * @since 0.15
  */
-public interface Content {
-
-    /**
-     * Content bytes.
-     *
-     * @return Content split into byte chunks.
-     */
-    Publisher<ByteBuffer> bytes();
+public interface Content extends Publisher<ByteBuffer> {
 
     /**
      * Provides size of content in bytes if known.
@@ -64,6 +60,18 @@ public interface Content {
          * Content bytes.
          */
         private final Publisher<ByteBuffer> publisher;
+
+        /**
+         * Ctor.
+         *
+         * @param array Content bytes.
+         */
+        public From(final byte[] array) {
+            this(
+                array.length,
+                Flowable.fromArray(ByteBuffer.wrap(Arrays.copyOf(array, array.length)))
+            );
+        }
 
         /**
          * Ctor.
@@ -96,8 +104,8 @@ public interface Content {
         }
 
         @Override
-        public Publisher<ByteBuffer> bytes() {
-            return this.publisher;
+        public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
+            this.publisher.subscribe(subscriber);
         }
 
         @Override

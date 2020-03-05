@@ -26,7 +26,6 @@ package com.artipie.asto;
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
-import com.artipie.asto.memory.ByteArrayContent;
 import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
 import java.net.URI;
@@ -61,7 +60,7 @@ class S3StorageTest {
         client.createBucket(bucket);
         final byte[] data = "data2".getBytes();
         final String key = "a/b/c";
-        this.storage(bucket).save(new Key.From(key), new ByteArrayContent(data)).join();
+        this.storage(bucket).save(new Key.From(key), new Content.From(data)).join();
         final byte[] downloaded;
         try (S3Object s3Object = client.getObject(bucket, key)) {
             downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());

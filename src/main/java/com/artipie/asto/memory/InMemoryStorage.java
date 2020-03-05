@@ -47,7 +47,7 @@ public final class InMemoryStorage implements Storage {
     /**
      * Values stored by key strings.
      */
-    private final NavigableMap<String, ByteArrayContent> data;
+    private final NavigableMap<String, byte[]> data;
 
     /**
      * Ctor.
@@ -94,23 +94,21 @@ public final class InMemoryStorage implements Storage {
                 synchronized (this.data) {
                     this.data.put(
                         key.string(),
-                        new ByteArrayContent(
-                            Flowable.fromPublisher(content.bytes())
-                                .toList()
-                                .blockingGet()
-                                .stream()
-                                .reduce(
-                                    (left, right) -> {
-                                        final ByteBuffer concat = ByteBuffer.allocate(
-                                            left.remaining() + right.remaining()
-                                        ).put(left).put(right);
-                                        concat.flip();
-                                        return concat;
-                                    }
-                                )
-                                .map(buf -> new Remaining(buf).bytes())
-                                .orElse(new byte[0])
-                        )
+                        Flowable.fromPublisher(content)
+                            .toList()
+                            .blockingGet()
+                            .stream()
+                            .reduce(
+                                (left, right) -> {
+                                    final ByteBuffer concat = ByteBuffer.allocate(
+                                        left.remaining() + right.remaining()
+                                    ).put(left).put(right);
+                                    concat.flip();
+                                    return concat;
+                                }
+                            )
+                            .map(buf -> new Remaining(buf).bytes())
+                            .orElse(new byte[0])
                     );
                 }
             }
@@ -140,13 +138,13 @@ public final class InMemoryStorage implements Storage {
         return CompletableFuture.supplyAsync(
             () -> {
                 synchronized (this.data) {
-                    final Content content = this.data.get(key.string());
+                    final byte[] content = this.data.get(key.string());
                     if (content == null) {
                         throw new IllegalArgumentException(
                             String.format("No value for key: %s", key.string())
                         );
                     }
-                    return content;
+                    return new Content.From(content);
                 }
             }
         );

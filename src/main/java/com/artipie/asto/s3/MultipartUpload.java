@@ -105,7 +105,7 @@ final class MultipartUpload {
      */
     public CompletionStage<Void> upload(final Content content) {
         final AtomicInteger part = new AtomicInteger();
-        return Flowable.fromPublisher(content.bytes()).compose(
+        return Flowable.fromPublisher(content).compose(
             FlowableTransformers.bufferWhile(
                 new Predicate<ByteBuffer>() {
                     private long sum;

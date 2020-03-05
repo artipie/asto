@@ -133,7 +133,7 @@ public final class FileStorage implements Storage {
                 return file;
             })
             .flatMapCompletable(
-                file -> new RxFile(file, this.fls).save(Flowable.fromPublisher(content.bytes()))
+                file -> new RxFile(file, this.fls).save(Flowable.fromPublisher(content))
             ).to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
@@ -158,7 +158,13 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Content> value(final Key key) {
         return CompletableFuture.supplyAsync(
-            () -> new RxFileContent(new RxFile(this.path(key), this.fls))
+            () -> {
+                final RxFile file = new RxFile(this.path(key), this.fls);
+                return new Content.From(
+                    file.size().blockingGet(),
+                    file.flow()
+                );
+            }
         );
     }
 
