@@ -25,9 +25,12 @@ package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
@@ -66,6 +69,26 @@ class S3StorageTest {
             downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
         }
         MatcherAssert.assertThat(downloaded, Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldExistForSavedObject(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "content".getBytes();
+        final String key = "some/existing/key";
+        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        MatcherAssert.assertThat(exists, Matchers.equalTo(true));
+    }
+
+    @Test
+    void shouldNotExistForUnknownObject(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final String key = "unknown/key";
+        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        MatcherAssert.assertThat(exists, Matchers.equalTo(false));
     }
 
     private S3Storage storage(final String bucket) {
