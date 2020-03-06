@@ -27,18 +27,18 @@ import com.artipie.asto.blocking.BlockingStorage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests for {@link Storage#move(Key, Key)}.
  *
  * @since 0.14
  */
+@ExtendWith(StorageExtension.class)
 public final class StorageMoveTest {
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldMove(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "source".getBytes();
@@ -49,8 +49,7 @@ public final class StorageMoveTest {
         MatcherAssert.assertThat(blocking.value(destination), Matchers.equalTo(data));
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldMoveWhenDestinationExists(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "source data".getBytes();
@@ -65,8 +64,7 @@ public final class StorageMoveTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldFailToMoveAbsentValue(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Key source = new Key.From("shouldFailToMoveAbsentValue-source");

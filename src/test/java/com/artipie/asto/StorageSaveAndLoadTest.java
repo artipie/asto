@@ -29,18 +29,18 @@ import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests for {@link Storage#save(Key, Content)} and {@link Storage#value(Key)}.
  *
  * @since 0.14
  */
+@ExtendWith(StorageExtension.class)
 public final class StorageSaveAndLoadTest {
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldSave(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "0".getBytes();
@@ -52,8 +52,7 @@ public final class StorageSaveAndLoadTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldSaveFromMultipleBuffers(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldSaveFromMultipleBuffers");
         storage.save(
@@ -72,8 +71,7 @@ public final class StorageSaveAndLoadTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldSaveEmpty(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldSaveEmpty");
         storage.save(key, new Content.From(Flowable.empty())).get();
@@ -84,8 +82,7 @@ public final class StorageSaveAndLoadTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldSaveWhenValueAlreadyExists(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] original = "1".getBytes();
@@ -99,8 +96,7 @@ public final class StorageSaveAndLoadTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldFailToLoadAbsentValue(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Key key = new Key.From("shouldFailToLoadAbsentValue");
