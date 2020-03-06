@@ -91,6 +91,25 @@ class S3StorageTest {
         MatcherAssert.assertThat(exists, Matchers.equalTo(false));
     }
 
+    @Test
+    void shouldMoveObject(final AmazonS3 client) throws Exception {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] original = "something".getBytes();
+        final String source = "source";
+        client.putObject(bucket, source, new ByteArrayInputStream(original), new ObjectMetadata());
+        final String destination = "destination";
+        new BlockingStorage(this.storage(bucket)).move(
+            new Key.From(source),
+            new Key.From(destination)
+        );
+        final byte[] downloaded;
+        try (S3Object s3Object = client.getObject(bucket, destination)) {
+            downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
+        }
+        MatcherAssert.assertThat(downloaded, Matchers.equalTo(original));
+    }
+
     private S3Storage storage(final String bucket) {
         final S3AsyncClient client = S3AsyncClient.builder()
             .region(Region.of("us-east-1"))

@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -108,7 +109,13 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        throw new UnsupportedOperationException();
+        return this.client.copyObject(
+            CopyObjectRequest.builder()
+                .copySource(String.format("%s/%s", this.bucket, source.string()))
+                .bucket(this.bucket)
+                .key(destination.string())
+                .build()
+        ).thenApply(response -> null);
     }
 
     @Override
