@@ -35,6 +35,7 @@ import java.net.URI;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -89,6 +90,21 @@ class S3StorageTest {
         final String key = "unknown/key";
         final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
         MatcherAssert.assertThat(exists, Matchers.equalTo(false));
+    }
+
+    @Test
+    void shouldGetObjectWhenLoad(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "data".getBytes();
+        final String key = "some/key";
+        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
+        MatcherAssert.assertThat(
+            "Storage should read object stored on S3",
+            value,
+            new IsEqual<>(data)
+        );
     }
 
     private S3Storage storage(final String bucket) {
