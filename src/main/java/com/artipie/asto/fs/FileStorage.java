@@ -32,7 +32,6 @@ import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -58,18 +57,9 @@ public final class FileStorage implements Storage {
     private final Path dir;
 
     /**
-     * The Vert.x.
+     * The Vert.x file system.
      */
     private final FileSystem fls;
-
-    /**
-     * Ctor.
-     *
-     * @param path The path to the dir.
-     */
-    public FileStorage(final Path path) {
-        this(path, Vertx.vertx().fileSystem());
-    }
 
     /**
      * Ctor.
