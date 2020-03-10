@@ -73,6 +73,26 @@ class S3StorageTest {
     }
 
     @Test
+    void shouldExistForSavedObject(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "content".getBytes();
+        final String key = "some/existing/key";
+        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        MatcherAssert.assertThat(exists, Matchers.equalTo(true));
+    }
+
+    @Test
+    void shouldNotExistForUnknownObject(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final String key = "unknown/key";
+        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        MatcherAssert.assertThat(exists, Matchers.equalTo(false));
+    }
+
+    @Test
     void shouldGetObjectWhenLoad(final AmazonS3 client) {
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(bucket);

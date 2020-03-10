@@ -38,6 +38,8 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
  * Storage that holds data in S3 storage.
@@ -69,7 +71,25 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        throw new UnsupportedOperationException();
+        final CompletableFuture<Boolean> exists = new CompletableFuture<>();
+        this.client.headObject(
+            HeadObjectRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build()
+        ).handle(
+            (response, throwable) -> {
+                if (throwable == null) {
+                    exists.complete(true);
+                } else if (throwable.getCause() instanceof NoSuchKeyException) {
+                    exists.complete(false);
+                } else {
+                    exists.completeExceptionally(throwable);
+                }
+                return response;
+            }
+        );
+        return exists;
     }
 
     @Override
