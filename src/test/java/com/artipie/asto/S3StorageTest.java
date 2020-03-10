@@ -35,6 +35,7 @@ import java.net.URI;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -92,7 +93,7 @@ class S3StorageTest {
     }
 
     @Test
-    void shouldMoveObject(final AmazonS3 client) throws Exception {
+    void shouldCopyObjectWhenMoved(final AmazonS3 client) throws Exception {
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(bucket);
         final byte[] original = "something".getBytes();
@@ -103,11 +104,33 @@ class S3StorageTest {
             new Key.From(source),
             new Key.From(destination)
         );
-        final byte[] downloaded;
         try (S3Object s3Object = client.getObject(bucket, destination)) {
-            downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
+            MatcherAssert.assertThat(
+                ByteStreams.toByteArray(s3Object.getObjectContent()),
+                new IsEqual<>(original)
+            );
         }
-        MatcherAssert.assertThat(downloaded, Matchers.equalTo(original));
+    }
+
+    @Test
+    void shouldDeleteOriginalObjectWhenMoved(final AmazonS3 client) throws Exception {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final String source = "src";
+        client.putObject(
+            bucket,
+            source,
+            new ByteArrayInputStream("data".getBytes()),
+            new ObjectMetadata()
+        );
+        new BlockingStorage(this.storage(bucket)).move(
+            new Key.From(source),
+            new Key.From("dest")
+        );
+        MatcherAssert.assertThat(
+            client.doesObjectExist(bucket, source),
+            new IsEqual<>(false)
+        );
     }
 
     private S3Storage storage(final String bucket) {

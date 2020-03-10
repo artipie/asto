@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
@@ -115,7 +116,16 @@ public final class S3Storage implements Storage {
                 .bucket(this.bucket)
                 .key(destination.string())
                 .build()
-        ).thenApply(response -> null);
+        ).thenCompose(
+            copied -> this.client.deleteObject(
+                DeleteObjectRequest.builder()
+                    .bucket(this.bucket)
+                    .key(source.string())
+                    .build()
+            ).thenCompose(
+                deleted -> CompletableFuture.allOf()
+            )
+        );
     }
 
     @Override
