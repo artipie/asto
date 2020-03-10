@@ -30,6 +30,7 @@ import com.artipie.asto.Transaction;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -101,9 +102,21 @@ public final class S3Storage implements Storage {
         ).thenApply(
             created -> new MultipartUpload(this.client, this.bucket, key, created.uploadId())
         ).thenCompose(
-            upload -> upload.upload(content)
-                .thenCompose(ignored -> upload.complete())
-        ).thenApply(response -> null);
+            upload -> upload.upload(content).handle(
+                (ignored, throwable) -> {
+                    final CompletionStage<Void> finished;
+                    if (throwable == null) {
+                        finished = upload.complete();
+                    } else {
+                        final CompletableFuture<Void> promise = new CompletableFuture<>();
+                        promise.completeExceptionally(throwable);
+                        finished = promise;
+                        upload.abort();
+                    }
+                    return finished;
+                }
+            ).thenCompose(self -> self)
+        );
     }
 
     @Override

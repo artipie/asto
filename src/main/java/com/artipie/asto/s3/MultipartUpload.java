@@ -38,6 +38,7 @@ import java.util.function.Function;
 import org.reactivestreams.Publisher;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
@@ -144,6 +145,21 @@ final class MultipartUpload {
     public CompletionStage<Void> complete() {
         return this.client.completeMultipartUpload(
             CompleteMultipartUploadRequest.builder()
+                .bucket(this.bucket)
+                .key(this.key.string())
+                .uploadId(this.id)
+                .build()
+        ).thenApply(ignored -> null);
+    }
+
+    /**
+     * Aborts the upload.
+     *
+     * @return Completion stage which is completed when success response received from S3.
+     */
+    public CompletionStage<Void> abort() {
+        return this.client.abortMultipartUpload(
+            AbortMultipartUploadRequest.builder()
                 .bucket(this.bucket)
                 .key(this.key.string())
                 .uploadId(this.id)
