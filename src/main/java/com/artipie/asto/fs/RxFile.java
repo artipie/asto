@@ -30,7 +30,6 @@ import io.reactivex.Single;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Promise;
-import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
