@@ -60,14 +60,6 @@ public class RxFile {
     /**
      * Ctor.
      * @param file The wrapped file.
-     */
-    public RxFile(final Path file) {
-        this(file, Vertx.vertx().fileSystem());
-    }
-
-    /**
-     * Ctor.
-     * @param file The wrapped file.
      * @param fls The file system.
      */
     public RxFile(final Path file, final FileSystem fls) {
