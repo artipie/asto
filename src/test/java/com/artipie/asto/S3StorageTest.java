@@ -32,7 +32,10 @@ import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -90,6 +93,36 @@ class S3StorageTest {
         final String key = "unknown/key";
         final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
         MatcherAssert.assertThat(exists, Matchers.equalTo(false));
+    }
+
+    @Test
+    void shouldListKeysInOrder(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "some data!".getBytes();
+        Arrays.asList(
+            new Key.From("1"),
+            new Key.From("a", "b", "c", "1"),
+            new Key.From("a", "b", "2"),
+            new Key.From("a", "z"),
+            new Key.From("z")
+        ).forEach(
+            key -> client.putObject(
+                bucket,
+                key.string(),
+                new ByteArrayInputStream(data),
+                new ObjectMetadata()
+            )
+        );
+        final Collection<String> keys = new BlockingStorage(this.storage(bucket))
+            .list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(
+            keys,
+            Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
+        );
     }
 
     @Test
