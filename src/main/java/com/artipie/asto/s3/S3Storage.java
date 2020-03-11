@@ -27,14 +27,23 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
  * Storage that holds data in S3 storage.
@@ -89,7 +98,18 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        throw new UnsupportedOperationException();
+        return this.client.listObjects(
+            ListObjectsRequest.builder()
+                .bucket(this.bucket)
+                .prefix(prefix.string())
+                .build()
+        ).thenApply(
+            response -> response.contents()
+                .stream()
+                .map(S3Object::key)
+                .map(Key.From::new)
+                .collect(Collectors.toList())
+        );
     }
 
     @Override
@@ -126,11 +146,67 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        throw new UnsupportedOperationException();
+        final CompletableFuture<Content> promise = new CompletableFuture<>();
+        this.client.getObject(
+            GetObjectRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build(),
+            new ResponseAdapter(promise)
+        );
+        return promise;
     }
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Adapts {@link AsyncResponseTransformer} to {@link CompletableFuture}.
+     *
+     * @since 0.15
+     */
+    private static class ResponseAdapter
+        implements AsyncResponseTransformer<GetObjectResponse, Content> {
+
+        /**
+         * Promise of response body.
+         */
+        private final CompletableFuture<Content> promise;
+
+        /**
+         * Content length received in response.
+         */
+        private Long length;
+
+        /**
+         * Ctor.
+         *
+         * @param promise Promise of response body.
+         */
+        ResponseAdapter(final CompletableFuture<Content> promise) {
+            this.promise = promise;
+        }
+
+        @Override
+        public CompletableFuture<Content> prepare() {
+            return this.promise;
+        }
+
+        @Override
+        public void onResponse(final GetObjectResponse response) {
+            this.length = response.contentLength();
+        }
+
+        @Override
+        public void onStream(final SdkPublisher<ByteBuffer> publisher) {
+            this.promise.complete(new Content.From(Optional.ofNullable(this.length), publisher));
+        }
+
+        @Override
+        public void exceptionOccurred(final Throwable throwable) {
+            this.promise.completeExceptionally(throwable);
+        }
     }
 }

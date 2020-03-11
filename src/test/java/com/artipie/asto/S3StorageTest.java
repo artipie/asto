@@ -35,12 +35,16 @@ import com.google.common.io.ByteStreams;
 import io.reactivex.Flowable;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyIterable;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -125,6 +129,51 @@ class S3StorageTest {
         final String key = "unknown/key";
         final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
         MatcherAssert.assertThat(exists, Matchers.equalTo(false));
+    }
+
+    @Test
+    void shouldListKeysInOrder(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "some data!".getBytes();
+        Arrays.asList(
+            new Key.From("1"),
+            new Key.From("a", "b", "c", "1"),
+            new Key.From("a", "b", "2"),
+            new Key.From("a", "z"),
+            new Key.From("z")
+        ).forEach(
+            key -> client.putObject(
+                bucket,
+                key.string(),
+                new ByteArrayInputStream(data),
+                new ObjectMetadata()
+            )
+        );
+        final Collection<String> keys = new BlockingStorage(this.storage(bucket))
+            .list(new Key.From("a", "b"))
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(
+            keys,
+            Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
+        );
+    }
+
+    @Test
+    void shouldGetObjectWhenLoad(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "data".getBytes();
+        final String key = "some/key";
+        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
+        MatcherAssert.assertThat(
+            "Storage should read object stored on S3",
+            value,
+            new IsEqual<>(data)
+        );
     }
 
     private S3Storage storage(final String bucket) {
