@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -88,11 +87,13 @@ class S3StorageTest {
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(bucket);
         final String key = "fail";
-        final CompletableFuture<Void> saved = this.storage(bucket).save(
-            new Key.From(key),
-            new Content.From(Flowable.error(new IllegalStateException()))
+        Assertions.assertThrows(
+            Exception.class,
+            () -> this.storage(bucket).save(
+                new Key.From(key),
+                new Content.From(Flowable.error(new IllegalStateException()))
+            ).join()
         );
-        Assertions.assertThrows(Exception.class, saved::join);
     }
 
     @Test
@@ -100,11 +101,10 @@ class S3StorageTest {
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(bucket);
         final String key = "abort";
-        final CompletableFuture<Void> saved = this.storage(bucket).save(
+        this.storage(bucket).save(
             new Key.From(key),
             new Content.From(Flowable.error(new IllegalStateException()))
-        );
-        saved.exceptionally(ignore -> null).join();
+        ).exceptionally(ignore -> null).join();
         final List<MultipartUpload> uploads = client.listMultipartUploads(
             new ListMultipartUploadsRequest(bucket)
         ).getMultipartUploads();
