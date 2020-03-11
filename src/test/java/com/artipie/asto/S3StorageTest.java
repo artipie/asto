@@ -93,6 +93,21 @@ class S3StorageTest {
     }
 
     @Test
+    void shouldGetObjectWhenLoad(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] data = "data".getBytes();
+        final String key = "some/key";
+        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
+        MatcherAssert.assertThat(
+            "Storage should read object stored on S3",
+            value,
+            new IsEqual<>(data)
+        );
+    }
+
+    @Test
     void shouldCopyObjectWhenMoved(final AmazonS3 client) throws Exception {
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(bucket);
@@ -120,7 +135,7 @@ class S3StorageTest {
         client.putObject(
             bucket,
             source,
-            new ByteArrayInputStream("data".getBytes()),
+            new ByteArrayInputStream("some data".getBytes()),
             new ObjectMetadata()
         );
         new BlockingStorage(this.storage(bucket)).move(
