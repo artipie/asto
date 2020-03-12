@@ -176,6 +176,47 @@ class S3StorageTest {
         );
     }
 
+    @Test
+    void shouldCopyObjectWhenMoved(final AmazonS3 client) throws Exception {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final byte[] original = "something".getBytes();
+        final String source = "source";
+        client.putObject(bucket, source, new ByteArrayInputStream(original), new ObjectMetadata());
+        final String destination = "destination";
+        new BlockingStorage(this.storage(bucket)).move(
+            new Key.From(source),
+            new Key.From(destination)
+        );
+        try (S3Object s3Object = client.getObject(bucket, destination)) {
+            MatcherAssert.assertThat(
+                ByteStreams.toByteArray(s3Object.getObjectContent()),
+                new IsEqual<>(original)
+            );
+        }
+    }
+
+    @Test
+    void shouldDeleteOriginalObjectWhenMoved(final AmazonS3 client) throws Exception {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final String source = "src";
+        client.putObject(
+            bucket,
+            source,
+            new ByteArrayInputStream("some data".getBytes()),
+            new ObjectMetadata()
+        );
+        new BlockingStorage(this.storage(bucket)).move(
+            new Key.From(source),
+            new Key.From("dest")
+        );
+        MatcherAssert.assertThat(
+            client.doesObjectExist(bucket, source),
+            new IsEqual<>(false)
+        );
+    }
+
     private S3Storage storage(final String bucket) {
         final S3AsyncClient client = S3AsyncClient.builder()
             .region(Region.of("us-east-1"))

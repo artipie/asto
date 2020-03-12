@@ -37,7 +37,9 @@ import java.util.stream.Collectors;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -141,7 +143,22 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        throw new UnsupportedOperationException();
+        return this.client.copyObject(
+            CopyObjectRequest.builder()
+                .copySource(String.format("%s/%s", this.bucket, source.string()))
+                .bucket(this.bucket)
+                .key(destination.string())
+                .build()
+        ).thenCompose(
+            copied -> this.client.deleteObject(
+                DeleteObjectRequest.builder()
+                    .bucket(this.bucket)
+                    .key(source.string())
+                    .build()
+            ).thenCompose(
+                deleted -> CompletableFuture.allOf()
+            )
+        );
     }
 
     @Override
