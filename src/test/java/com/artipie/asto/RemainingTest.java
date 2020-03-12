@@ -42,11 +42,9 @@ public final class RemainingTest {
         buf.put(array);
         buf.flip();
         MatcherAssert.assertThat(
-            "unexpected remaining array",
             new Remaining(buf, true).bytes(), new IsEqual<>(array)
         );
         MatcherAssert.assertThat(
-            "failed to read array twice",
             new Remaining(buf, true).bytes(), new IsEqual<>(array)
         );
     }

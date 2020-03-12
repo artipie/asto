@@ -46,7 +46,10 @@ public final class StorageSaveAndLoadTest {
         final byte[] data = "0".getBytes();
         final Key key = new Key.From("shouldSave");
         blocking.save(key, data);
-        MatcherAssert.assertThat(blocking.value(key), Matchers.equalTo(data));
+        MatcherAssert.assertThat(
+            blocking.value(key),
+            Matchers.equalTo(data)
+        );
     }
 
     @ParameterizedTest
@@ -75,6 +78,7 @@ public final class StorageSaveAndLoadTest {
         final Key key = new Key.From("shouldSaveEmpty");
         storage.save(key, new Content.From(Flowable.empty())).get();
         MatcherAssert.assertThat(
+            "Saved content should be empty",
             new BlockingStorage(storage).value(key),
             Matchers.equalTo(new byte[0])
         );
@@ -89,7 +93,10 @@ public final class StorageSaveAndLoadTest {
         final Key key = new Key.From("shouldSaveWhenValueAlreadyExists");
         blocking.save(key, original);
         blocking.save(key, updated);
-        MatcherAssert.assertThat(blocking.value(key), Matchers.equalTo(updated));
+        MatcherAssert.assertThat(
+            blocking.value(key),
+            Matchers.equalTo(updated)
+        );
     }
 
     @ParameterizedTest
