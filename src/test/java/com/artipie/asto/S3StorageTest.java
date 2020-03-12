@@ -84,7 +84,6 @@ class S3StorageTest {
         client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
         final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
         MatcherAssert.assertThat(
-            "Content should exist for saved object",
             exists,
             Matchers.equalTo(true)
         );
@@ -124,7 +123,6 @@ class S3StorageTest {
             .map(Key::string)
             .collect(Collectors.toList());
         MatcherAssert.assertThat(
-            "List of keys should be in order",
             keys,
             Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
         );

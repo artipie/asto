@@ -183,7 +183,6 @@ final class FileStorageTest {
     @Test
     void shouldNotExistForUnknownKey() throws Exception {
         MatcherAssert.assertThat(
-            "Content should not exists by unknown key",
             this.storage.exists(new Key.From("unknown")).get(),
             Matchers.equalTo(false)
         );
