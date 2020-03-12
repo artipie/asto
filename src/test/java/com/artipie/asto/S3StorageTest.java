@@ -44,7 +44,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -68,57 +68,48 @@ class S3StorageTest {
         .withSecureConnection(false)
         .build();
 
+    /**
+     * Bucket to use in tests.
+     */
+    private String bucket;
+
+    @BeforeEach
+    void setUp(final AmazonS3 client) {
+        this.bucket = UUID.randomUUID().toString();
+        client.createBucket(this.bucket);
+    }
+
     @Test
     void shouldUploadObjectWhenSave(final AmazonS3 client) throws Exception {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
         final byte[] data = "data2".getBytes();
         final String key = "a/b/c";
-        this.storage(bucket).save(new Key.From(key), new Content.From(data)).join();
+        this.storage().save(new Key.From(key), new Content.From(data)).join();
         final byte[] downloaded;
-        try (S3Object s3Object = client.getObject(bucket, key)) {
+        try (S3Object s3Object = client.getObject(this.bucket, key)) {
             downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
         }
         MatcherAssert.assertThat(downloaded, Matchers.equalTo(data));
     }
 
     @Test
-    void shouldFailToSaveMultipartUploadWhenFailedToReadContent(final AmazonS3 client) {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
-        final String key = "fail";
-        Assertions.assertThrows(
-            Exception.class,
-            () -> this.storage(bucket).save(
-                new Key.From(key),
-                new Content.From(Flowable.error(new IllegalStateException()))
-            ).join()
-        );
-    }
-
-    @Test
     void shouldAbortMultipartUploadWhenFailedToReadContent(final AmazonS3 client) {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
-        final String key = "abort";
-        this.storage(bucket).save(
-            new Key.From(key),
+        this.storage().save(
+            new Key.From("abort"),
             new Content.From(Flowable.error(new IllegalStateException()))
         ).exceptionally(ignore -> null).join();
         final List<MultipartUpload> uploads = client.listMultipartUploads(
-            new ListMultipartUploadsRequest(bucket)
+            new ListMultipartUploadsRequest(this.bucket)
         ).getMultipartUploads();
         MatcherAssert.assertThat(uploads, new IsEmptyIterable<>());
     }
 
     @Test
     void shouldExistForSavedObject(final AmazonS3 client) {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
         final byte[] data = "content".getBytes();
         final String key = "some/existing/key";
-        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
-        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        client.putObject(this.bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final boolean exists = new BlockingStorage(this.storage())
+            .exists(new Key.From(key));
         MatcherAssert.assertThat(
             exists,
             Matchers.equalTo(true)
@@ -126,18 +117,7 @@ class S3StorageTest {
     }
 
     @Test
-    void shouldNotExistForUnknownObject(final AmazonS3 client) {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
-        final String key = "unknown/key";
-        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
-        MatcherAssert.assertThat(exists, Matchers.equalTo(false));
-    }
-
-    @Test
     void shouldListKeysInOrder(final AmazonS3 client) {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
         final byte[] data = "some data!".getBytes();
         Arrays.asList(
             new Key.From("1"),
@@ -147,13 +127,13 @@ class S3StorageTest {
             new Key.From("z")
         ).forEach(
             key -> client.putObject(
-                bucket,
+                this.bucket,
                 key.string(),
                 new ByteArrayInputStream(data),
                 new ObjectMetadata()
             )
         );
-        final Collection<String> keys = new BlockingStorage(this.storage(bucket))
+        final Collection<String> keys = new BlockingStorage(this.storage())
             .list(new Key.From("a", "b"))
             .stream()
             .map(Key::string)
@@ -166,12 +146,11 @@ class S3StorageTest {
 
     @Test
     void shouldGetObjectWhenLoad(final AmazonS3 client) {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
         final byte[] data = "data".getBytes();
         final String key = "some/key";
-        client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
-        final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
+        client.putObject(this.bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        final byte[] value = new BlockingStorage(this.storage())
+            .value(new Key.From(key));
         MatcherAssert.assertThat(
             value,
             new IsEqual<>(data)
@@ -180,17 +159,19 @@ class S3StorageTest {
 
     @Test
     void shouldCopyObjectWhenMoved(final AmazonS3 client) throws Exception {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
         final byte[] original = "something".getBytes();
         final String source = "source";
-        client.putObject(bucket, source, new ByteArrayInputStream(original), new ObjectMetadata());
+        client.putObject(
+            this.bucket,
+            source, new ByteArrayInputStream(original),
+            new ObjectMetadata()
+        );
         final String destination = "destination";
-        new BlockingStorage(this.storage(bucket)).move(
+        new BlockingStorage(this.storage()).move(
             new Key.From(source),
             new Key.From(destination)
         );
-        try (S3Object s3Object = client.getObject(bucket, destination)) {
+        try (S3Object s3Object = client.getObject(this.bucket, destination)) {
             MatcherAssert.assertThat(
                 ByteStreams.toByteArray(s3Object.getObjectContent()),
                 new IsEqual<>(original)
@@ -200,26 +181,24 @@ class S3StorageTest {
 
     @Test
     void shouldDeleteOriginalObjectWhenMoved(final AmazonS3 client) throws Exception {
-        final String bucket = UUID.randomUUID().toString();
-        client.createBucket(bucket);
         final String source = "src";
         client.putObject(
-            bucket,
+            this.bucket,
             source,
             new ByteArrayInputStream("some data".getBytes()),
             new ObjectMetadata()
         );
-        new BlockingStorage(this.storage(bucket)).move(
+        new BlockingStorage(this.storage()).move(
             new Key.From(source),
             new Key.From("dest")
         );
         MatcherAssert.assertThat(
-            client.doesObjectExist(bucket, source),
+            client.doesObjectExist(this.bucket, source),
             new IsEqual<>(false)
         );
     }
 
-    private S3Storage storage(final String bucket) {
+    private S3Storage storage() {
         final S3AsyncClient client = S3AsyncClient.builder()
             .region(Region.of("us-east-1"))
             .credentialsProvider(
@@ -229,6 +208,6 @@ class S3StorageTest {
                 URI.create(String.format("http://localhost:%d", MOCK.getHttpPort()))
             )
             .build();
-        return new S3Storage(client, bucket);
+        return new S3Storage(client, this.bucket);
     }
 }
