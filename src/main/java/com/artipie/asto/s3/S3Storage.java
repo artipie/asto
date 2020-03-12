@@ -120,7 +120,11 @@ public final class S3Storage implements Storage {
                 .key(key.string())
                 .build()
         ).thenApply(
-            created -> new MultipartUpload(this.client, this.bucket, key, created.uploadId())
+            created -> new MultipartUpload(
+                new Bucket(this.client, this.bucket),
+                key,
+                created.uploadId()
+            )
         ).thenCompose(
             upload -> upload.upload(content).handle(
                 (ignored, throwable) -> {
