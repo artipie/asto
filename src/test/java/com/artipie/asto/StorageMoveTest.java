@@ -59,7 +59,10 @@ public final class StorageMoveTest {
         blocking.save(source, data);
         blocking.save(destination, "destination data".getBytes());
         blocking.move(source, destination);
-        MatcherAssert.assertThat(blocking.value(destination), Matchers.equalTo(data));
+        MatcherAssert.assertThat(
+            blocking.value(destination),
+            Matchers.equalTo(data)
+        );
     }
 
     @ParameterizedTest

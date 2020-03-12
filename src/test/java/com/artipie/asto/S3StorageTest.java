@@ -119,7 +119,10 @@ class S3StorageTest {
         final String key = "some/existing/key";
         client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
         final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
-        MatcherAssert.assertThat(exists, Matchers.equalTo(true));
+        MatcherAssert.assertThat(
+            exists,
+            Matchers.equalTo(true)
+        );
     }
 
     @Test
@@ -170,7 +173,6 @@ class S3StorageTest {
         client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
         final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
         MatcherAssert.assertThat(
-            "Storage should read object stored on S3",
             value,
             new IsEqual<>(data)
         );

@@ -104,7 +104,6 @@ final class FileStorageTest {
         blocking.save(key, original);
         blocking.save(key, updated);
         MatcherAssert.assertThat(
-            "Value read from storage should be updated",
             blocking.value(key),
             new IsEqual<>(updated)
         );
@@ -133,7 +132,10 @@ final class FileStorageTest {
         blocking.save(source, data);
         final Key destination = new Key.From("to");
         blocking.move(source, destination);
-        MatcherAssert.assertThat(blocking.value(destination), Matchers.equalTo(data));
+        MatcherAssert.assertThat(
+            blocking.value(destination),
+            Matchers.equalTo(data)
+        );
     }
 
     @Test
@@ -161,7 +163,10 @@ final class FileStorageTest {
             .stream()
             .map(Key::string)
             .collect(Collectors.toList());
-        MatcherAssert.assertThat(keys, Matchers.empty());
+        MatcherAssert.assertThat(
+            keys,
+            Matchers.empty()
+        );
     }
 
     @Test
@@ -169,7 +174,10 @@ final class FileStorageTest {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key key = new Key.From("some", "key");
         blocking.save(key, "some data".getBytes());
-        MatcherAssert.assertThat(blocking.exists(key), Matchers.equalTo(true));
+        MatcherAssert.assertThat(
+            blocking.exists(key),
+            Matchers.equalTo(true)
+        );
     }
 
     @Test
@@ -187,6 +195,9 @@ final class FileStorageTest {
         final Key key = new Key.From(parent, "c");
         final byte[] data = "content".getBytes();
         blocking.save(key, data);
-        MatcherAssert.assertThat(blocking.exists(parent), Matchers.equalTo(false));
+        MatcherAssert.assertThat(
+            blocking.exists(parent),
+            Matchers.equalTo(false)
+        );
     }
 }
