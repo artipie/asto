@@ -119,6 +119,7 @@ final class FileStorageTest {
         blocking.save(key, new ByteArray(content.getBytes()).primitiveBytes());
         final byte[] bytes = blocking.value(key);
         MatcherAssert.assertThat(
+            "Contents in blocking wrapper test should be equal",
             new String(bytes),
             Matchers.equalTo(content)
         );
@@ -133,7 +134,11 @@ final class FileStorageTest {
         blocking.save(source, data);
         final Key destination = new Key.From("to");
         blocking.move(source, destination);
-        MatcherAssert.assertThat(blocking.value(destination), Matchers.equalTo(data));
+        MatcherAssert.assertThat(
+            "Contents in move test should be equal",
+            blocking.value(destination),
+            Matchers.equalTo(data)
+        );
     }
 
     @Test
@@ -149,6 +154,7 @@ final class FileStorageTest {
             .map(Key::string)
             .collect(Collectors.toList());
         MatcherAssert.assertThat(
+            "List of keys should constructed properly",
             keys,
             Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
         );
@@ -161,7 +167,11 @@ final class FileStorageTest {
             .stream()
             .map(Key::string)
             .collect(Collectors.toList());
-        MatcherAssert.assertThat(keys, Matchers.empty());
+        MatcherAssert.assertThat(
+            "List of keys should be constructed as an empty string",
+            keys,
+            Matchers.empty()
+        );
     }
 
     @Test
@@ -169,12 +179,17 @@ final class FileStorageTest {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key key = new Key.From("some", "key");
         blocking.save(key, "some data".getBytes());
-        MatcherAssert.assertThat(blocking.exists(key), Matchers.equalTo(true));
+        MatcherAssert.assertThat(
+            "Content by the key should exists",
+            blocking.exists(key),
+            Matchers.equalTo(true)
+        );
     }
 
     @Test
     void shouldNotExistForUnknownKey() throws Exception {
         MatcherAssert.assertThat(
+            "Content should not exists by unknown key",
             this.storage.exists(new Key.From("unknown")).get(),
             Matchers.equalTo(false)
         );
@@ -187,6 +202,10 @@ final class FileStorageTest {
         final Key key = new Key.From(parent, "c");
         final byte[] data = "content".getBytes();
         blocking.save(key, data);
-        MatcherAssert.assertThat(blocking.exists(parent), Matchers.equalTo(false));
+        MatcherAssert.assertThat(
+            "Content should not exists for parent of saved key",
+            blocking.exists(parent),
+            Matchers.equalTo(false)
+        );
     }
 }

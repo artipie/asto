@@ -107,7 +107,11 @@ final class RxFileTest {
         final Path temp = tmp.resolve("size-test.txt");
         Files.write(temp, data);
         final Long size = new RxFile(temp, vertx.fileSystem()).size().blockingGet();
-        MatcherAssert.assertThat(size, Matchers.equalTo((long) data.length));
+        MatcherAssert.assertThat(
+            "Rx file size should be retrieved",
+            size,
+            Matchers.equalTo((long) data.length)
+        );
         vertx.close();
     }
 

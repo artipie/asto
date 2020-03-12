@@ -65,6 +65,7 @@ public final class StorageListTest {
             .map(Key::string)
             .collect(Collectors.toList());
         MatcherAssert.assertThat(
+            "List of keys should be in order",
             keys,
             Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
         );
