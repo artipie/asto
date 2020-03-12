@@ -51,6 +51,12 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  * Storage that holds data in S3 storage.
  *
  * @since 0.15
+ * @todo #87:60min Do not await abort to complete if save() failed.
+ *  In case uploading content fails inside {@link S3Storage#save(Key, Content)} method
+ *  we are doing abort() for multipart upload.
+ *  Also whole operation does not complete until abort() is complete.
+ *  It would be better to finish save() operation right away and do abort() in background,
+ *  but it makes testing the method difficult.
  */
 public final class S3Storage implements Storage {
 
@@ -131,9 +137,10 @@ public final class S3Storage implements Storage {
                         finished = upload.complete();
                     } else {
                         final CompletableFuture<Void> promise = new CompletableFuture<>();
-                        promise.completeExceptionally(throwable);
                         finished = promise;
-                        upload.abort();
+                        upload.abort().whenComplete(
+                            (result, ex) -> promise.completeExceptionally(throwable)
+                        );
                     }
                     return finished;
                 }
