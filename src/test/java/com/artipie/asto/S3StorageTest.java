@@ -25,20 +25,26 @@ package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
+import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
+import io.reactivex.Flowable;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -50,6 +56,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
  * Tests for {@link S3Storage}.
  *
  * @since 0.15
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 class S3StorageTest {
 
@@ -73,6 +80,35 @@ class S3StorageTest {
             downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
         }
         MatcherAssert.assertThat(downloaded, Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldFailToSaveMultipartUploadWhenFailedToReadContent(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final String key = "fail";
+        Assertions.assertThrows(
+            Exception.class,
+            () -> this.storage(bucket).save(
+                new Key.From(key),
+                new Content.From(Flowable.error(new IllegalStateException()))
+            ).join()
+        );
+    }
+
+    @Test
+    void shouldAbortMultipartUploadWhenFailedToReadContent(final AmazonS3 client) {
+        final String bucket = UUID.randomUUID().toString();
+        client.createBucket(bucket);
+        final String key = "abort";
+        this.storage(bucket).save(
+            new Key.From(key),
+            new Content.From(Flowable.error(new IllegalStateException()))
+        ).exceptionally(ignore -> null).join();
+        final List<MultipartUpload> uploads = client.listMultipartUploads(
+            new ListMultipartUploadsRequest(bucket)
+        ).getMultipartUploads();
+        MatcherAssert.assertThat(uploads, new IsEmptyIterable<>());
     }
 
     @Test

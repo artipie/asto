@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
@@ -50,6 +51,12 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  * Storage that holds data in S3 storage.
  *
  * @since 0.15
+ * @todo #87:60min Do not await abort to complete if save() failed.
+ *  In case uploading content fails inside {@link S3Storage#save(Key, Content)} method
+ *  we are doing abort() for multipart upload.
+ *  Also whole operation does not complete until abort() is complete.
+ *  It would be better to finish save() operation right away and do abort() in background,
+ *  but it makes testing the method difficult.
  */
 public final class S3Storage implements Storage {
 
@@ -123,9 +130,22 @@ public final class S3Storage implements Storage {
         ).thenApply(
             created -> new MultipartUpload(this.client, this.bucket, key, created.uploadId())
         ).thenCompose(
-            upload -> upload.upload(content)
-                .thenCompose(ignored -> upload.complete())
-        ).thenApply(response -> null);
+            upload -> upload.upload(content).handle(
+                (ignored, throwable) -> {
+                    final CompletionStage<Void> finished;
+                    if (throwable == null) {
+                        finished = upload.complete();
+                    } else {
+                        final CompletableFuture<Void> promise = new CompletableFuture<>();
+                        finished = promise;
+                        upload.abort().whenComplete(
+                            (result, ex) -> promise.completeExceptionally(throwable)
+                        );
+                    }
+                    return finished;
+                }
+            ).thenCompose(self -> self)
+        );
     }
 
     @Override
