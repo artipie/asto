@@ -47,7 +47,6 @@ public final class StorageSaveAndLoadTest {
         final Key key = new Key.From("shouldSave");
         blocking.save(key, data);
         MatcherAssert.assertThat(
-            "Content should be saved",
             blocking.value(key),
             Matchers.equalTo(data)
         );
@@ -68,7 +67,6 @@ public final class StorageSaveAndLoadTest {
             )
         ).get();
         MatcherAssert.assertThat(
-            "Content should be saved from multiple buffers",
             new BlockingStorage(storage).value(key),
             Matchers.equalTo("12345".getBytes())
         );
@@ -96,7 +94,6 @@ public final class StorageSaveAndLoadTest {
         blocking.save(key, original);
         blocking.save(key, updated);
         MatcherAssert.assertThat(
-            "Content should be saved when value already exists",
             blocking.value(key),
             Matchers.equalTo(updated)
         );

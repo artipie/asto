@@ -39,7 +39,6 @@ final class KeyTest {
     @Test
     void resolvesKeysFromParts() {
         MatcherAssert.assertThat(
-            "Keys from parts should be resolved",
             new Key.From("one1", "two2", "three3/four4").string(),
             new IsEqual<>("one1/two2/three3/four4")
         );
@@ -48,7 +47,6 @@ final class KeyTest {
     @Test
     void resolvesKeyFromParts() {
         MatcherAssert.assertThat(
-            "Key from parts should be resolved",
             new Key.From("one", "two", "three").string(),
             Matchers.equalTo("one/two/three")
         );
@@ -57,7 +55,6 @@ final class KeyTest {
     @Test
     void resolvesKeyFromBasePath() {
         MatcherAssert.assertThat(
-            "Key from base path should be resolved",
             new Key.From(new Key.From("black", "red"), "green", "yellow").string(),
             Matchers.equalTo("black/red/green/yellow")
         );
@@ -67,7 +64,6 @@ final class KeyTest {
     void keyFromString() {
         final String string = "a/b/c";
         MatcherAssert.assertThat(
-            "Key from string should be resolved",
             new Key.From(string).string(),
             Matchers.equalTo(string)
         );

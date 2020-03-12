@@ -43,7 +43,6 @@ public final class StorageExistsTest {
         final byte[] data = "some data".getBytes();
         new BlockingStorage(storage).save(key, data);
         MatcherAssert.assertThat(
-            "Saved key should exist",
             storage.exists(key).get(),
             new IsEqual<>(true)
         );
@@ -54,7 +53,6 @@ public final class StorageExistsTest {
     void shouldNotExistForUnknownKey(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldNotExistForUnknownKey");
         MatcherAssert.assertThat(
-            "Key that was never saved should not exist",
             storage.exists(key).get(),
             new IsEqual<>(false)
         );
@@ -68,7 +66,6 @@ public final class StorageExistsTest {
         final byte[] data = "content".getBytes();
         new BlockingStorage(storage).save(key, data);
         MatcherAssert.assertThat(
-            "Key that is parent of some existing key is not expected to exist",
             storage.exists(parent).get(),
             new IsEqual<>(false)
         );

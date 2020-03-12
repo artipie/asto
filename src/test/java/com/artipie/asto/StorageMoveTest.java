@@ -60,7 +60,6 @@ public final class StorageMoveTest {
         blocking.save(destination, "destination data".getBytes());
         blocking.move(source, destination);
         MatcherAssert.assertThat(
-            "Content should be moved when destination exists",
             blocking.value(destination),
             Matchers.equalTo(data)
         );
