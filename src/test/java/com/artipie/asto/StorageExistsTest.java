@@ -26,18 +26,18 @@ package com.artipie.asto;
 import com.artipie.asto.blocking.BlockingStorage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests for {@link Storage#exists(Key)}.
  *
  * @since 0.14
  */
+@ExtendWith(StorageExtension.class)
 public final class StorageExistsTest {
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldExistForSavedKey(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldExistForSavedKey");
         final byte[] data = "some data".getBytes();
@@ -48,8 +48,7 @@ public final class StorageExistsTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldNotExistForUnknownKey(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldNotExistForUnknownKey");
         MatcherAssert.assertThat(
@@ -58,8 +57,7 @@ public final class StorageExistsTest {
         );
     }
 
-    @ParameterizedTest
-    @ArgumentsSource(StorageArgumentProvider.class)
+    @TestTemplate
     void shouldNotExistForParentOfSavedKey(final Storage storage) throws Exception {
         final Key parent = new Key.From("shouldNotExistForParentOfSavedKey");
         final Key key = new Key.From(parent, "child");
