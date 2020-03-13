@@ -113,9 +113,8 @@ final class StorageExtension
             )
             .build();
         final String bucket = UUID.randomUUID().toString();
-        final S3Storage storage = new S3Storage(client, bucket);
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
-        return storage;
+        return new S3Storage(client, bucket);
     }
 
     /**
