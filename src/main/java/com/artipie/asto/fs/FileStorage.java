@@ -146,6 +146,15 @@ public final class FileStorage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Void> delete(final Key key) {
+        return CompletableFuture.supplyAsync(
+            () -> new RxFile(this.path(key), this.fls)
+        ).thenCompose(
+            file -> file.delete().to(CompletableInterop.await())
+        );
+    }
+
+    @Override
     public CompletableFuture<Content> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {

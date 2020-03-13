@@ -115,4 +115,13 @@ public class BlockingStorage {
                 .toArray(Byte[]::new)
         ).primitiveBytes();
     }
+
+    /**
+     * Removes value from storage. Fails if value does not exist.
+     *
+     * @param key Key for value to be deleted.
+     */
+    public void delete(final Key key) {
+        this.storage.delete(key).blockingAwait();
+    }
 }

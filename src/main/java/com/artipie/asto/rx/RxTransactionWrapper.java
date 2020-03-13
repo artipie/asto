@@ -96,6 +96,11 @@ public final class RxTransactionWrapper implements RxTransaction {
     }
 
     @Override
+    public Completable delete(final Key key) {
+        return CompletableInterop.fromFuture(this.wrapped.delete(key));
+    }
+
+    @Override
     public Single<RxTransaction> transaction(final List<Key> keys) {
         return SingleInterop.fromFuture(this.wrapped.transaction(keys))
             .map(RxTransactionWrapper::new);

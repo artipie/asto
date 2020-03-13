@@ -84,6 +84,14 @@ public interface Storage {
     CompletableFuture<Content> value(Key key);
 
     /**
+     * Removes value from storage. Fails if value does not exist.
+     *
+     * @param key Key for value to be deleted.
+     * @return Completion or error signal.
+     */
+    CompletableFuture<Void> delete(Key key);
+
+    /**
      * Start a transaction with specified keys. These specified keys are the scope of
      * a transaction. You will be able to perform storage operations like
      * {@link Storage#save(Key, Content)} or {@link Storage#value(Key)} only in

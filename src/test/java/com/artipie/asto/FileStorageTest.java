@@ -35,6 +35,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.io.TempDir;
  *
  * @since 0.1
  */
+@SuppressWarnings("PMD.TooManyMethods")
 final class FileStorageTest {
 
     /**
@@ -199,5 +201,33 @@ final class FileStorageTest {
             blocking.exists(parent),
             Matchers.equalTo(false)
         );
+    }
+
+    @Test
+    void shouldDeleteValue() throws Exception {
+        final Key key = new Key.From("shouldDeleteValue");
+        final byte[] data = "shouldDeleteValue-data".getBytes();
+        final BlockingStorage blocking = new BlockingStorage(this.storage);
+        blocking.save(key, data);
+        blocking.delete(key);
+        MatcherAssert.assertThat(
+            this.storage.exists(key).get(),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void shouldFailToDeleteNotExistingValue() {
+        final Key key = new Key.From("shouldFailToDeleteNotExistingValue");
+        Assertions.assertThrows(Exception.class, () -> this.storage.delete(key).get());
+    }
+
+    @Test
+    void shouldFailToDeleteParentOfSavedKey() {
+        final Key parent = new Key.From("shouldFailToDeleteParentOfSavedKey");
+        final Key key = new Key.From(parent, "child");
+        final byte[] content = "shouldFailToDeleteParentOfSavedKey-content".getBytes();
+        new BlockingStorage(this.storage).save(key, content);
+        Assertions.assertThrows(Exception.class, () -> this.storage.delete(parent).get());
     }
 }

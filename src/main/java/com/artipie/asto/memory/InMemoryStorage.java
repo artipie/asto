@@ -151,6 +151,23 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Void> delete(final Key key) {
+        return CompletableFuture.runAsync(
+            () -> {
+                synchronized (this.data) {
+                    final String str = key.string();
+                    if (!this.data.containsKey(str)) {
+                        throw new IllegalArgumentException(
+                            String.format("Key does not exist: %s", str)
+                        );
+                    }
+                    this.data.remove(str);
+                }
+            }
+        );
+    }
+
+    @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         return CompletableFuture.completedFuture(new InMemoryTransaction(this));
     }
