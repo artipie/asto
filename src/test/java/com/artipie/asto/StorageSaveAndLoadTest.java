@@ -97,6 +97,17 @@ public final class StorageSaveAndLoadTest {
     }
 
     @TestTemplate
+    void shouldFailToSaveErrorContent(final Storage storage) {
+        Assertions.assertThrows(
+            Exception.class,
+            () -> storage.save(
+                new Key.From("shouldFailToSaveErrorContent"),
+                new Content.From(Flowable.error(new IllegalStateException()))
+            ).join()
+        );
+    }
+
+    @TestTemplate
     void shouldFailToLoadAbsentValue(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Key key = new Key.From("shouldFailToLoadAbsentValue");
