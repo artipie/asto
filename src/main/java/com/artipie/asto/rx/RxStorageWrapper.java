@@ -47,6 +47,7 @@ public final class RxStorageWrapper implements RxStorage {
 
     /**
      * Ctor.
+     *
      * @param storage The storage
      */
     public RxStorageWrapper(final Storage storage) {
@@ -92,6 +93,11 @@ public final class RxStorageWrapper implements RxStorage {
      */
     public Single<Content> value(final Key key) {
         return SingleInterop.fromFuture(this.storage.value(key));
+    }
+
+    @Override
+    public Completable delete(final Key key) {
+        return CompletableInterop.fromFuture(this.storage.delete(key));
     }
 
     /**

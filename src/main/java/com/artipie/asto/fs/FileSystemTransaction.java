@@ -79,6 +79,11 @@ public final class FileSystemTransaction implements Transaction {
     }
 
     @Override
+    public CompletableFuture<Void> delete(final Key key) {
+        return this.parent.delete(key);
+    }
+
+    @Override
     public CompletableFuture<Transaction> transaction(
         // @checkstyle HiddenFieldCheck (1 line)
         final List<Key> keys) {

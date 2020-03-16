@@ -56,8 +56,9 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
  * Tests for {@link S3Storage}.
  *
  * @since 0.15
- * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (3 lines)
  */
+@SuppressWarnings("PMD.TooManyMethods")
 class S3StorageTest {
 
     /**
@@ -194,6 +195,18 @@ class S3StorageTest {
         );
         MatcherAssert.assertThat(
             client.doesObjectExist(this.bucket, source),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void shouldDeleteObject(final AmazonS3 client) {
+        final byte[] data = "to be deleted".getBytes();
+        final String key = "to/be/deleted";
+        client.putObject(this.bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
+        new BlockingStorage(this.storage()).delete(new Key.From(key));
+        MatcherAssert.assertThat(
+            client.doesObjectExist(this.bucket, key),
             new IsEqual<>(false)
         );
     }
