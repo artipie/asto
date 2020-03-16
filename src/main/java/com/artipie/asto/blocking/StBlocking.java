@@ -28,8 +28,8 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.rx.RxStWrapper;
 import com.artipie.asto.rx.RxStorage;
-import com.artipie.asto.rx.RxStorageWrapper;
 import io.reactivex.Flowable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,7 +39,7 @@ import java.util.Collection;
  *
  * @since 0.1
  */
-public class BlockingStorage {
+public class StBlocking {
 
     /**
      * Wrapped storage.
@@ -51,8 +51,8 @@ public class BlockingStorage {
      *
      * @param storage Storage to wrap
      */
-    public BlockingStorage(final Storage storage) {
-        this.storage = new RxStorageWrapper(storage);
+    public StBlocking(final Storage storage) {
+        this.storage = new RxStWrapper(storage);
     }
 
     /**

@@ -23,7 +23,7 @@
  */
 package com.artipie.asto;
 
-import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.blocking.StBlocking;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -42,7 +42,7 @@ public final class StorageListTest {
 
     @TestTemplate
     void shouldListNoKeysWhenEmpty(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final Collection<String> keys = blocking.list(new Key.From("a", "b"))
             .stream()
             .map(Key::string)
@@ -53,7 +53,7 @@ public final class StorageListTest {
     @TestTemplate
     void shouldListKeysInOrder(final Storage storage) {
         final byte[] data = "some data!".getBytes();
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         blocking.save(new Key.From("1"), data);
         blocking.save(new Key.From("a", "b", "c", "1"), data);
         blocking.save(new Key.From("a", "b", "2"), data);

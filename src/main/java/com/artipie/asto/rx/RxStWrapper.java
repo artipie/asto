@@ -25,7 +25,7 @@ package com.artipie.asto.rx;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Transaction;
+import com.artipie.asto.Storage;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
@@ -34,70 +34,77 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A reactive wrapper of {@link RxTransaction}.
+ * Reactive wrapper over {@code Storage}.
  *
- * @since 0.10
+ * @since 0.9
  */
-public final class RxTransactionWrapper implements RxTransaction {
+public final class RxStWrapper implements RxStorage {
 
     /**
-     * The wrapped storage.
+     * Wrapped storage.
      */
-    private final Transaction wrapped;
+    private final Storage storage;
 
     /**
      * Ctor.
-     * @param wrapped The storage to wrapp
+     * @param storage The storage
      */
-    public RxTransactionWrapper(final Transaction wrapped) {
-        this.wrapped = wrapped;
+    public RxStWrapper(final Storage storage) {
+        this.storage = storage;
     }
 
-    @Override
-    public Completable commit() {
-        return CompletableInterop.fromFuture(this.wrapped.commit());
-    }
-
-    @Override
-    public Completable rollback() {
-        return CompletableInterop.fromFuture(this.wrapped.rollback());
-    }
-
-    @Override
+    /**
+     * This file exists?
+     *
+     * @param key The key (file name)
+     * @return TRUE if exists, FALSE otherwise
+     */
     public Single<Boolean> exists(final Key key) {
-        return SingleInterop.fromFuture(this.wrapped.exists(key));
+        return SingleInterop.fromFuture(this.storage.exists(key));
     }
 
     @Override
     public Single<Collection<Key>> list(final Key prefix) {
-        return SingleInterop.fromFuture(this.wrapped.list(prefix));
+        return SingleInterop.fromFuture(this.storage.list(prefix));
     }
 
-    @Override
+    /**
+     * Saves the bytes to the specified key.
+     *
+     * @param key The key
+     * @param content Bytes to save
+     * @return Completion or error signal.
+     */
     public Completable save(final Key key, final Content content) {
-        return CompletableInterop.fromFuture(
-            this.wrapped.save(
-                key,
-                content
-            )
-        );
+        return CompletableInterop.fromFuture(this.storage.save(key, content));
     }
 
     @Override
     public Completable move(final Key source, final Key destination) {
-        return CompletableInterop.fromFuture(
-            this.wrapped.move(source, destination)
-        );
+        return CompletableInterop.fromFuture(this.storage.move(source, destination));
     }
 
-    @Override
+    /**
+     * Obtain bytes by key.
+     *
+     * @param key The key
+     * @return Bytes.
+     */
     public Single<Content> value(final Key key) {
-        return SingleInterop.fromFuture(this.wrapped.value(key));
+        return SingleInterop.fromFuture(this.storage.value(key));
     }
 
-    @Override
+    /**
+     * Start a transaction with specified keys. These specified keys are the scope of
+     * a transaction. You will be able to perform storage operations like
+     * {@link RxStorage#save(Key, Content)} or {@link RxStorage#value(Key)} only in
+     * the scope of a transaction.
+     *
+     * @param keys The keys regarding which transaction is atomic
+     * @return Transaction
+     */
     public Single<RxTransaction> transaction(final List<Key> keys) {
-        return SingleInterop.fromFuture(this.wrapped.transaction(keys))
-            .map(RxTransactionWrapper::new);
+        return SingleInterop.fromFuture(this.storage.transaction(keys))
+            .map(RxTnWrapper::new);
     }
 }

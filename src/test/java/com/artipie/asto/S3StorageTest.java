@@ -29,7 +29,7 @@ import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
 import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
-import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.blocking.StBlocking;
 import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
 import io.reactivex.Flowable;
@@ -118,7 +118,7 @@ class S3StorageTest {
         final byte[] data = "content".getBytes();
         final String key = "some/existing/key";
         client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
-        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        final boolean exists = new StBlocking(this.storage(bucket)).exists(new Key.From(key));
         MatcherAssert.assertThat(
             exists,
             Matchers.equalTo(true)
@@ -130,7 +130,7 @@ class S3StorageTest {
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(bucket);
         final String key = "unknown/key";
-        final boolean exists = new BlockingStorage(this.storage(bucket)).exists(new Key.From(key));
+        final boolean exists = new StBlocking(this.storage(bucket)).exists(new Key.From(key));
         MatcherAssert.assertThat(exists, Matchers.equalTo(false));
     }
 
@@ -153,7 +153,7 @@ class S3StorageTest {
                 new ObjectMetadata()
             )
         );
-        final Collection<String> keys = new BlockingStorage(this.storage(bucket))
+        final Collection<String> keys = new StBlocking(this.storage(bucket))
             .list(new Key.From("a", "b"))
             .stream()
             .map(Key::string)
@@ -171,7 +171,7 @@ class S3StorageTest {
         final byte[] data = "data".getBytes();
         final String key = "some/key";
         client.putObject(bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
-        final byte[] value = new BlockingStorage(this.storage(bucket)).value(new Key.From(key));
+        final byte[] value = new StBlocking(this.storage(bucket)).value(new Key.From(key));
         MatcherAssert.assertThat(
             value,
             new IsEqual<>(data)
@@ -186,7 +186,7 @@ class S3StorageTest {
         final String source = "source";
         client.putObject(bucket, source, new ByteArrayInputStream(original), new ObjectMetadata());
         final String destination = "destination";
-        new BlockingStorage(this.storage(bucket)).move(
+        new StBlocking(this.storage(bucket)).move(
             new Key.From(source),
             new Key.From(destination)
         );
@@ -209,7 +209,7 @@ class S3StorageTest {
             new ByteArrayInputStream("some data".getBytes()),
             new ObjectMetadata()
         );
-        new BlockingStorage(this.storage(bucket)).move(
+        new StBlocking(this.storage(bucket)).move(
             new Key.From(source),
             new Key.From("dest")
         );

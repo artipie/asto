@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  *
  * @since 0.1
  */
-public final class FileStorage implements Storage {
+public final class StFile implements Storage {
 
     /**
      * Where we keep the data.
@@ -67,7 +67,7 @@ public final class FileStorage implements Storage {
      * @param path The path to the dir
      * @param fls The file system
      */
-    public FileStorage(final Path path, final FileSystem fls) {
+    public StFile(final Path path, final FileSystem fls) {
         this.dir = path;
         this.fls = fls;
     }
@@ -160,7 +160,7 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new FileSystemTransaction(this));
+        return CompletableFuture.completedFuture(new TnFileSystem(this));
     }
 
     /**

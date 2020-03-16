@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto.fs;
+package com.artipie.asto.memory;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
@@ -32,11 +32,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Transaction on {@link FileStorage}.
+ * Transaction on {@link StInMemory}.
  *
- * @since 0.10
+ * @since 0.14
  */
-public final class FileSystemTransaction implements Transaction {
+public final class TnInMemory implements Transaction {
 
     /**
      * The parent storage.
@@ -48,8 +48,7 @@ public final class FileSystemTransaction implements Transaction {
      *
      * @param parent The parent
      */
-    public FileSystemTransaction(
-        final Storage parent) {
+    public TnInMemory(final Storage parent) {
         this.parent = parent;
     }
 
@@ -79,19 +78,17 @@ public final class FileSystemTransaction implements Transaction {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(
-        // @checkstyle HiddenFieldCheck (1 line)
-        final List<Key> keys) {
+    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         return CompletableFuture.completedFuture(this);
     }
 
     @Override
     public CompletableFuture<Void> commit() {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.allOf();
     }
 
     @Override
     public CompletableFuture<Void> rollback() {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.allOf();
     }
 }

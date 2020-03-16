@@ -23,7 +23,7 @@
  */
 package com.artipie.asto;
 
-import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.fs.StFile;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  * The storage.
  * <p>
  * You are supposed to implement this interface the way you want. It has
- * to abstract the binary storage. You may use {@link FileStorage} if you
+ * to abstract the binary storage. You may use {@link StFile} if you
  * want to work with files. Otherwise, for S3 or something else, you have
  * to implement it yourself.
  *

@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 0.14
  */
-public final class InMemoryStorage implements Storage {
+public final class StInMemory implements Storage {
 
     /**
      * Values stored by key strings.
@@ -52,7 +52,7 @@ public final class InMemoryStorage implements Storage {
     /**
      * Ctor.
      */
-    public InMemoryStorage() {
+    public StInMemory() {
         this.data = new TreeMap<>();
     }
 
@@ -152,6 +152,6 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new InMemoryTransaction(this));
+        return CompletableFuture.completedFuture(new TnInMemory(this));
     }
 }

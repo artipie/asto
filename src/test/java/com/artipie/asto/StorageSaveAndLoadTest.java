@@ -23,7 +23,7 @@
  */
 package com.artipie.asto;
 
-import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.blocking.StBlocking;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
@@ -42,7 +42,7 @@ public final class StorageSaveAndLoadTest {
 
     @TestTemplate
     void shouldSave(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final byte[] data = "0".getBytes();
         final Key key = new Key.From("shouldSave");
         blocking.save(key, data);
@@ -66,7 +66,7 @@ public final class StorageSaveAndLoadTest {
             )
         ).get();
         MatcherAssert.assertThat(
-            new BlockingStorage(storage).value(key),
+            new StBlocking(storage).value(key),
             Matchers.equalTo("12345".getBytes())
         );
     }
@@ -77,14 +77,14 @@ public final class StorageSaveAndLoadTest {
         storage.save(key, new Content.From(Flowable.empty())).get();
         MatcherAssert.assertThat(
             "Saved content should be empty",
-            new BlockingStorage(storage).value(key),
+            new StBlocking(storage).value(key),
             Matchers.equalTo(new byte[0])
         );
     }
 
     @TestTemplate
     void shouldSaveWhenValueAlreadyExists(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
         final Key key = new Key.From("shouldSaveWhenValueAlreadyExists");
@@ -98,7 +98,7 @@ public final class StorageSaveAndLoadTest {
 
     @TestTemplate
     void shouldFailToLoadAbsentValue(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final Key key = new Key.From("shouldFailToLoadAbsentValue");
         Assertions.assertThrows(RuntimeException.class, () -> blocking.value(key));
     }

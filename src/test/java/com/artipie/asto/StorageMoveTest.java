@@ -23,7 +23,7 @@
  */
 package com.artipie.asto;
 
-import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.blocking.StBlocking;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -40,7 +40,7 @@ public final class StorageMoveTest {
 
     @TestTemplate
     void shouldMove(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final byte[] data = "source".getBytes();
         final Key source = new Key.From("shouldMove-source");
         final Key destination = new Key.From("shouldMove-destination");
@@ -51,7 +51,7 @@ public final class StorageMoveTest {
 
     @TestTemplate
     void shouldMoveWhenDestinationExists(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final byte[] data = "source data".getBytes();
         final Key source = new Key.From("shouldMoveWhenDestinationExists-source");
         final Key destination = new Key.From("shouldMoveWhenDestinationExists-destination");
@@ -66,7 +66,7 @@ public final class StorageMoveTest {
 
     @TestTemplate
     void shouldFailToMoveAbsentValue(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
+        final StBlocking blocking = new StBlocking(storage);
         final Key source = new Key.From("shouldFailToMoveAbsentValue-source");
         final Key destination = new Key.From("shouldFailToMoveAbsentValue-destination");
         Assertions.assertThrows(RuntimeException.class, () -> blocking.move(source, destination));

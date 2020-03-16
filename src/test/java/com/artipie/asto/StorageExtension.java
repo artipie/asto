@@ -25,7 +25,7 @@
 package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
-import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.memory.StInMemory;
 import com.artipie.asto.s3.S3Storage;
 import java.net.URI;
 import java.util.Arrays;
@@ -86,8 +86,8 @@ final class StorageExtension
         final Collection<Storage> storages;
         try {
             storages = Arrays.asList(
-                new InMemoryStorage(),
-                new InMemoryStorage().transaction(Collections.emptyList()).get(),
+                new StInMemory(),
+                new StInMemory().transaction(Collections.emptyList()).get(),
                 this.s3Storage()
             );
         } catch (final InterruptedException | ExecutionException ex) {
