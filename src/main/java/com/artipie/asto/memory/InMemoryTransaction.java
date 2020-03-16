@@ -78,6 +78,11 @@ public final class InMemoryTransaction implements Transaction {
     }
 
     @Override
+    public CompletableFuture<Void> delete(final Key key) {
+        return this.parent.delete(key);
+    }
+
+    @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         return CompletableFuture.completedFuture(this);
     }
