@@ -160,7 +160,7 @@ public final class StFile implements Storage {
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new TnFileSystem(this));
+        return CompletableFuture.completedFuture(new TxFileSystem(this));
     }
 
     /**

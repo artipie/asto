@@ -105,6 +105,6 @@ public final class RxStWrapper implements RxStorage {
      */
     public Single<RxTransaction> transaction(final List<Key> keys) {
         return SingleInterop.fromFuture(this.storage.transaction(keys))
-            .map(RxTnWrapper::new);
+            .map(RxTxWrapper::new);
     }
 }

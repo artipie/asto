@@ -38,7 +38,7 @@ import java.util.List;
  *
  * @since 0.10
  */
-public final class RxTnWrapper implements RxTransaction {
+public final class RxTxWrapper implements RxTransaction {
 
     /**
      * The wrapped storage.
@@ -49,7 +49,7 @@ public final class RxTnWrapper implements RxTransaction {
      * Ctor.
      * @param wrapped The storage to wrapp
      */
-    public RxTnWrapper(final Transaction wrapped) {
+    public RxTxWrapper(final Transaction wrapped) {
         this.wrapped = wrapped;
     }
 
@@ -98,6 +98,6 @@ public final class RxTnWrapper implements RxTransaction {
     @Override
     public Single<RxTransaction> transaction(final List<Key> keys) {
         return SingleInterop.fromFuture(this.wrapped.transaction(keys))
-            .map(RxTnWrapper::new);
+            .map(RxTxWrapper::new);
     }
 }

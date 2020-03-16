@@ -152,6 +152,6 @@ public final class StInMemory implements Storage {
 
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new TnInMemory(this));
+        return CompletableFuture.completedFuture(new TxInMemory(this));
     }
 }
