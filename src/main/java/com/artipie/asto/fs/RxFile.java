@@ -145,6 +145,15 @@ public class RxFile {
     }
 
     /**
+     * Delete file.
+     *
+     * @return Completion or error signal
+     */
+    public Completable delete() {
+        return this.fls.rxDelete(this.file.toString());
+    }
+
+    /**
      * Get file size.
      *
      * @return File size in bytes.

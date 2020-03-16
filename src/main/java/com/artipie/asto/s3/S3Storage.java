@@ -186,6 +186,31 @@ public final class S3Storage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Void> delete(final Key key) {
+        return this.exists(key).thenCompose(
+            exists -> {
+                final CompletableFuture<Void> deleted;
+                if (exists) {
+                    deleted = this.client.deleteObject(
+                        DeleteObjectRequest.builder()
+                            .bucket(this.bucket)
+                            .key(key.string())
+                            .build()
+                    ).thenCompose(
+                        response -> CompletableFuture.allOf()
+                    );
+                } else {
+                    deleted = new CompletableFuture<>();
+                    deleted.completeExceptionally(
+                        new IllegalArgumentException(String.format("Key does not exist: %s", key))
+                    );
+                }
+                return deleted;
+            }
+        );
+    }
+
+    @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         throw new UnsupportedOperationException();
     }

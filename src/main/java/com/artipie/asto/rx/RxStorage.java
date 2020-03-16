@@ -81,6 +81,14 @@ public interface RxStorage {
     Single<Content> value(Key key);
 
     /**
+     * Removes value from storage. Fails if value does not exist.
+     *
+     * @param key Key for value to be deleted.
+     * @return Completion or error signal.
+     */
+    Completable delete(Key key);
+
+    /**
      * Start a transaction with specified keys.
      *
      * @param keys The keys regarding which transaction is atomic
