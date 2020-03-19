@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.reactivestreams.Publisher;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
@@ -56,14 +55,9 @@ final class MultipartUpload {
     private static final long PART_SIZE = 1024 * 1024;
 
     /**
-     * S3 client.
+     * Bucket.
      */
-    private final S3AsyncClient client;
-
-    /**
-     * Bucket name.
-     */
-    private final String bucket;
+    private final Bucket bucket;
 
     /**
      * S3 object key.
@@ -78,21 +72,11 @@ final class MultipartUpload {
     /**
      * Ctor.
      *
-     * @param client S3 client.
-     * @param bucket Bucket name.
+     * @param bucket Bucket.
      * @param key S3 object key.
      * @param id ID of this upload.
-     * @todo #87:60min Refactor MultipartUpload class, reduce number of fields.
-     *  MultipartUpload class is too big right now in terms of fields and could be decomposed.
-     *  S3Bucket or S3Object classes might be extracted here.
-     * @checkstyle ParameterNumberCheck (2 line)
      */
-    MultipartUpload(
-        final S3AsyncClient client,
-        final String bucket,
-        final Key key,
-        final String id) {
-        this.client = client;
+    MultipartUpload(final Bucket bucket, final Key key, final String id) {
         this.bucket = bucket;
         this.key = key;
         this.id = id;
@@ -143,9 +127,8 @@ final class MultipartUpload {
      * @return Completion stage which is completed when success response received from S3.
      */
     public CompletionStage<Void> complete() {
-        return this.client.completeMultipartUpload(
+        return this.bucket.completeMultipartUpload(
             CompleteMultipartUploadRequest.builder()
-                .bucket(this.bucket)
                 .key(this.key.string())
                 .uploadId(this.id)
                 .build()
@@ -158,9 +141,8 @@ final class MultipartUpload {
      * @return Completion stage which is completed when success response received from S3.
      */
     public CompletionStage<Void> abort() {
-        return this.client.abortMultipartUpload(
+        return this.bucket.abortMultipartUpload(
             AbortMultipartUploadRequest.builder()
-                .bucket(this.bucket)
                 .key(this.key.string())
                 .uploadId(this.id)
                 .build()
@@ -182,9 +164,8 @@ final class MultipartUpload {
             .to(SingleInterop.get())
             .toCompletableFuture()
             .thenCompose(
-                length -> this.client.uploadPart(
+                length -> this.bucket.uploadPart(
                     UploadPartRequest.builder()
-                        .bucket(this.bucket)
                         .key(this.key.string())
                         .uploadId(this.id)
                         .partNumber(part)
