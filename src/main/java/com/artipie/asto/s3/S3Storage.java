@@ -34,6 +34,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import org.reactivestreams.Subscriber;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -45,6 +47,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
@@ -59,6 +62,11 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  but it makes testing the method difficult.
  */
 public final class S3Storage implements Storage {
+
+    /**
+     * Minimum content size to consider uploading it as multipart.
+     */
+    private static final long MIN_MULTIPART = 10 * 1024 * 1024;
 
     /**
      * S3 client.
@@ -122,34 +130,57 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return this.client.createMultipartUpload(
-            CreateMultipartUploadRequest.builder()
-                .bucket(this.bucket)
-                .key(key.string())
-                .build()
-        ).thenApply(
-            created -> new MultipartUpload(
-                new Bucket(this.client, this.bucket),
-                key,
-                created.uploadId()
-            )
-        ).thenCompose(
-            upload -> upload.upload(content).handle(
-                (ignored, throwable) -> {
-                    final CompletionStage<Void> finished;
-                    if (throwable == null) {
-                        finished = upload.complete();
-                    } else {
-                        final CompletableFuture<Void> promise = new CompletableFuture<>();
-                        finished = promise;
-                        upload.abort().whenComplete(
-                            (result, ex) -> promise.completeExceptionally(throwable)
-                        );
+        final CompletableFuture<Void> future;
+        final Optional<Long> size = content.size();
+        if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
+            future = this.client.putObject(
+                PutObjectRequest.builder()
+                    .bucket(this.bucket)
+                    .key(key.string())
+                    .build(),
+                new AsyncRequestBody() {
+                    @Override
+                    public Optional<Long> contentLength() {
+                        return size;
                     }
-                    return finished;
+
+                    @Override
+                    public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
+                        content.subscribe(subscriber);
+                    }
                 }
-            ).thenCompose(self -> self)
-        );
+            ).thenApply(ignored -> null);
+        } else {
+            future = this.client.createMultipartUpload(
+                CreateMultipartUploadRequest.builder()
+                    .bucket(this.bucket)
+                    .key(key.string())
+                    .build()
+            ).thenApply(
+                created -> new MultipartUpload(
+                    new Bucket(this.client, this.bucket),
+                    key,
+                    created.uploadId()
+                )
+            ).thenCompose(
+                upload -> upload.upload(content).handle(
+                    (ignored, throwable) -> {
+                        final CompletionStage<Void> finished;
+                        if (throwable == null) {
+                            finished = upload.complete();
+                        } else {
+                            final CompletableFuture<Void> promise = new CompletableFuture<>();
+                            finished = promise;
+                            upload.abort().whenComplete(
+                                (result, ex) -> promise.completeExceptionally(throwable)
+                            );
+                        }
+                        return finished;
+                    }
+                ).thenCompose(self -> self)
+            );
+        }
+        return future;
     }
 
     @Override

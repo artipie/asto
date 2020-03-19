@@ -34,10 +34,13 @@ import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
 import io.reactivex.Flowable;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
@@ -85,11 +88,31 @@ class S3StorageTest {
         final byte[] data = "data2".getBytes();
         final String key = "a/b/c";
         this.storage().save(new Key.From(key), new Content.From(data)).join();
-        final byte[] downloaded;
-        try (S3Object s3Object = client.getObject(this.bucket, key)) {
-            downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
-        }
-        MatcherAssert.assertThat(downloaded, Matchers.equalTo(data));
+        MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldUploadObjectWhenSaveContentOfUnknownSize(final AmazonS3 client) throws Exception {
+        final byte[] data = "data?".getBytes();
+        final String key = "unknown/size";
+        this.storage().save(
+            new Key.From(key),
+            new Content.From(Flowable.just(ByteBuffer.wrap(data)))
+        ).join();
+        MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
+    }
+
+    @Test
+    void shouldUploadObjectWhenSaveLargeContent(final AmazonS3 client) throws Exception {
+        final int size = 20 * 1024 * 1024;
+        final byte[] data = new byte[size];
+        new Random().nextBytes(data);
+        final String key = "big/data";
+        this.storage().save(
+            new Key.From(key),
+            new Content.From(Flowable.just(ByteBuffer.wrap(data)))
+        ).join();
+        MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
 
     @Test
@@ -209,6 +232,12 @@ class S3StorageTest {
             client.doesObjectExist(this.bucket, key),
             new IsEqual<>(false)
         );
+    }
+
+    private byte[] download(final AmazonS3 client, final String key) throws IOException {
+        try (S3Object s3Object = client.getObject(this.bucket, key)) {
+            return ByteStreams.toByteArray(s3Object.getObjectContent());
+        }
     }
 
     private S3Storage storage() {

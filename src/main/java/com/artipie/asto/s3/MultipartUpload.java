@@ -50,9 +50,9 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 final class MultipartUpload {
 
     /**
-     * Approximate part size when value is uploaded as multipart.
+     * Minimum part size. See https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
      */
-    private static final long PART_SIZE = 1024 * 1024;
+    private static final long MIN_PART_SIZE = 5 * 1024 * 1024;
 
     /**
      * Bucket.
@@ -99,7 +99,7 @@ final class MultipartUpload {
                     public boolean test(final ByteBuffer buffer) {
                         final int length = buffer.remaining();
                         final boolean keep;
-                        if (this.sum + length > MultipartUpload.PART_SIZE) {
+                        if (this.sum + length > MultipartUpload.MIN_PART_SIZE) {
                             this.sum = length;
                             keep = false;
                         } else {
