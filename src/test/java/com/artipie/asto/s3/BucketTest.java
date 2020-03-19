@@ -27,15 +27,13 @@ import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
-import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.io.ByteStreams;
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyIterable;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -68,10 +66,27 @@ class BucketTest {
      */
     private String name;
 
+    /**
+     * Bucket instance being tested.
+     */
+    private Bucket bucket;
+
     @BeforeEach
     void setUp(final AmazonS3 client) {
         this.name = UUID.randomUUID().toString();
         client.createBucket(this.name);
+        this.bucket = new Bucket(
+            S3AsyncClient.builder()
+                .region(Region.of("us-east-1"))
+                .credentialsProvider(
+                    StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
+                )
+                .endpointOverride(
+                    URI.create(String.format("http://localhost:%d", MOCK.getHttpPort()))
+                )
+                .build(),
+            this.name
+        );
     }
 
     @Test
@@ -81,8 +96,7 @@ class BucketTest {
             new InitiateMultipartUploadRequest(this.name, key)
         ).getUploadId();
         final byte[] data = "data".getBytes();
-        final Bucket bucket = this.bucket();
-        bucket.uploadPart(
+        this.bucket.uploadPart(
             UploadPartRequest.builder()
                 .key(key)
                 .uploadId(id)
@@ -91,7 +105,7 @@ class BucketTest {
                 .build(),
             AsyncRequestBody.fromPublisher(AsyncRequestBody.fromBytes(data))
         ).thenCompose(
-            ignored -> bucket.completeMultipartUpload(
+            ignored -> this.bucket.completeMultipartUpload(
                 CompleteMultipartUploadRequest.builder()
                     .key(key)
                     .uploadId(id)
@@ -102,7 +116,7 @@ class BucketTest {
         try (S3Object s3Object = client.getObject(this.name, key)) {
             downloaded = ByteStreams.toByteArray(s3Object.getObjectContent());
         }
-        MatcherAssert.assertThat(downloaded, Matchers.equalTo(data));
+        MatcherAssert.assertThat(downloaded, new IsEqual<>(data));
     }
 
     @Test
@@ -111,28 +125,17 @@ class BucketTest {
         final String id = client.initiateMultipartUpload(
             new InitiateMultipartUploadRequest(this.name, key)
         ).getUploadId();
-        this.bucket().abortMultipartUpload(
+        this.bucket.abortMultipartUpload(
             AbortMultipartUploadRequest.builder()
                 .key(key)
                 .uploadId(id)
                 .build()
         ).join();
-        final List<MultipartUpload> uploads = client.listMultipartUploads(
-            new ListMultipartUploadsRequest(this.name)
-        ).getMultipartUploads();
-        MatcherAssert.assertThat(uploads, new IsEmptyIterable<>());
-    }
-
-    private Bucket bucket() {
-        final S3AsyncClient client = S3AsyncClient.builder()
-            .region(Region.of("us-east-1"))
-            .credentialsProvider(
-                StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
-            )
-            .endpointOverride(
-                URI.create(String.format("http://localhost:%d", MOCK.getHttpPort()))
-            )
-            .build();
-        return new Bucket(client, this.name);
+        MatcherAssert.assertThat(
+            client.listMultipartUploads(
+                new ListMultipartUploadsRequest(this.name)
+            ).getMultipartUploads(),
+            new IsEmptyIterable<>()
+        );
     }
 }
