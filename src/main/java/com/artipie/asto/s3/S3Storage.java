@@ -27,6 +27,9 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Flowable;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -130,47 +133,43 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        final CompletableFuture<Void> future;
-        final Optional<Long> size = content.size();
-        if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
-            future = this.client.putObject(
-                PutObjectRequest.builder()
-                    .bucket(this.bucket)
-                    .key(key.string())
-                    .build(),
-                new ContentBody(content)
-            ).thenApply(ignored -> null);
-        } else {
-            future = this.client.createMultipartUpload(
-                CreateMultipartUploadRequest.builder()
-                    .bucket(this.bucket)
-                    .key(key.string())
-                    .build()
-            ).thenApply(
-                created -> new MultipartUpload(
-                    new Bucket(this.client, this.bucket),
-                    key,
-                    created.uploadId()
-                )
-            ).thenCompose(
-                upload -> upload.upload(content).handle(
-                    (ignored, throwable) -> {
-                        final CompletionStage<Void> finished;
-                        if (throwable == null) {
-                            finished = upload.complete();
-                        } else {
-                            final CompletableFuture<Void> promise = new CompletableFuture<>();
-                            finished = promise;
-                            upload.abort().whenComplete(
-                                (result, ex) -> promise.completeExceptionally(throwable)
-                            );
+        return content.size()
+            .map(size -> CompletableFuture.completedFuture(Optional.of(size)))
+            .orElseGet(
+                () -> Flowable.fromPublisher(content)
+                    .map(Buffer::remaining)
+                    .scanWith(() -> 0L, (sum, item) -> sum + item)
+                    .takeUntil(total -> total >= S3Storage.MIN_MULTIPART)
+                    .lastOrError()
+                    .to(SingleInterop.get())
+                    .toCompletableFuture()
+                    .<Optional<Long>>thenApply(
+                        last -> {
+                            final Optional<Long> size;
+                            if (last >= S3Storage.MIN_MULTIPART) {
+                                size = Optional.empty();
+                            } else {
+                                size = Optional.of(last);
+                            }
+                            return size;
                         }
-                        return finished;
+                    )
+            ).thenApply(
+                sizeOpt -> sizeOpt
+                    .<Content>map(size -> new Content.From(size, content))
+                    .orElse(content)
+            ).thenCompose(
+                updated -> {
+                    final CompletableFuture<Void> future;
+                    final Optional<Long> size = updated.size();
+                    if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
+                        future = this.put(key, updated);
+                    } else {
+                        future = this.uploadMultipart(key, updated);
                     }
-                ).thenCompose(self -> self)
+                    return future;
+                }
             );
-        }
-        return future;
     }
 
     @Override
@@ -234,6 +233,61 @@ public final class S3Storage implements Storage {
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Uploads content using put request.
+     *
+     * @param key Object key.
+     * @param content Object content to be uploaded.
+     * @return Completion stage which is completed when response received from S3.
+     */
+    private CompletableFuture<Void> put(final Key key, final Content content) {
+        return this.client.putObject(
+            PutObjectRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build(),
+            new ContentBody(content)
+        ).thenApply(ignored -> null);
+    }
+
+    /**
+     * Uploads content using multipart upload.
+     *
+     * @param key Object key.
+     * @param content Object content to be uploaded.
+     * @return Completion stage which is completed when upload is completed or aborted.
+     */
+    private CompletableFuture<Void> uploadMultipart(final Key key, final Content content) {
+        return this.client.createMultipartUpload(
+            CreateMultipartUploadRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build()
+        ).thenApply(
+            created -> new MultipartUpload(
+                new Bucket(this.client, this.bucket),
+                key,
+                created.uploadId()
+            )
+        ).thenCompose(
+            upload -> upload.upload(content).handle(
+                (ignored, throwable) -> {
+                    final CompletionStage<Void> finished;
+                    if (throwable == null) {
+                        finished = upload.complete();
+                    } else {
+                        final CompletableFuture<Void> promise = new CompletableFuture<>();
+                        finished = promise;
+                        upload.abort().whenComplete(
+                            (result, ex) -> promise.completeExceptionally(throwable)
+                        );
+                    }
+                    return finished;
+                }
+            ).thenCompose(self -> self)
+        );
     }
 
     /**
