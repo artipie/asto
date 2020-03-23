@@ -25,9 +25,13 @@
 package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
+import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.s3.S3Storage;
+import io.vertx.reactivex.core.Vertx;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,14 +69,23 @@ final class StorageExtension
         .withSecureConnection(false)
         .build();
 
+    /**
+     * Vert.x instance to use in tests.
+     */
+    private Vertx vertx;
+
     @Override
     public void beforeAll(final ExtensionContext extension) {
         this.mock.beforeAll(extension);
+        this.vertx = Vertx.vertx();
     }
 
     @Override
     public void afterAll(final ExtensionContext extension) {
         this.mock.afterAll(extension);
+        if (this.vertx != null) {
+            this.vertx.rxClose().blockingAwait();
+        }
     }
 
     @Override
@@ -88,9 +101,13 @@ final class StorageExtension
             storages = Arrays.asList(
                 new InMemoryStorage(),
                 new InMemoryStorage().transaction(Collections.emptyList()).get(),
-                this.s3Storage()
+                this.s3Storage(),
+                new FileStorage(
+                    Files.createTempDirectory("junit"),
+                    this.vertx.fileSystem()
+                )
             );
-        } catch (final InterruptedException | ExecutionException ex) {
+        } catch (final InterruptedException | ExecutionException | IOException ex) {
             throw new IllegalStateException("Failed to generate storage", ex);
         }
         return storages.stream().map(StorageContext::new);

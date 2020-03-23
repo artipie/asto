@@ -29,16 +29,12 @@ import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -46,7 +42,6 @@ import org.junit.jupiter.api.io.TempDir;
  *
  * @since 0.1
  */
-@SuppressWarnings("PMD.TooManyMethods")
 final class FileStorageTest {
 
     /**
@@ -138,96 +133,5 @@ final class FileStorageTest {
             blocking.value(destination),
             Matchers.equalTo(data)
         );
-    }
-
-    @Test
-    void list() {
-        final byte[] data = "some data!".getBytes();
-        final BlockingStorage blocking = new BlockingStorage(this.storage);
-        blocking.save(new Key.From("a", "b", "c", "1"), data);
-        blocking.save(new Key.From("a", "b", "2"), data);
-        blocking.save(new Key.From("a", "z"), data);
-        blocking.save(new Key.From("z"), data);
-        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
-            .stream()
-            .map(Key::string)
-            .collect(Collectors.toList());
-        MatcherAssert.assertThat(
-            keys,
-            Matchers.equalTo(Arrays.asList("a/b/2", "a/b/c/1"))
-        );
-    }
-
-    @Test
-    void listEmpty() {
-        final BlockingStorage blocking = new BlockingStorage(this.storage);
-        final Collection<String> keys = blocking.list(new Key.From("a", "b"))
-            .stream()
-            .map(Key::string)
-            .collect(Collectors.toList());
-        MatcherAssert.assertThat(
-            keys,
-            Matchers.empty()
-        );
-    }
-
-    @Test
-    void shouldExistForSavedKey() {
-        final BlockingStorage blocking = new BlockingStorage(this.storage);
-        final Key key = new Key.From("some", "key");
-        blocking.save(key, "some data".getBytes());
-        MatcherAssert.assertThat(
-            blocking.exists(key),
-            Matchers.equalTo(true)
-        );
-    }
-
-    @Test
-    void shouldNotExistForUnknownKey() throws Exception {
-        MatcherAssert.assertThat(
-            this.storage.exists(new Key.From("unknown")).get(),
-            Matchers.equalTo(false)
-        );
-    }
-
-    @Test
-    void shouldNotExistForParentOfSavedKey() {
-        final BlockingStorage blocking = new BlockingStorage(this.storage);
-        final Key parent = new Key.From("a", "b");
-        final Key key = new Key.From(parent, "c");
-        final byte[] data = "content".getBytes();
-        blocking.save(key, data);
-        MatcherAssert.assertThat(
-            blocking.exists(parent),
-            Matchers.equalTo(false)
-        );
-    }
-
-    @Test
-    void shouldDeleteValue() throws Exception {
-        final Key key = new Key.From("shouldDeleteValue");
-        final byte[] data = "shouldDeleteValue-data".getBytes();
-        final BlockingStorage blocking = new BlockingStorage(this.storage);
-        blocking.save(key, data);
-        blocking.delete(key);
-        MatcherAssert.assertThat(
-            this.storage.exists(key).get(),
-            new IsEqual<>(false)
-        );
-    }
-
-    @Test
-    void shouldFailToDeleteNotExistingValue() {
-        final Key key = new Key.From("shouldFailToDeleteNotExistingValue");
-        Assertions.assertThrows(Exception.class, () -> this.storage.delete(key).get());
-    }
-
-    @Test
-    void shouldFailToDeleteParentOfSavedKey() {
-        final Key parent = new Key.From("shouldFailToDeleteParentOfSavedKey");
-        final Key key = new Key.From(parent, "child");
-        final byte[] content = "shouldFailToDeleteParentOfSavedKey-content".getBytes();
-        new BlockingStorage(this.storage).save(key, content);
-        Assertions.assertThrows(Exception.class, () -> this.storage.delete(parent).get());
     }
 }
