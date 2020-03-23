@@ -138,17 +138,7 @@ public final class S3Storage implements Storage {
                     .bucket(this.bucket)
                     .key(key.string())
                     .build(),
-                new AsyncRequestBody() {
-                    @Override
-                    public Optional<Long> contentLength() {
-                        return size;
-                    }
-
-                    @Override
-                    public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
-                        content.subscribe(subscriber);
-                    }
-                }
+                new ContentBody(content)
             ).thenApply(ignored -> null);
         } else {
             future = this.client.createMultipartUpload(
@@ -244,6 +234,38 @@ public final class S3Storage implements Storage {
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@link AsyncRequestBody} created from {@link Content}.
+     *
+     * @since 0.16
+     */
+    private static class ContentBody implements AsyncRequestBody {
+
+        /**
+         * Data source for request body.
+         */
+        private final Content source;
+
+        /**
+         * Ctor.
+         *
+         * @param source Data source for request body.
+         */
+        ContentBody(final Content source) {
+            this.source = source;
+        }
+
+        @Override
+        public Optional<Long> contentLength() {
+            return this.source.size();
+        }
+
+        @Override
+        public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
+            this.source.subscribe(subscriber);
+        }
     }
 
     /**
