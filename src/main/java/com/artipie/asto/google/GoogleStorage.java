@@ -92,11 +92,12 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return CompletableFuture.supplyAsync(() -> new Content.From(
-            this.client.get(
-                BlobId.of(this.bucket, key.string())
-            ).getContent()
-        ));
+        return CompletableFuture.supplyAsync(
+            () -> new Content.From(
+                this.client.get(
+                    BlobId.of(this.bucket, key.string())
+                ).getContent()
+            ));
     }
 
     @Override
