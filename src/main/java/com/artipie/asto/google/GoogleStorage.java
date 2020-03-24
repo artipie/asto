@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 Artipie
+ * Copyright (c) 2020 artipie.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.asto.google;
 
 import com.artipie.asto.Content;
@@ -37,12 +36,12 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 0.1
  */
-public class GoogleStorage implements Storage {
+public final class GoogleStorage implements Storage {
 
     /**
      * Google storage client.
      */
-    final com.google.cloud.storage.Storage client;
+    private final com.google.cloud.storage.Storage client;
 
     /**
      * Ctor.
@@ -76,6 +75,11 @@ public class GoogleStorage implements Storage {
     @Override
     public CompletableFuture<Content> value(final Key key) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete(final Key key) {
+        return null;
     }
 
     @Override

@@ -37,6 +37,8 @@ import java.util.List;
  * Reactive wrapper over {@code Storage}.
  *
  * @since 0.9
+ * @checkstyle UnusedPrivateField (500 lines)
+ * @checkstyle SingularField (500 lines)
  */
 public final class RxStorageWrapper implements RxStorage {
 
