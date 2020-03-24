@@ -25,9 +25,14 @@ package com.artipie.asto.google;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.StorageOptions;
+import io.reactivex.Flowable;
+import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -81,7 +86,16 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        throw new UnsupportedOperationException();
+        return CompletableFuture.runAsync(() -> {
+            final ByteArrayOutputStream output = new ByteArrayOutputStream();
+            Flowable.fromPublisher(content).blockingForEach(
+                (buffer) -> output.write(new Remaining(buffer).bytes())
+            );
+            this.client.create(
+                BlobInfo.newBuilder(BlobId.of(bucket, key.string())).build(),
+                output.toByteArray()
+            );
+        });
     }
 
     @Override
