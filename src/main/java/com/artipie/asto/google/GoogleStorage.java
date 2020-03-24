@@ -46,18 +46,27 @@ public final class GoogleStorage implements Storage {
     private final com.google.cloud.storage.Storage client;
 
     /**
-     * Ctor.
+     * Bucket name.
      */
-    public GoogleStorage() {
-        this(StorageOptions.getDefaultInstance());
+    private final String bucket;
+
+    /**
+     * Ctor.
+     *
+     * @param bucket Bucket name
+     */
+    public GoogleStorage(final String bucket) {
+        this(StorageOptions.getDefaultInstance(), bucket);
     }
 
     /**
      * Ctor.
      * @param options Options for Google storage client
+     * @param bucket
      */
-    public GoogleStorage(final StorageOptions options) {
+    public GoogleStorage(final StorageOptions options, final String bucket) {
         this.client = options.getService();
+        this.bucket = bucket;
     }
 
     @Override
