@@ -35,6 +35,9 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Storage that holds data in Google storage.
  *
+ * About transactions information can be found here:
+ * https://stackoverflow.com/questions/23436244/google-cloud-storage-transactions
+ * That's why it's not supported and actually not needed (atomicity works for one object level)
  * @since 0.1
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
