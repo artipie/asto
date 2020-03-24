@@ -86,16 +86,17 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return CompletableFuture.runAsync(() -> {
-            final ByteArrayOutputStream output = new ByteArrayOutputStream();
-            Flowable.fromPublisher(content).blockingForEach(
-                (buffer) -> output.write(new Remaining(buffer).bytes())
-            );
-            this.client.create(
-                BlobInfo.newBuilder(BlobId.of(bucket, key.string())).build(),
-                output.toByteArray()
-            );
-        });
+        return CompletableFuture.runAsync(
+            () -> {
+                final ByteArrayOutputStream output = new ByteArrayOutputStream();
+                Flowable.fromPublisher(content).blockingForEach(
+                    buffer -> output.write(new Remaining(buffer).bytes())
+                );
+                this.client.create(
+                    BlobInfo.newBuilder(BlobId.of(this.bucket, key.string())).build(),
+                    output.toByteArray()
+                );
+            });
     }
 
     @Override
