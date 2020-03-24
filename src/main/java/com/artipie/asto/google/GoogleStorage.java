@@ -97,7 +97,8 @@ public final class GoogleStorage implements Storage {
     @Override
     public CompletableFuture<Void> delete(final Key key) {
         return CompletableFuture.runAsync(
-            () -> this.client.delete(this.bucket, key.string()));
+            () -> this.client.delete(this.bucket, key.string())
+        );
     }
 
     @Override
