@@ -71,7 +71,9 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        throw new UnsupportedOperationException();
+        return CompletableFuture.supplyAsync(
+            () -> this.client.get(this.bucket, key.string()).exists()
+        );
     }
 
     @Override
