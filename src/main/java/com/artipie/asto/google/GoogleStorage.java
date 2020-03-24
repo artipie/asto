@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.StorageOptions;
 import java.util.Collection;
 import java.util.List;
@@ -96,7 +97,10 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> delete(final Key key) {
-        return null;
+        return CompletableFuture.runAsync(
+            () -> {
+                this.client.get(this.bucket, key.string()).delete();
+            });
     }
 
     @Override
