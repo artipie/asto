@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import com.google.cloud.storage.StorageOptions;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -35,9 +36,8 @@ import java.util.concurrent.CompletableFuture;
  * Storage that holds data in Google storage.
  *
  * @since 0.1
- * @checkstyle UnusedPrivateField (500 lines)
- * @checkstyle SingularField (500 lines)
  */
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class GoogleStorage implements Storage {
 
     /**
@@ -47,11 +47,17 @@ public final class GoogleStorage implements Storage {
 
     /**
      * Ctor.
-     *
-     * @param client Google storage client
      */
-    public GoogleStorage(final com.google.cloud.storage.Storage client) {
-        this.client = client;
+    public GoogleStorage() {
+        this(StorageOptions.getDefaultInstance());
+    }
+
+    /**
+     * Ctor.
+     * @param options Options for Google storage client
+     */
+    public GoogleStorage(final StorageOptions options) {
+        this.client = options.getService();
     }
 
     @Override
