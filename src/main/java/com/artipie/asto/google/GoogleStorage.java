@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Storage that holds data in Google storage.
  *
- * @since 0.1
+ * @since 0.15
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class GoogleStorage implements Storage {

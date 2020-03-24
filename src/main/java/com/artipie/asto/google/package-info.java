@@ -24,7 +24,7 @@
 /**
  * Google storage.
  *
- * @since 0.1
+ * @since 0.15
  */
 
 package com.artipie.asto.google;
