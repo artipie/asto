@@ -27,10 +27,15 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import com.google.api.gax.paging.Page;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.StorageOptions;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Storage that holds data in Google storage.
@@ -76,7 +81,17 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        throw new UnsupportedOperationException();
+        final Bucket buck = this.client.get(this.bucket);
+        return CompletableFuture.supplyAsync(
+            () -> {
+                final Page<Blob> blobs =
+                    buck.list(
+                        com.google.cloud.storage.Storage.BlobListOption.prefix(prefix.string()),
+                        com.google.cloud.storage.Storage.BlobListOption.currentDirectory()
+                    );
+                return StreamSupport.stream(blobs.iterateAll().spliterator(), false)
+                    .map(blob -> new Key.From(blob.getName())).collect(Collectors.toList());
+            });
     }
 
     @Override
