@@ -96,7 +96,7 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> delete(final Key key) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
