@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.StorageOptions;
 import java.util.Collection;
 import java.util.List;
@@ -91,7 +92,11 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        throw new UnsupportedOperationException();
+        return CompletableFuture.supplyAsync(() -> new Content.From(
+            this.client.get(
+                BlobId.of(this.bucket, key.string())
+            ).getContent()
+        ));
     }
 
     @Override
