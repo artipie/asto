@@ -62,7 +62,7 @@ public final class GoogleStorage implements Storage {
     /**
      * Ctor.
      * @param options Options for Google storage client
-     * @param bucket
+     * @param bucket Bucket name
      */
     public GoogleStorage(final StorageOptions options, final String bucket) {
         this.client = options.getService();
