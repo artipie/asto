@@ -35,6 +35,8 @@ import java.util.concurrent.CompletableFuture;
  * Storage that holds data in Google storage.
  *
  * @since 0.1
+ * @checkstyle UnusedPrivateField (500 lines)
+ * @checkstyle SingularField (500 lines)
  */
 public final class GoogleStorage implements Storage {
 
