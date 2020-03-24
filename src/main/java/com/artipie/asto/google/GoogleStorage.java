@@ -27,7 +27,6 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
-import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.StorageOptions;
 import java.util.Collection;
 import java.util.List;
