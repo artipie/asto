@@ -36,9 +36,15 @@ import java.util.concurrent.CompletableFuture;
  * Storage that holds data in Google storage.
  *
  * @since 0.17
+ * @checkstyle ConstantUsageCheck (500 lines)
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class GoogleStorage implements Storage {
+
+    /**
+     * API URL.
+     */
+    private static final String URL = "https://storage.googleapis.com/storage/v1";
 
     /**
      * Google storage client.
