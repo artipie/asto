@@ -89,7 +89,12 @@ public final class FileStorage implements Storage {
                 final Path path = this.path(prefix);
                 final Collection<Key> keys;
                 if (Files.exists(path)) {
-                    final int dirnamelen = path.toString().length() - prefix.string().length();
+                    final int dirnamelen;
+                    if (Key.ROOT.equals(prefix)) {
+                        dirnamelen = path.toString().length() + 1;
+                    } else {
+                        dirnamelen = path.toString().length() - prefix.string().length();
+                    }
                     keys = Files.walk(path)
                         .filter(Files::isRegularFile)
                         .map(Path::toString)
