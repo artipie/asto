@@ -72,17 +72,6 @@ SOFTWARE.
     <system>rultor</system>
     <url>https://www.rultor.com/s/asto</url>
   </ciManagement>
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>libraries-bom</artifactId>
-        <version>3.2.0</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <distributionManagement>
     <site>
       <id>github-pages</id>
@@ -131,9 +120,9 @@ SOFTWARE.
       <version>2.7.19</version>
     </dependency>
     <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-storage</artifactId>
-      <version>1.106.0</version>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-client</artifactId>
+      <version>3.8.5</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

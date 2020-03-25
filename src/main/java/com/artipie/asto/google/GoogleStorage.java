@@ -27,7 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
-import com.google.cloud.storage.StorageOptions;
+import io.vertx.reactivex.ext.web.client.WebClient;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +43,7 @@ public final class GoogleStorage implements Storage {
     /**
      * Google storage client.
      */
-    private final com.google.cloud.storage.Storage client;
+    private final WebClient client;
 
     /**
      * Bucket name.
@@ -52,20 +52,11 @@ public final class GoogleStorage implements Storage {
 
     /**
      * Ctor.
-     *
+     * @param client Web client
      * @param bucket Bucket name
      */
-    public GoogleStorage(final String bucket) {
-        this(StorageOptions.getDefaultInstance(), bucket);
-    }
-
-    /**
-     * Ctor.
-     * @param options Options for Google storage client
-     * @param bucket Bucket name
-     */
-    public GoogleStorage(final StorageOptions options, final String bucket) {
-        this.client = options.getService();
+    public GoogleStorage(final WebClient client, final String bucket) {
+        this.client = client;
         this.bucket = bucket;
     }
 
