@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -142,6 +143,23 @@ public interface Key {
                 }
             }
             return String.join(From.DELIMITER, this.parts);
+        }
+
+        @Override
+        public boolean equals(final Object another) {
+            if (this == another) {
+                return true;
+            }
+            if (another == null || getClass() != another.getClass()) {
+                return false;
+            }
+            final From from = (From) another;
+            return Objects.equals(this.parts, from.parts);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.parts);
         }
     }
 }
