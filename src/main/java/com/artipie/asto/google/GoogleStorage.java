@@ -109,7 +109,7 @@ public final class GoogleStorage implements Storage {
             .writeStream(this.vertx.getDelegate());
         this.client.get(String.format(GoogleStorage.GET_URL, this.bucket, key.string()))
             .as(BodyCodec.pipe(WriteStream.newInstance(stream)))
-            .rxSend();
+            .rxSend().subscribe();
         return  Flowable.fromPublisher(stream).flatMapCompletable(
             buffer -> Completable.fromSingle(
                 Single.just(new Content.From(buffer.getBytes()))
