@@ -121,7 +121,12 @@ SOFTWARE.
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-web-client</artifactId>
+      <artifactId>vertx-rx-java</artifactId>
+      <version>3.8.5</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-reactive-streams</artifactId>
       <version>3.8.5</version>
     </dependency>
     <dependency>
