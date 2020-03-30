@@ -23,9 +23,7 @@
  */
 package com.artipie.asto;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -125,9 +123,8 @@ public interface Key {
          * Ctor.
          * @param parts Parts
          */
-        public From(final Collection<String> parts) {
-            this.parts = new ArrayList<>(parts)
-                .stream()
+        public From(final List<String> parts) {
+            this.parts = parts.stream()
                 .flatMap(part -> Arrays.stream(part.split("/")))
                 .collect(Collectors.toList());
         }
