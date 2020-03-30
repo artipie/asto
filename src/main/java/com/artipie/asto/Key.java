@@ -162,7 +162,7 @@ public interface Key {
         @Override
         public Optional<Key> parent() {
             final Optional<Key> parent;
-            if (this.equals(Key.ROOT)) {
+            if (this.parts.isEmpty()) {
                 parent = Optional.empty();
             } else {
                 parent = Optional.of(

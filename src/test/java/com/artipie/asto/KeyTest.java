@@ -90,8 +90,16 @@ final class KeyTest {
     @Test
     void rootParent() {
         MatcherAssert.assertThat(
-            "ROOT parent is not empty optional",
+            "ROOT parent is not empty",
             !Key.ROOT.parent().isPresent()
+        );
+    }
+
+    @Test
+    void emptyKeyParent() {
+        MatcherAssert.assertThat(
+            "Empty key parent is not empty",
+            !new Key.From("").parent().isPresent()
         );
     }
 }
