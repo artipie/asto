@@ -78,4 +78,28 @@ final class KeyTest {
     void resolvesRootKey() {
         MatcherAssert.assertThat(Key.ROOT.string(), Matchers.equalTo(""));
     }
+
+    @Test
+    void returnsParent() {
+        MatcherAssert.assertThat(
+            new Key.From("a/b").parent().get().string(),
+            new IsEqual<>("a")
+        );
+    }
+
+    @Test
+    void rootParent() {
+        MatcherAssert.assertThat(
+            "ROOT parent is not empty",
+            !Key.ROOT.parent().isPresent()
+        );
+    }
+
+    @Test
+    void emptyKeyParent() {
+        MatcherAssert.assertThat(
+            "Empty key parent is not empty",
+            !new Key.From("").parent().isPresent()
+        );
+    }
 }
