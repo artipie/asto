@@ -25,22 +25,32 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.apache.commons.codec.binary.Hex;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Test case for {@link Storage}.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class FileStorageTest {
 
@@ -67,14 +77,12 @@ final class FileStorageTest {
         }
     }
 
-    // @checkstyle MagicNumberCheck (1 line)
-    @RepeatedTest(100)
+    @Test
     void savesAndLoads() throws Exception {
         final String content = "Hello world!!!";
         final Key key = new Key.From("a", "b", "test.deb");
         this.storage.save(
-            key,
-            new Content.From(content.getBytes())
+            key, new Content.From(content.getBytes(StandardCharsets.UTF_8))
         ).get();
         MatcherAssert.assertThat(
             new String(
@@ -85,17 +93,17 @@ final class FileStorageTest {
                     .map(buf -> new Remaining(buf).bytes())
                     .flatMap(byteArr -> Arrays.stream(new ByteArray(byteArr).boxedBytes()))
                     .toArray(Byte[]::new)
-                ).primitiveBytes()
+                ).primitiveBytes(),
+                StandardCharsets.UTF_8
             ),
             Matchers.equalTo(content)
         );
     }
 
-    // @checkstyle MagicNumberCheck (1 line)
-    @RepeatedTest(100)
+    @Test
     void saveOverwrites() {
-        final byte[] original = "1".getBytes();
-        final byte[] updated = "2".getBytes();
+        final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
+        final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key key = new Key.From("foo");
         blocking.save(key, original);
@@ -106,24 +114,24 @@ final class FileStorageTest {
         );
     }
 
-    // @checkstyle MagicNumberCheck (1 line)
-    @RepeatedTest(100)
+    @Test
     void blockingWrapperWorks() {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
-        blocking.save(key, new ByteArray(content.getBytes()).primitiveBytes());
+        blocking.save(
+            key, new ByteArray(content.getBytes(StandardCharsets.UTF_8)).primitiveBytes()
+        );
         final byte[] bytes = blocking.value(key);
         MatcherAssert.assertThat(
-            new String(bytes),
+            new String(bytes, StandardCharsets.UTF_8),
             Matchers.equalTo(content)
         );
     }
 
-    // @checkstyle MagicNumberCheck (1 line)
-    @RepeatedTest(100)
+    @Test
     void move() {
-        final byte[] data = "data".getBytes();
+        final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key source = new Key.From("from");
         blocking.save(source, data);
@@ -132,6 +140,57 @@ final class FileStorageTest {
         MatcherAssert.assertThat(
             blocking.value(destination),
             Matchers.equalTo(data)
+        );
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "test.storage.file.huge", matches = "true|on")
+    void saveAndLoadHugeFiles() throws Exception {
+        // @checkstyle MagicNumberCheck (30 lines)
+        // @checkstyle MethodBodyCommentsCheck (30 lines)
+        final Key key = new Key.From("huge");
+        // one 8KB fragment of repeated sequence of byte ranges 0x00..0xFF
+        final ByteBuffer fragment = ByteBuffer.wrap(
+            new ByteArray(
+                IntStream.range(0, 4 * 8).flatMap(
+                    cnt -> IntStream.range(0, 256)
+                ).mapToObj(x -> (byte) x)
+                    .collect(Collectors.toList())
+            ).primitiveBytes()
+        );
+        // 1 GB of 8KB byte fragments
+        final AtomicLong cnt = new AtomicLong(131_072);
+        this.storage.save(
+            key,
+            new Content.From(
+                Flowable.generate(
+                    // @checkstyle ReturnCountCheck (10 lines)
+                    emitter -> {
+                        if (cnt.decrementAndGet() == 0) {
+                            emitter.onComplete();
+                            return;
+                        }
+                        if (cnt.get() == 0) {
+                            return;
+                        }
+                        emitter.onNext(fragment.slice());
+                    }
+                )
+            )
+        ).get();
+        final String hash = this.storage.value(key).thenCompose(
+            content -> Flowable.fromPublisher(content).reduceWith(
+                () -> MessageDigest.getInstance("SHA256"),
+                (digest, buf) -> {
+                    digest.update(buf);
+                    return digest;
+                }
+            ).map(digest -> new String(Hex.encodeHex(digest.digest())))
+                .to(SingleInterop.get())
+        ).get();
+        MatcherAssert.assertThat(
+            hash,
+            new IsEqual<>("13b0e1029eae62b2cde3e918d384ce704319a1eca1cf268b962cb34dbbab04e4")
         );
     }
 }
