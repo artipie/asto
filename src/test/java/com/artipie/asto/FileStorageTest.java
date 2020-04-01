@@ -25,10 +25,8 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
-import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Path;
-import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -41,6 +39,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Test case for {@link Storage}.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 final class FileStorageTest {
 
@@ -70,23 +69,17 @@ final class FileStorageTest {
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     void savesAndLoads() throws Exception {
-        final String content = "Hello world!!!";
+        final byte[] content = "Hello world!!!".getBytes();
         final Key key = new Key.From("a", "b", "test.deb");
         this.storage.save(
             key,
-            new Content.From(content.getBytes())
+            new Content.From(content)
         ).get();
         MatcherAssert.assertThat(
-            new String(
-                new ByteArray(Flowable.fromPublisher(this.storage.value(key).get())
-                    .toList()
-                    .blockingGet()
-                    .stream()
-                    .map(buf -> new Remaining(buf).bytes())
-                    .flatMap(byteArr -> Arrays.stream(new ByteArray(byteArr).boxedBytes()))
-                    .toArray(Byte[]::new)
-                ).primitiveBytes()
-            ),
+            new Remaining(
+                new Concatenation(this.storage.value(key).get()).single().blockingGet(),
+                true
+            ).bytes(),
             Matchers.equalTo(content)
         );
     }

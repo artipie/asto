@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -108,17 +109,9 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return flow.reduce(
-            (left, right) -> {
-                final ByteBuffer concat = ByteBuffer.allocate(
-                    left.remaining() + right.remaining()
-                ).put(left).put(right);
-                concat.flip();
-                return concat;
-            }
-        )
+        return new Concatenation(flow)
+            .single()
             .map(buf -> new Remaining(buf).bytes())
-            .toSingle(new byte[0])
             .flatMapCompletable(
                 bytes -> Completable.fromAction(
                     () -> Files.write(

@@ -23,13 +23,12 @@
  */
 package com.artipie.asto.memory;
 
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
-import io.reactivex.Flowable;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,21 +93,10 @@ public final class InMemoryStorage implements Storage {
                 synchronized (this.data) {
                     this.data.put(
                         key.string(),
-                        Flowable.fromPublisher(content)
-                            .toList()
-                            .blockingGet()
-                            .stream()
-                            .reduce(
-                                (left, right) -> {
-                                    final ByteBuffer concat = ByteBuffer.allocate(
-                                        left.remaining() + right.remaining()
-                                    ).put(left).put(right);
-                                    concat.flip();
-                                    return concat;
-                                }
-                            )
-                            .map(buf -> new Remaining(buf).bytes())
-                            .orElse(new byte[0])
+                        new Remaining(
+                            new Concatenation(content).single().blockingGet(),
+                            true
+                        ).bytes()
                     );
                 }
             }
