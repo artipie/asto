@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -50,7 +49,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Test case for {@link Storage}.
  *
  * @since 0.1
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 final class FileStorageTest {
 
@@ -79,23 +78,17 @@ final class FileStorageTest {
 
     @Test
     void savesAndLoads() throws Exception {
-        final String content = "Hello world!!!";
+        final byte[] content = "Hello world!!!".getBytes();
         final Key key = new Key.From("a", "b", "test.deb");
         this.storage.save(
-            key, new Content.From(content.getBytes(StandardCharsets.UTF_8))
+            key,
+            new Content.From(content)
         ).get();
         MatcherAssert.assertThat(
-            new String(
-                new ByteArray(Flowable.fromPublisher(this.storage.value(key).get())
-                    .toList()
-                    .blockingGet()
-                    .stream()
-                    .map(buf -> new Remaining(buf).bytes())
-                    .flatMap(byteArr -> Arrays.stream(new ByteArray(byteArr).boxedBytes()))
-                    .toArray(Byte[]::new)
-                ).primitiveBytes(),
-                StandardCharsets.UTF_8
-            ),
+            new Remaining(
+                new Concatenation(this.storage.value(key).get()).single().blockingGet(),
+                true
+            ).bytes(),
             Matchers.equalTo(content)
         );
     }
