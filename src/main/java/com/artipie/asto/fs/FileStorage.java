@@ -124,7 +124,7 @@ public final class FileStorage implements Storage {
         return Single.fromCallable(
             () -> {
                 final Path file = this.path(key);
-                file.getParent().toFile().mkdirs();
+                Files.createDirectories(file.getParent());
                 return file;
             })
             .flatMapCompletable(
