@@ -29,6 +29,6 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v2
       - name: Lint
-        uses: g4s8/gitlint-action@0.2
+        uses: g4s8/gitlint-action@0.3.1
         with:
           since: "2020-03-30"
