@@ -33,19 +33,22 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.reactivestreams.Publisher;
 
 /**
- * Tests for {@link Content}.
+ * Tests for {@link Concatenation}.
  *
  * @since 0.17
  * @checkstyle ArrayTrailingCommaCheck (500 lines)
  */
-final class ContentTest {
+final class ConcatenationTest {
 
     @ParameterizedTest
     @MethodSource("flows")
     void shouldReadBytes(final Publisher<ByteBuffer> publisher, final byte[] bytes) {
         final Content content = new Content.From(publisher);
         MatcherAssert.assertThat(
-            content.bytes().blockingGet(),
+            new Remaining(
+                new Concatenation(content).single().blockingGet(),
+                true
+            ).bytes(),
             new IsEqual<>(bytes)
         );
     }
@@ -54,10 +57,17 @@ final class ContentTest {
     @MethodSource("flows")
     void shouldReadBytesTwice(final Publisher<ByteBuffer> publisher, final byte[] bytes) {
         final Content content = new Content.From(publisher);
-        content.bytes().blockingGet();
+        final byte[] first = new Remaining(
+            new Concatenation(content).single().blockingGet(),
+            true
+        ).bytes();
+        final byte[] second = new Remaining(
+            new Concatenation(content).single().blockingGet(),
+            true
+        ).bytes();
         MatcherAssert.assertThat(
-            content.bytes().blockingGet(),
-            new IsEqual<>(bytes)
+            second,
+            new IsEqual<>(first)
         );
     }
 

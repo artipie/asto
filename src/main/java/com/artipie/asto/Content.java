@@ -24,7 +24,6 @@
 package com.artipie.asto;
 
 import io.reactivex.Flowable;
-import io.reactivex.Single;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
@@ -44,13 +43,6 @@ public interface Content extends Publisher<ByteBuffer> {
      * @return Size of content in bytes if known.
      */
     Optional<Long> size();
-
-    /**
-     * Get all content as one byte array.
-     *
-     * @return All content as single byte array.
-     */
-    Single<byte[]> bytes();
 
     /**
      * Key built from byte buffers publisher and total size if it is known.
@@ -119,32 +111,6 @@ public interface Content extends Publisher<ByteBuffer> {
         @Override
         public Optional<Long> size() {
             return this.length;
-        }
-
-        @Override
-        public Single<byte[]> bytes() {
-            return Flowable.fromPublisher(this.publisher).reduce(
-                ByteBuffer.allocate(0),
-                (left, right) -> {
-                    left.mark();
-                    right.mark();
-                    final ByteBuffer concat = ByteBuffer.allocate(
-                        left.remaining() + right.remaining()
-                    ).put(left).put(right);
-                    left.reset();
-                    right.reset();
-                    concat.flip();
-                    return concat;
-                }
-            ).map(
-                buffer -> {
-                    final byte[] bytes = new byte[buffer.remaining()];
-                    buffer.mark();
-                    buffer.get(bytes);
-                    buffer.reset();
-                    return bytes;
-                }
-            );
         }
     }
 }

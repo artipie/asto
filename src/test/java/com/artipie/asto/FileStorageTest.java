@@ -39,6 +39,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Test case for {@link Storage}.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 final class FileStorageTest {
 
@@ -75,7 +76,10 @@ final class FileStorageTest {
             new Content.From(content)
         ).get();
         MatcherAssert.assertThat(
-            this.storage.value(key).get().bytes().blockingGet(),
+            new Remaining(
+                new Concatenation(this.storage.value(key).get()).single().blockingGet(),
+                true
+            ).bytes(),
             Matchers.equalTo(content)
         );
     }

@@ -23,8 +23,10 @@
  */
 package com.artipie.asto.blocking;
 
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorage;
 import com.artipie.asto.rx.RxStorageWrapper;
@@ -99,7 +101,12 @@ public class BlockingStorage {
      * @return Value associated with the key
      */
     public byte[] value(final Key key) {
-        return this.storage.value(key).flatMap(Content::bytes).blockingGet();
+        return new Remaining(
+            this.storage.value(key)
+                .flatMap(content -> new Concatenation(content).single())
+                .blockingGet(),
+            true
+        ).bytes();
     }
 
     /**
