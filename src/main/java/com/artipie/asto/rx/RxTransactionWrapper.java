@@ -91,6 +91,11 @@ public final class RxTransactionWrapper implements RxTransaction {
     }
 
     @Override
+    public Single<Long> size(final Key key) {
+        return SingleInterop.fromFuture(this.wrapped.size(key));
+    }
+
+    @Override
     public Single<Content> value(final Key key) {
         return SingleInterop.fromFuture(this.wrapped.value(key));
     }

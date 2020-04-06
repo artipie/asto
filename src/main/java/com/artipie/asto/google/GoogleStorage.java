@@ -104,6 +104,11 @@ public final class GoogleStorage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Long> size(final Key key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public CompletableFuture<Content> value(final Key key) {
         final ReactiveWriteStream<Buffer> stream = ReactiveWriteStream
             .writeStream(this.vertx.getDelegate());

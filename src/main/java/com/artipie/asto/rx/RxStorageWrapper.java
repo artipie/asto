@@ -85,6 +85,11 @@ public final class RxStorageWrapper implements RxStorage {
         return CompletableInterop.fromFuture(this.storage.move(source, destination));
     }
 
+    @Override
+    public Single<Long> size(final Key key) {
+        return SingleInterop.fromFuture(this.storage.size(key));
+    }
+
     /**
      * Obtain bytes by key.
      *

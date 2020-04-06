@@ -95,6 +95,16 @@ public class BlockingStorage {
     }
 
     /**
+     * Get value size.
+     *
+     * @param key The key of value.
+     * @return Size of value in bytes.
+     */
+    public long size(final Key key) {
+        return this.storage.size(key).blockingGet();
+    }
+
+    /**
      * Obtain value for the specified key.
      *
      * @param key The key

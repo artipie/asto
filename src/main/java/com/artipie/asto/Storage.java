@@ -76,6 +76,14 @@ public interface Storage {
     CompletableFuture<Void> move(Key source, Key destination);
 
     /**
+     * Get value size.
+     *
+     * @param key The key of value.
+     * @return Size of value in bytes.
+     */
+    CompletableFuture<Long> size(Key key);
+
+    /**
      * Obtain bytes by key.
      *
      * @param key The key
@@ -141,6 +149,11 @@ public interface Storage {
         @Override
         public final CompletableFuture<Void> move(final Key source, final Key destination) {
             return this.delegate.move(source, destination);
+        }
+
+        @Override
+        public final CompletableFuture<Long> size(final Key key) {
+            return this.delegate.size(key);
         }
 
         @Override
