@@ -130,6 +130,11 @@ SOFTWARE.
       <version>3.8.5</version>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-client</artifactId>
+      <version>3.7.1</version>
+    </dependency>
+    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <scope>test</scope>
@@ -150,6 +155,12 @@ SOFTWARE.
       <groupId>com.adobe.testing</groupId>
       <artifactId>s3mock-junit5</artifactId>
       <version>2.1.19</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-junit5</artifactId>
+      <version>3.8.5</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

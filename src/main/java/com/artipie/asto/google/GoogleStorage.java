@@ -27,16 +27,14 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
-import hu.akarnokd.rxjava2.interop.CompletableInterop;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.reactivex.Single;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.reactivestreams.ReactiveWriteStream;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.streams.WriteStream;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.codec.BodyCodec;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -46,14 +44,25 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 0.17
  * @checkstyle ConstantUsageCheck (500 lines)
+ * @checkstyle ParameterNumberCheck (500 lines)
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class GoogleStorage implements Storage {
 
     /**
-     * API GET_URL.
+     * API GET_REQUEST.
      */
-    private static final String GET_URL = "https://storage.googleapis.com/storage/v1/b/%s/o/%s";
+    private static final String GET_REQUEST = "/storage/v1/b/%s/o/%s";
+
+    /**
+     * API HOST.
+     */
+    private static final String HOST = "storage.googleapis.com";
+
+    /**
+     * API PORT.
+     */
+    private static final int PORT = 443;
 
     /**
      * Vertx context.
@@ -71,6 +80,16 @@ public final class GoogleStorage implements Storage {
     private final String bucket;
 
     /**
+     * Api host.
+     */
+    private final String host;
+
+    /**
+     * Api port.
+     */
+    private final int port;
+
+    /**
      * Ctor.
      *
      * @param vertx Vertx context
@@ -78,7 +97,27 @@ public final class GoogleStorage implements Storage {
      * @param bucket Bucket name
      */
     public GoogleStorage(final Vertx vertx, final WebClient client, final String bucket) {
+        this(vertx, GoogleStorage.HOST, GoogleStorage.PORT, client, bucket);
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param vertx Vertx context
+     * @param host Api host
+     * @param port Api port
+     * @param client Web client
+     * @param bucket Bucket name
+     */
+    public GoogleStorage(
+        final Vertx vertx,
+        final String host,
+        final int port,
+        final WebClient client,
+        final String bucket) {
         this.vertx = vertx;
+        this.host = host;
+        this.port = port;
         this.client = client;
         this.bucket = bucket;
     }
@@ -107,15 +146,16 @@ public final class GoogleStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         final ReactiveWriteStream<Buffer> stream = ReactiveWriteStream
             .writeStream(this.vertx.getDelegate());
-        this.client.get(String.format(GoogleStorage.GET_URL, this.bucket, key.string()))
+        this.client.get(
+            this.port,
+            this.host,
+            String.format(GoogleStorage.GET_REQUEST, this.bucket, key.string())
+        )
             .as(BodyCodec.pipe(WriteStream.newInstance(stream)))
             .rxSend().subscribe();
-        return  Flowable.fromPublisher(stream).flatMapCompletable(
-            buffer -> Completable.fromSingle(
-                Single.just(new Content.From(buffer.getBytes()))
-            ))
-            .to(CompletableInterop.await())
-            .thenApply(content -> (Content) content).toCompletableFuture();
+        final Flowable<ByteBuffer> flow = Flowable.fromPublisher(stream)
+            .map(buffer -> ByteBuffer.wrap(buffer.getBytes()));
+        return CompletableFuture.supplyAsync(() -> new Content.From(flow));
     }
 
     @Override
