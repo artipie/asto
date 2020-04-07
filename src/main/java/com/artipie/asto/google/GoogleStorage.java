@@ -146,16 +146,19 @@ public final class GoogleStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         final ReactiveWriteStream<Buffer> stream = ReactiveWriteStream
             .writeStream(this.vertx.getDelegate());
-        this.client.get(
-            this.port,
-            this.host,
-            String.format(GoogleStorage.GET_REQUEST, this.bucket, key.string())
-        )
-            .as(BodyCodec.pipe(WriteStream.newInstance(stream)))
-            .rxSend().subscribe();
         final Flowable<ByteBuffer> flow = Flowable.fromPublisher(stream)
             .map(buffer -> ByteBuffer.wrap(buffer.getBytes()));
-        return CompletableFuture.supplyAsync(() -> new Content.From(flow));
+        return CompletableFuture.supplyAsync(
+            () -> {
+                this.client.get(
+                    this.port,
+                    this.host,
+                    String.format(GoogleStorage.GET_REQUEST, this.bucket, key.string())
+                )
+                    .as(BodyCodec.pipe(WriteStream.newInstance(stream)))
+                    .rxSend().subscribe();
+                return new Content.From(flow);
+            });
     }
 
     @Override
