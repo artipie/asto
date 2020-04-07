@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import io.reactivex.Flowable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.reactivestreams.ReactiveWriteStream;
@@ -144,21 +145,18 @@ public final class GoogleStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                final ReactiveWriteStream<Buffer> stream = ReactiveWriteStream
-                    .writeStream(this.vertx.getDelegate());
-                final Flowable<ByteBuffer> flow = Flowable.fromPublisher(stream)
-                    .map(buffer -> ByteBuffer.wrap(buffer.getBytes()));
-                this.client.get(
-                    this.port,
-                    this.host,
-                    String.format(GoogleStorage.GET_REQUEST, this.bucket, key.string())
-                )
-                    .as(BodyCodec.pipe(WriteStream.newInstance(stream)))
-                    .rxSend().subscribe();
-                return new Content.From(flow);
-            });
+        final ReactiveWriteStream<Buffer> stream = ReactiveWriteStream
+            .writeStream(this.vertx.getDelegate());
+        final Flowable<ByteBuffer> flow = Flowable.fromPublisher(stream)
+            .map(buffer -> ByteBuffer.wrap(buffer.getBytes()));
+        this.client.get(
+            this.port,
+            this.host,
+            String.format(GoogleStorage.GET_REQUEST, this.bucket, key.string())
+        )
+            .as(BodyCodec.pipe(WriteStream.newInstance(stream)))
+            .rxSend().subscribe();
+        return CompletableFuture.completedFuture(new Content.From(flow));
     }
 
     @Override
