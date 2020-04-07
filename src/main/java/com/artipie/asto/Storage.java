@@ -105,7 +105,7 @@ public interface Storage {
     /**
      * Forwarding decorator for {@link Storage}.
      *
-     * @since 0.17
+     * @since 0.18
      */
     abstract class Wrap implements Storage {
 
@@ -124,37 +124,37 @@ public interface Storage {
         }
 
         @Override
-        public CompletableFuture<Boolean> exists(final Key key) {
+        public final CompletableFuture<Boolean> exists(final Key key) {
             return this.delegate.exists(key);
         }
 
         @Override
-        public CompletableFuture<Collection<Key>> list(final Key prefix) {
+        public final CompletableFuture<Collection<Key>> list(final Key prefix) {
             return this.delegate.list(prefix);
         }
 
         @Override
-        public CompletableFuture<Void> save(final Key key, final Content content) {
+        public final CompletableFuture<Void> save(final Key key, final Content content) {
             return this.delegate.save(key, content);
         }
 
         @Override
-        public CompletableFuture<Void> move(final Key source, final Key destination) {
+        public final CompletableFuture<Void> move(final Key source, final Key destination) {
             return this.delegate.move(source, destination);
         }
 
         @Override
-        public CompletableFuture<Content> value(final Key key) {
+        public final CompletableFuture<Content> value(final Key key) {
             return this.delegate.value(key);
         }
 
         @Override
-        public CompletableFuture<Void> delete(final Key key) {
+        public final CompletableFuture<Void> delete(final Key key) {
             return this.delegate.delete(key);
         }
 
         @Override
-        public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+        public final CompletableFuture<Transaction> transaction(final List<Key> keys) {
             return this.delegate.transaction(keys);
         }
     }
