@@ -28,11 +28,11 @@ import io.vertx.core.Handler;
 import io.vertx.reactivex.core.http.HttpServerRequest;
 
 /**
- * GoogleApiHandlerOnGetRequest.
+ * GetResponse.
  *
  * @since 0.18
  */
-public final class GoogleApiHandlerOnGetRequest implements Handler<HttpServerRequest> {
+public final class GetResponse implements Handler<HttpServerRequest> {
     @Override
     public void handle(final HttpServerRequest req) {
         req.response().end("response");

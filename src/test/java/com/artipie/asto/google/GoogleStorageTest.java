@@ -66,7 +66,7 @@ public final class GoogleStorageTest {
      * Test server.
      */
     private static final VertxTestWebServer SERVER = new VertxTestWebServer(
-        GoogleStorageTest.VERTX, GoogleStorageTest.PORT, new GoogleApiHandlerOnGetRequest()
+        GoogleStorageTest.VERTX, GoogleStorageTest.PORT, new GetResponse()
     );
 
     @BeforeAll
