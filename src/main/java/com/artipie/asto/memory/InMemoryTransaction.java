@@ -73,6 +73,11 @@ public final class InMemoryTransaction implements Transaction {
     }
 
     @Override
+    public CompletableFuture<Long> size(final Key key) {
+        return this.parent.size(key);
+    }
+
+    @Override
     public CompletableFuture<Content> value(final Key key) {
         return this.parent.value(key);
     }

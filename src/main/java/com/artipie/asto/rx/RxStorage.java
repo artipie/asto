@@ -73,6 +73,14 @@ public interface RxStorage {
     Completable move(Key source, Key destination);
 
     /**
+     * Get value size.
+     *
+     * @param key The key of value.
+     * @return Size of value in bytes.
+     */
+    Single<Long> size(Key key);
+
+    /**
      * Obtain bytes by key.
      *
      * @param key The key

@@ -41,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 0.14
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class InMemoryStorage implements Storage {
 
     /**
@@ -116,6 +117,23 @@ public final class InMemoryStorage implements Storage {
                     }
                     this.data.put(destination.string(), this.data.get(key));
                     this.data.remove(source.string());
+                }
+            }
+        );
+    }
+
+    @Override
+    public CompletableFuture<Long> size(final Key key) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                synchronized (this.data) {
+                    final byte[] content = this.data.get(key.string());
+                    if (content == null) {
+                        throw new IllegalArgumentException(
+                            String.format("No value for key: %s", key.string())
+                        );
+                    }
+                    return (long) content.length;
                 }
             }
         );

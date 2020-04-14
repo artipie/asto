@@ -160,6 +160,14 @@ public final class FileStorage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Long> size(final Key key) {
+        return new RxFile(this.path(key), this.fls)
+            .size()
+            .to(SingleInterop.get())
+            .toCompletableFuture();
+    }
+
+    @Override
     public CompletableFuture<Content> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {

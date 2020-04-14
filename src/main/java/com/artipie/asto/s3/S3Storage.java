@@ -48,6 +48,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -190,6 +191,16 @@ public final class S3Storage implements Storage {
                 deleted -> CompletableFuture.allOf()
             )
         );
+    }
+
+    @Override
+    public CompletableFuture<Long> size(final Key key) {
+        return this.client.headObject(
+            HeadObjectRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build()
+        ).thenApply(HeadObjectResponse::contentLength);
     }
 
     @Override
