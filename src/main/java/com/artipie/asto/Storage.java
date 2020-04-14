@@ -101,4 +101,61 @@ public interface Storage {
      * @return Transaction
      */
     CompletableFuture<Transaction> transaction(List<Key> keys);
+
+    /**
+     * Forwarding decorator for {@link Storage}.
+     *
+     * @since 0.18
+     */
+    abstract class Wrap implements Storage {
+
+        /**
+         * Delegate storage.
+         */
+        private final Storage delegate;
+
+        /**
+         * Ctor.
+         *
+         * @param delegate Delegate storage
+         */
+        protected Wrap(final Storage delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public final CompletableFuture<Boolean> exists(final Key key) {
+            return this.delegate.exists(key);
+        }
+
+        @Override
+        public final CompletableFuture<Collection<Key>> list(final Key prefix) {
+            return this.delegate.list(prefix);
+        }
+
+        @Override
+        public final CompletableFuture<Void> save(final Key key, final Content content) {
+            return this.delegate.save(key, content);
+        }
+
+        @Override
+        public final CompletableFuture<Void> move(final Key source, final Key destination) {
+            return this.delegate.move(source, destination);
+        }
+
+        @Override
+        public final CompletableFuture<Content> value(final Key key) {
+            return this.delegate.value(key);
+        }
+
+        @Override
+        public final CompletableFuture<Void> delete(final Key key) {
+            return this.delegate.delete(key);
+        }
+
+        @Override
+        public final CompletableFuture<Transaction> transaction(final List<Key> keys) {
+            return this.delegate.transaction(keys);
+        }
+    }
 }

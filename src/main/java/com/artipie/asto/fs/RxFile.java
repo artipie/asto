@@ -23,7 +23,6 @@
  */
 package com.artipie.asto.fs;
 
-import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -33,6 +32,7 @@ import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -113,26 +113,24 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return flow.reduce(
-            (left, right) -> {
-                final ByteBuffer concat = ByteBuffer.allocate(
-                    left.remaining() + right.remaining()
-                ).put(left).put(right);
-                concat.flip();
-                return concat;
-            }
-        )
-            .map(buf -> new Remaining(buf).bytes())
-            .toSingle(new byte[0])
-            .flatMapCompletable(
-                bytes -> Completable.fromAction(
-                    () -> Files.write(
-                        this.file,
-                        bytes,
-                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
-                    )
-                )
-            );
+        return Single.fromCallable(
+            () -> FileChannel.open(
+                this.file,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING
+            )
+        ).flatMapCompletable(
+            chan -> flow.reduce(
+                chan,
+                (out, buf) -> {
+                    while (buf.hasRemaining()) {
+                        out.write(buf);
+                    }
+                    return out;
+                }
+            ).ignoreElement().doOnTerminate(chan::close)
+        );
     }
 
     /**

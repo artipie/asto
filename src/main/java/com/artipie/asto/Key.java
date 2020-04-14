@@ -23,12 +23,11 @@
  */
 package com.artipie.asto;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,6 +48,12 @@ public interface Key {
      * @return Key string
      */
     String string();
+
+    /**
+     * Parent key.
+     * @return Parent key or Optional.empty if the current key is ROOT
+     */
+    Optional<Key> parent();
 
     /**
      * Default decorator.
@@ -72,6 +77,11 @@ public interface Key {
         @Override
         public final String string() {
             return this.origin.string();
+        }
+
+        @Override
+        public Optional<Key> parent() {
+            return this.origin.parent();
         }
     }
 
@@ -125,11 +135,15 @@ public interface Key {
          * Ctor.
          * @param parts Parts
          */
-        public From(final Collection<String> parts) {
-            this.parts = new ArrayList<>(parts)
-                .stream()
-                .flatMap(part -> Arrays.stream(part.split("/")))
-                .collect(Collectors.toList());
+        @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
+        public From(final List<String> parts) {
+            if (parts.size() == 1 && parts.get(0).isEmpty()) {
+                this.parts = Collections.emptyList();
+            } else {
+                this.parts = parts.stream()
+                    .flatMap(part -> Arrays.stream(part.split("/")))
+                    .collect(Collectors.toList());
+            }
         }
 
         @Override
@@ -143,6 +157,19 @@ public interface Key {
                 }
             }
             return String.join(From.DELIMITER, this.parts);
+        }
+
+        @Override
+        public Optional<Key> parent() {
+            final Optional<Key> parent;
+            if (this.parts.isEmpty()) {
+                parent = Optional.empty();
+            } else {
+                parent = Optional.of(
+                    new Key.From(this.parts.subList(0, this.parts.size() - 1))
+                );
+            }
+            return parent;
         }
 
         @Override
