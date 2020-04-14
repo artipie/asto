@@ -23,18 +23,18 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.asto.Remaining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Promise;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
@@ -108,24 +108,26 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return Single.fromCallable(
-            () -> FileChannel.open(
-                this.file,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE,
-                StandardOpenOption.TRUNCATE_EXISTING
-            )
-        ).flatMapCompletable(
-            chan -> flow.reduce(
-                chan,
-                (out, buf) -> {
-                    while (buf.hasRemaining()) {
-                        out.write(buf);
+        return this.fls.rxOpen(
+            this.file.toString(),
+            new OpenOptions()
+                .setRead(false)
+                .setCreate(true)
+                .setWrite(true)
+                .setTruncateExisting(true)
+        )
+            .flatMapCompletable(
+                asyncFile -> Completable.create(
+                    emitter -> {
+                        flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
+                            .subscribe(asyncFile.toSubscriber()
+                                .onWriteStreamEnd(emitter::onComplete)
+                                .onWriteStreamError(emitter::onError)
+                                .onError(emitter::onError)
+                            );
                     }
-                    return out;
-                }
-            ).ignoreElement().doOnTerminate(chan::close)
-        );
+                )
+            );
     }
 
     /**
