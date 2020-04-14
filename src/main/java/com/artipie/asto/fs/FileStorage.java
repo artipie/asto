@@ -32,7 +32,7 @@ import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.vertx.reactivex.core.file.FileSystem;
+import io.vertx.reactivex.core.Vertx;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +47,11 @@ import java.util.stream.Collectors;
 /**
  * Simple storage, in files.
  *
+ * <p>
+ * This class must be constructed only via vertx instance, otherwise we can get file system from
+ * another vertx instance and it will cause performance issues.
+ * Check {@link io.vertx.core.Vertx original}  {@code fileSystem()} method docs.
+ *
  * @since 0.1
  */
 public final class FileStorage implements Storage {
@@ -57,19 +62,19 @@ public final class FileStorage implements Storage {
     private final Path dir;
 
     /**
-     * The Vert.x file system.
+     * Vertx.
      */
-    private final FileSystem fls;
+    private final Vertx vertx;
 
     /**
      * Ctor.
      *
      * @param path The path to the dir
-     * @param fls The file system
+     * @param vertx The Vertx
      */
-    public FileStorage(final Path path, final FileSystem fls) {
+    public FileStorage(final Path path, final Vertx vertx) {
         this.dir = path;
-        this.fls = fls;
+        this.vertx = vertx;
     }
 
     @Override
@@ -128,7 +133,7 @@ public final class FileStorage implements Storage {
                 return file;
             })
             .flatMapCompletable(
-                file -> new RxFile(file, this.fls).save(Flowable.fromPublisher(content))
+                file -> new RxFile(file, this.vertx).save(Flowable.fromPublisher(content))
             ).to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
@@ -143,7 +148,7 @@ public final class FileStorage implements Storage {
                 return dest;
             })
             .flatMapCompletable(
-                dest -> new RxFile(this.path(source), this.fls).move(dest)
+                dest -> new RxFile(this.path(source), this.vertx).move(dest)
             )
             .to(CompletableInterop.await())
             .<Void>thenApply(file -> null)
@@ -152,7 +157,7 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> delete(final Key key) {
-        return new RxFile(this.path(key), this.fls)
+        return new RxFile(this.path(key), this.vertx)
             .delete()
             .to(CompletableInterop.await())
             .toCompletableFuture()
@@ -163,7 +168,7 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
-                final RxFile file = new RxFile(this.path(key), this.fls);
+                final RxFile file = new RxFile(this.path(key), this.vertx);
                 return new Content.From(
                     file.size().blockingGet(),
                     file.flow()

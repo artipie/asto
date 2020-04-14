@@ -104,7 +104,7 @@ final class StorageExtension
                 this.s3Storage(),
                 new FileStorage(
                     Files.createTempDirectory("junit"),
-                    this.vertx.fileSystem()
+                    this.vertx
                 )
             );
         } catch (final InterruptedException | ExecutionException | IOException ex) {

@@ -30,7 +30,6 @@ import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Promise;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -57,9 +56,9 @@ public class RxFile {
     private final Path file;
 
     /**
-     * The file system.
+     * The Vertx.
      */
-    private final FileSystem fls;
+    private final Vertx vertx;
 
     /**
      * Ctor.
@@ -68,7 +67,7 @@ public class RxFile {
      */
     public RxFile(final Path file, final Vertx vertx) {
         this.file = file;
-        this.fls = vertx.fileSystem();
+        this.vertx = vertx;
     }
 
     /**
@@ -76,7 +75,7 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(
+        return this.vertx.fileSystem().rxOpen(
             this.file.toString(),
             new OpenOptions()
                 .setRead(true)
@@ -140,7 +139,7 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable move(final Path target) {
-        return this.fls.rxMove(
+        return this.vertx.fileSystem().rxMove(
             this.file.toString(),
             target.toString(),
             new CopyOptions().setReplaceExisting(true)
@@ -153,7 +152,7 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable delete() {
-        return this.fls.rxDelete(this.file.toString());
+        return this.vertx.fileSystem().rxDelete(this.file.toString());
     }
 
     /**

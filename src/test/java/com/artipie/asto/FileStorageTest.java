@@ -66,7 +66,7 @@ final class FileStorageTest {
     @BeforeEach
     void setUp(@TempDir final Path tmp) {
         this.vertx = Vertx.vertx();
-        this.storage = new FileStorage(tmp, this.vertx.fileSystem());
+        this.storage = new FileStorage(tmp, this.vertx);
     }
 
     @AfterEach

@@ -50,7 +50,7 @@ final class RxFileTest {
         final String hello = "hello-world";
         final Path temp = tmp.resolve("txt-file");
         Files.write(temp, hello.getBytes());
-        final String content = new RxFile(temp, vertx.fileSystem())
+        final String content = new RxFile(temp, vertx)
             .flow()
             .rebatchRequests(1)
             .toList()
@@ -71,8 +71,8 @@ final class RxFileTest {
         final String one = "one";
         final String two = "two111";
         final Path target = tmp.resolve("target.txt");
-        new RxFile(target, vertx.fileSystem()).save(pubFromString(two)).blockingAwait();
-        new RxFile(target, vertx.fileSystem()).save(pubFromString(one)).blockingAwait();
+        new RxFile(target, vertx).save(pubFromString(two)).blockingAwait();
+        new RxFile(target, vertx).save(pubFromString(one)).blockingAwait();
         MatcherAssert.assertThat(
             new String(Files.readAllBytes(target), StandardCharsets.UTF_8),
             Matchers.equalTo(one)
@@ -86,7 +86,7 @@ final class RxFileTest {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
         final Path temp = tmp.resolve("saved.txt");
-        new RxFile(temp, vertx.fileSystem())
+        new RxFile(temp, vertx)
             .save(
                 Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
                     aByte -> {
@@ -106,7 +106,7 @@ final class RxFileTest {
         final byte[] data = "012345".getBytes();
         final Path temp = tmp.resolve("size-test.txt");
         Files.write(temp, data);
-        final Long size = new RxFile(temp, vertx.fileSystem()).size().blockingGet();
+        final Long size = new RxFile(temp, vertx).size().blockingGet();
         MatcherAssert.assertThat(
             size,
             Matchers.equalTo((long) data.length)
