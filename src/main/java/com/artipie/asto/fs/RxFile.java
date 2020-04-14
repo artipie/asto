@@ -30,6 +30,7 @@ import io.reactivex.Single;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.reactivex.core.Promise;
+import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -41,6 +42,10 @@ import java.nio.file.StandardOpenOption;
  * and {@link RxFile#save(Flowable)} methods respectively.
  * <p>
  * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
+ * <p>
+ * This class must be constructed only via vertx instance, otherwise we can get file system from
+ * another vertx instance and it will cause performance issues.
+ * Check {@link io.vertx.core.Vertx original}  {@code fileSystem()} method docs.
  *
  * @since 0.12
  */
@@ -59,11 +64,11 @@ public class RxFile {
     /**
      * Ctor.
      * @param file The wrapped file.
-     * @param fls The file system.
+     * @param vertx Vertx instance.
      */
-    public RxFile(final Path file, final FileSystem fls) {
+    public RxFile(final Path file, final Vertx vertx) {
         this.file = file;
-        this.fls = fls;
+        this.fls = vertx.fileSystem();
     }
 
     /**
