@@ -83,7 +83,7 @@ public class RxFile {
                     final Promise<Void> promise = Promise.promise();
                     final Completable completable = Completable.create(
                         emitter ->
-                            promise.future().setHandler(
+                            promise.future().onComplete(
                                 event -> {
                                     if (event.succeeded()) {
                                         emitter.onComplete();
