@@ -169,15 +169,12 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                final RxFile file = new RxFile(this.path(key), this.fls);
-                return new Content.From(
-                    file.size().blockingGet(),
-                    file.flow()
-                );
-            }
-        );
+        return CompletableFuture.supplyAsync(() -> new RxFile(this.path(key), this.fls))
+            .thenCompose(
+                file -> file.size().<Content>map(size -> new Content.From(size, file.flow()))
+                    .to(SingleInterop.get())
+                    .toCompletableFuture()
+            );
     }
 
     @Override
