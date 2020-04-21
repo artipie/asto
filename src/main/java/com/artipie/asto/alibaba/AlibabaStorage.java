@@ -24,10 +24,15 @@
 
 package com.artipie.asto.alibaba;
 
+import com.aliyun.oss.OSS;
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +45,28 @@ import java.util.concurrent.CompletableFuture;
  * @since 0.19
  */
 public final class AlibabaStorage implements Storage {
+
+    /**
+     * OSS client.
+     */
+    private final OSS client;
+
+    /**
+     * Bucket name.
+     */
+    private final String bucket;
+
+    /**
+     * Ctor.
+     *
+     * @param client OSS Client
+     * @param bucket Bucket name
+     */
+    public AlibabaStorage(final OSS client, final String bucket) {
+        this.client = client;
+        this.bucket = bucket;
+    }
+
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
         throw new UnsupportedOperationException();
@@ -52,7 +79,14 @@ public final class AlibabaStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        throw new UnsupportedOperationException();
+        return new Concatenation(content).single()
+            .map(Remaining::new)
+            .map(Remaining::bytes)
+            .map(ByteArrayInputStream::new)
+            .to(SingleInterop.get())
+            .thenApply(bytes -> this.client.putObject(this.bucket, key.string(), bytes))
+            .<Void>thenApply(o -> null)
+            .toCompletableFuture();
     }
 
     @Override
