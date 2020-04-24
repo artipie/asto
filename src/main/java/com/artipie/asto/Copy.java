@@ -34,53 +34,48 @@ import java.util.concurrent.CompletableFuture;
  * @checkstyle UnusedPrivateField (500 lines)
  * @checkstyle SingularField (500 lines)
  * @checkstyle NonStaticMethodCheck (500 lines)
+ * @checkstyle MemberNameCheck (500 lines)
+ * @checkstyle ParameterNameCheck (500 lines)
  * @todo #160:30min Implement Sync class.
  *  This class currently is not implemented. This class should be implemented in a way to storage
  *  synchronization would work properly.
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "PMD.AvoidDuplicateLiterals"})
-public class Sync {
+public class Copy {
 
     /**
-     * The left storage.
+     * The storage to copy from.
      */
-    private final Storage left;
+    private final Storage from;
 
     /**
-     * The right storage.
+     * The storage to copy to.
      */
-    private final Storage right;
+    private final Storage to;
+
+    /**
+     * The keys to transfer.
+     */
+    private final List<Key> keys;
 
     /**
      * Ctor.
-     * @param left The left storage.
-     * @param right The right storage.
+     * @param from The left storage.
+     * @param to The right storage.
+     * @param keys The keys to copy.
      */
-    public Sync(final Storage left, final Storage right) {
-        this.left = left;
-        this.right = right;
+    public Copy(final Storage from, final Storage to, final List<Key> keys) {
+        this.from = from;
+        this.to = to;
+        this.keys = keys;
     }
 
     /**
-     * Synchronizes specified key from left storage with the right one.
+     * Copy specified keys from one storage, to another.
      *
-     * @param keys The keys.
-     * @return When synchronization completes
+     * @return When copy operation completes
      */
-    public CompletableFuture<Void> leftWithRight(final List<Key> keys) {
-        return Single.error(new IllegalStateException("not implemented")).ignoreElement()
-            .to(CompletableInterop.await())
-            .<Void>thenApply(o -> null)
-            .toCompletableFuture();
-    }
-
-    /**
-     * Synchronizes specified key from right storage with the left one.
-     *
-     * @param keys The keys.
-     * @return When synchronization completes
-     */
-    public CompletableFuture<Void> rightWithLeft(final List<Key> keys) {
+    public CompletableFuture<Void> perform() {
         return Single.error(new IllegalStateException("not implemented")).ignoreElement()
             .to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
