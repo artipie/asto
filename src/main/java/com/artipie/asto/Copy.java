@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
- * @todo #160:30min Implement Sync class.
+ * @todo #160:30min Implement Copy class.
  *  This class currently is not implemented. This class should be implemented in a way to storage
  *  synchronization would work properly.
  */
