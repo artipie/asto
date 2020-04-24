@@ -49,11 +49,6 @@ public class Copy {
     private final Storage from;
 
     /**
-     * The storage to copy to.
-     */
-    private final Storage to;
-
-    /**
      * The keys to transfer.
      */
     private final List<Key> keys;
@@ -61,21 +56,19 @@ public class Copy {
     /**
      * Ctor.
      * @param from The left storage.
-     * @param to The right storage.
      * @param keys The keys to copy.
      */
-    public Copy(final Storage from, final Storage to, final List<Key> keys) {
+    public Copy(final Storage from, final List<Key> keys) {
         this.from = from;
-        this.to = to;
         this.keys = keys;
     }
 
     /**
-     * Copy specified keys from one storage, to another.
-     *
+     * Copy keys to the specified storage.
+     * @param to The storage to copy to.
      * @return When copy operation completes
      */
-    public CompletableFuture<Void> perform() {
+    public CompletableFuture<Void> copy(final Storage to) {
         return Single.error(new IllegalStateException("not implemented")).ignoreElement()
             .to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
