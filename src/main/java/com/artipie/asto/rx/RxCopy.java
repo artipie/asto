@@ -23,9 +23,11 @@
  */
 package com.artipie.asto.rx;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import io.reactivex.Completable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A reactive version of {@link com.artipie.asto.Copy}.
@@ -34,9 +36,6 @@ import java.util.List;
  * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
- * @todo #160:30min Implement RxCopy class.
- *  This class currently is not implemented. This class should be implemented in a way to storage
- *  synchronization would work properly.
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "PMD.AvoidDuplicateLiterals"})
 public class RxCopy {
@@ -67,6 +66,12 @@ public class RxCopy {
      * @return The completion signal.
      */
     public Completable copy(final RxStorage to) {
-        return Completable.error(new IllegalStateException("not implemented"));
+        return Completable.merge(
+            this.keys.stream()
+                .map(key ->
+                    to.save(key, new Content.From(this.from.value(key).flatMapPublisher(v -> v)))
+                )
+                .collect(Collectors.toList())
+        );
     }
 }
