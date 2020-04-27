@@ -32,11 +32,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Storage synchronization.
  * @since 0.19
- * @checkstyle NonStaticMethodCheck (500 lines)
- * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class Copy {
 
     /**
