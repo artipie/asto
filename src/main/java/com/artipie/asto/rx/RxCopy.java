@@ -38,7 +38,7 @@ import java.util.List;
  *  This class currently is not implemented. This class should be implemented in a way to storage
  *  synchronization would work properly.
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public class RxCopy {
 
     /**
