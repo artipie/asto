@@ -49,7 +49,10 @@ import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -59,6 +62,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
  * Tests for {@link S3Storage}.
  *
  * @since 0.15
+ * @checkstyle MagicNumberCheck (500 lines)
  * @checkstyle ClassDataAbstractionCouplingCheck (3 lines)
  */
 @SuppressWarnings("PMD.TooManyMethods")
@@ -92,17 +96,19 @@ class S3StorageTest {
     }
 
     @Test
+    @Timeout(5)
     void shouldUploadObjectWhenSaveContentOfUnknownSize(final AmazonS3 client) throws Exception {
         final byte[] data = "data?".getBytes();
         final String key = "unknown/size";
         this.storage().save(
             new Key.From(key),
-            new Content.From(Flowable.just(ByteBuffer.wrap(data)))
+            new Content.From(new OneOffPublisher(ByteBuffer.wrap(data)))
         ).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
 
     @Test
+    @Timeout(15)
     void shouldUploadObjectWhenSaveLargeContent(final AmazonS3 client) throws Exception {
         final int size = 20 * 1024 * 1024;
         final byte[] data = new byte[size];
@@ -110,7 +116,7 @@ class S3StorageTest {
         final String key = "big/data";
         this.storage().save(
             new Key.From(key),
-            new Content.From(Flowable.just(ByteBuffer.wrap(data)))
+            new Content.From(new OneOffPublisher(ByteBuffer.wrap(data)))
         ).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
@@ -251,5 +257,36 @@ class S3StorageTest {
             )
             .build();
         return new S3Storage(client, this.bucket);
+    }
+
+    /**
+     * Publisher that produces value only once for first subscription.
+     *
+     * @since 0.18
+     */
+    private static class OneOffPublisher implements Publisher<ByteBuffer> {
+
+        /**
+         * Data for subscriber.
+         */
+        private final ByteBuffer data;
+
+        /**
+         * Flag for completion.
+         */
+        private volatile boolean complete;
+
+        OneOffPublisher(final ByteBuffer data) {
+            this.data = data;
+        }
+
+        @Override
+        public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
+            if (!this.complete) {
+                this.complete = true;
+                subscriber.onNext(this.data);
+                subscriber.onComplete();
+            }
+        }
     }
 }

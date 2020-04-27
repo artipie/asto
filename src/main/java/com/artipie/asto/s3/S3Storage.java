@@ -134,10 +134,11 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
+        final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
         return content.size()
             .map(size -> CompletableFuture.completedFuture(Optional.of(size)))
             .orElseGet(
-                () -> Flowable.fromPublisher(content)
+                () -> cache
                     .map(Buffer::remaining)
                     .scanWith(() -> 0L, (sum, item) -> sum + item)
                     .takeUntil(total -> total >= S3Storage.MIN_MULTIPART)
@@ -157,8 +158,8 @@ public final class S3Storage implements Storage {
                     )
             ).thenApply(
                 sizeOpt -> sizeOpt
-                    .<Content>map(size -> new Content.From(size, content))
-                    .orElse(content)
+                    .<Content>map(size -> new Content.From(size, cache))
+                    .orElse(new Content.From(cache))
             ).thenCompose(
                 updated -> {
                     final CompletableFuture<Void> future;
