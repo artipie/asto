@@ -68,8 +68,11 @@ public class RxCopy {
     public Completable copy(final RxStorage to) {
         return Completable.merge(
             this.keys.stream()
-                .map(key ->
-                    to.save(key, new Content.From(this.from.value(key).flatMapPublisher(v -> v)))
+                .map(
+                    key -> to.save(
+                        key,
+                        new Content.From(this.from.value(key).flatMapPublisher(v -> v))
+                    )
                 )
                 .collect(Collectors.toList())
         );
