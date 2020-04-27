@@ -21,25 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.rx;
 
-import com.artipie.asto.rx.RxCopy;
-import com.artipie.asto.rx.RxStorageWrapper;
-import hu.akarnokd.rxjava2.interop.CompletableInterop;
+import com.artipie.asto.Key;
+import io.reactivex.Completable;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Storage synchronization.
+ * A reactive version of {@link com.artipie.asto.Copy}.
+ *
  * @since 0.19
+ * @checkstyle NonStaticMethodCheck (500 lines)
+ * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
+ * @todo #160:30min Implement RxCopy class.
+ *  This class currently is not implemented. This class should be implemented in a way to storage
+ *  synchronization would work properly.
  */
-public class Copy {
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public class RxCopy {
 
     /**
      * The storage to copy from.
      */
-    private final Storage from;
+    private final RxStorage from;
 
     /**
      * The keys to transfer.
@@ -48,23 +53,20 @@ public class Copy {
 
     /**
      * Ctor.
-     * @param from The storage to copy to.
+     * @param from The storage to copy from.
      * @param keys The keys to copy.
      */
-    public Copy(final Storage from, final List<Key> keys) {
+    public RxCopy(final RxStorage from, final List<Key> keys) {
         this.from = from;
         this.keys = keys;
     }
 
     /**
-     * Copy keys to the specified storage.
+     * Copy key to storage.
      * @param to The storage to copy to.
-     * @return When copy operation completes
+     * @return The completion signal.
      */
-    public CompletableFuture<Void> copy(final Storage to) {
-        return new RxCopy(new RxStorageWrapper(this.from), this.keys).copy(new RxStorageWrapper(to))
-            .to(CompletableInterop.await())
-            .<Void>thenApply(o -> null)
-            .toCompletableFuture();
+    public Completable copy(final RxStorage to) {
+        return Completable.error(new IllegalStateException("not implemented"));
     }
 }
