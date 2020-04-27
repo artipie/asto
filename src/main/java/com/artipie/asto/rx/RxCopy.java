@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public class RxCopy {
 
     /**
