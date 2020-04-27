@@ -31,8 +31,6 @@ import java.util.List;
  * A reactive version of {@link com.artipie.asto.Copy}.
  *
  * @since 0.19
- * @checkstyle UnusedPrivateField (500 lines)
- * @checkstyle SingularField (500 lines)
  * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)

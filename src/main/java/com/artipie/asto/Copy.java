@@ -32,16 +32,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Storage synchronization.
  * @since 0.19
- * @checkstyle UnusedPrivateField (500 lines)
- * @checkstyle SingularField (500 lines)
  * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
- * @todo #160:30min Implement Copy class.
- *  This class currently is not implemented. This class should be implemented in a way to storage
- *  synchronization would work properly.
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class Copy {
 
     /**
