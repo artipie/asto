@@ -26,8 +26,8 @@ package com.artipie.asto.rx;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A reactive version of {@link com.artipie.asto.Copy}.
@@ -41,6 +41,11 @@ import java.util.stream.Collectors;
 public class RxCopy {
 
     /**
+     * The default parallelism level.
+     */
+    private static final Integer DEFLT_PARALLELISM = 8;
+
+    /**
      * The storage to copy from.
      */
     private final RxStorage from;
@@ -51,13 +56,29 @@ public class RxCopy {
     private final List<Key> keys;
 
     /**
+     * Amount of parallel copy operations.
+     */
+    private final Integer parallelism;
+
+    /**
      * Ctor.
      * @param from The storage to copy from.
      * @param keys The keys to copy.
      */
     public RxCopy(final RxStorage from, final List<Key> keys) {
+        this(from, keys, RxCopy.DEFLT_PARALLELISM);
+    }
+
+    /**
+     * Ctor.
+     * @param from The storage to copy from.
+     * @param keys The keys to copy.
+     * @param parallelism The parallelism level.
+     */
+    public RxCopy(final RxStorage from, final List<Key> keys, final Integer parallelism) {
         this.from = from;
         this.keys = keys;
+        this.parallelism = parallelism;
     }
 
     /**
@@ -66,15 +87,16 @@ public class RxCopy {
      * @return The completion signal.
      */
     public Completable copy(final RxStorage to) {
-        return Completable.merge(
-            this.keys.stream()
-                .map(
-                    key -> to.save(
-                        key,
-                        new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
+        return Completable.concat(Flowable.fromIterable(this.keys)
+            .map(
+                key ->
+                    Completable.defer(
+                        () -> to.save(
+                            key,
+                            new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
+                        )
                     )
-                )
-                .collect(Collectors.toList())
+            ).buffer(this.parallelism).map(Completable::merge)
         );
     }
 }
