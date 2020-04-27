@@ -71,7 +71,7 @@ public class RxCopy {
                 .map(
                     key -> to.save(
                         key,
-                        new Content.From(this.from.value(key).flatMapPublisher(v -> v))
+                        new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
                     )
                 )
                 .collect(Collectors.toList())
