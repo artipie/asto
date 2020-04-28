@@ -43,7 +43,7 @@ public class RxCopy {
     /**
      * The default parallelism level.
      */
-    private static final Integer DEFLT_PARALLELISM = 8;
+    private static final Integer DEFLT_PARALLELISM = Runtime.getRuntime().availableProcessors();
 
     /**
      * The storage to copy from.
@@ -89,13 +89,12 @@ public class RxCopy {
     public Completable copy(final RxStorage to) {
         return Completable.concat(Flowable.fromIterable(this.keys)
             .map(
-                key ->
-                    Completable.defer(
-                        () -> to.save(
-                            key,
-                            new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
-                        )
+                key -> Completable.defer(
+                    () -> to.save(
+                        key,
+                        new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
                     )
+                )
             ).buffer(this.parallelism).map(Completable::merge)
         );
     }
