@@ -23,8 +23,10 @@
  */
 package com.artipie.asto.rx;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import java.util.List;
 
 /**
@@ -34,12 +36,14 @@ import java.util.List;
  * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle MemberNameCheck (500 lines)
  * @checkstyle ParameterNameCheck (500 lines)
- * @todo #160:30min Implement RxCopy class.
- *  This class currently is not implemented. This class should be implemented in a way to storage
- *  synchronization would work properly.
  */
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public class RxCopy {
+
+    /**
+     * The default parallelism level.
+     */
+    private static final Integer DEFLT_PARALLELISM = Runtime.getRuntime().availableProcessors();
 
     /**
      * The storage to copy from.
@@ -52,13 +56,29 @@ public class RxCopy {
     private final List<Key> keys;
 
     /**
+     * Amount of parallel copy operations.
+     */
+    private final Integer parallelism;
+
+    /**
      * Ctor.
      * @param from The storage to copy from.
      * @param keys The keys to copy.
      */
     public RxCopy(final RxStorage from, final List<Key> keys) {
+        this(from, keys, RxCopy.DEFLT_PARALLELISM);
+    }
+
+    /**
+     * Ctor.
+     * @param from The storage to copy from.
+     * @param keys The keys to copy.
+     * @param parallelism The parallelism level.
+     */
+    public RxCopy(final RxStorage from, final List<Key> keys, final Integer parallelism) {
         this.from = from;
         this.keys = keys;
+        this.parallelism = parallelism;
     }
 
     /**
@@ -67,6 +87,15 @@ public class RxCopy {
      * @return The completion signal.
      */
     public Completable copy(final RxStorage to) {
-        return Completable.error(new IllegalStateException("not implemented"));
+        return Completable.concat(Flowable.fromIterable(this.keys)
+            .map(
+                key -> Completable.defer(
+                    () -> to.save(
+                        key,
+                        new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
+                    )
+                )
+            ).buffer(this.parallelism).map(Completable::merge)
+        );
     }
 }
