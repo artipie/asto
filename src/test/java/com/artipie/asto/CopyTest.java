@@ -43,17 +43,20 @@ import org.junit.jupiter.api.Test;
 public class CopyTest {
 
     @Test
-    public void copyWorks() throws ExecutionException, InterruptedException {
-        final InMemoryStorage from = new InMemoryStorage();
-        final InMemoryStorage to = new InMemoryStorage();
+    public void copyTwoFilesFromOneStorageToAnotherWorksFine()
+        throws ExecutionException, InterruptedException {
+        final Storage from = new InMemoryStorage();
+        final Storage to = new InMemoryStorage();
         final Key akey = new Key.From("a.txt");
         final Key bkey = new Key.From("b.txt");
-        new BlockingStorage(from).save(akey, "Hello world A".getBytes());
-        new BlockingStorage(from).save(bkey, "Hello world B".getBytes());
+        final BlockingStorage bfrom = new BlockingStorage(from);
+        bfrom.save(akey, "Hello world A".getBytes());
+        bfrom.save(bkey, "Hello world B".getBytes());
         new Copy(from, Stream.of(bkey, akey).collect(Collectors.toList())).copy(to).get();
+        final BlockingStorage bto = new BlockingStorage(to);
         MatcherAssert.assertThat(
-            new String(new BlockingStorage(to).value(akey), StandardCharsets.UTF_8)
-                + new String(new BlockingStorage(to).value(bkey), StandardCharsets.UTF_8),
+            new String(bto.value(akey), StandardCharsets.UTF_8)
+                + new String(bto.value(bkey), StandardCharsets.UTF_8),
             new IsEqual<>("Hello world A" + "Hello world B")
         );
     }
