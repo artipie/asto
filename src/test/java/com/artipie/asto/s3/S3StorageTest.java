@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.s3;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.services.s3.AmazonS3;
@@ -29,8 +29,9 @@ import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
 import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
-import com.artipie.asto.s3.S3Storage;
 import com.google.common.io.ByteStreams;
 import io.reactivex.Flowable;
 import java.io.ByteArrayInputStream;
@@ -262,7 +263,7 @@ class S3StorageTest {
     /**
      * Publisher that produces value only once for first subscription.
      *
-     * @since 0.18
+     * @since 0.19
      */
     private static class OneOffPublisher implements Publisher<ByteBuffer> {
 
