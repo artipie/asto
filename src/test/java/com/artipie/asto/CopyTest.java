@@ -25,12 +25,12 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.IsEqual;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -53,11 +53,14 @@ public class CopyTest {
         bfrom.save(akey, "Hello world A".getBytes());
         bfrom.save(bkey, "Hello world B".getBytes());
         new Copy(from, Stream.of(bkey, akey).collect(Collectors.toList())).copy(to).get();
-        final BlockingStorage bto = new BlockingStorage(to);
-        MatcherAssert.assertThat(
-            new String(bto.value(akey), StandardCharsets.UTF_8)
-                + new String(bto.value(bkey), StandardCharsets.UTF_8),
-            new IsEqual<>("Hello world A" + "Hello world B")
-        );
+        for (final Key key :  new BlockingStorage(from).list(Key.ROOT)) {
+            MatcherAssert.assertThat(
+                Arrays.equals(
+                    bfrom.value(key),
+                    new BlockingStorage(to).value(key)
+                ),
+                Matchers.is(true)
+            );
+        }
     }
 }
