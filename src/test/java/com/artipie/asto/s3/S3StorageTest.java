@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -275,16 +276,16 @@ class S3StorageTest {
         /**
          * Flag for completion.
          */
-        private volatile boolean complete;
+        private final AtomicBoolean complete;
 
         OneOffPublisher(final ByteBuffer data) {
             this.data = data;
+            this.complete = new AtomicBoolean(false);
         }
 
         @Override
         public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
-            if (!this.complete) {
-                this.complete = true;
+            if (!this.complete.getAndSet(true)) {
                 subscriber.onNext(this.data);
                 subscriber.onComplete();
             }
