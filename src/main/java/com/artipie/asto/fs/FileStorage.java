@@ -113,7 +113,7 @@ public final class FileStorage implements Storage {
                 Logger.info(
                     this,
                     "Found %d objects by the prefix \"%s\" in %s by %s: %s",
-                    keys.size(), prefix, this.dir, path, keys
+                    keys.size(), prefix.string(), this.dir, path, keys
                 );
                 return keys;
             }).to(SingleInterop.get()).toCompletableFuture();
