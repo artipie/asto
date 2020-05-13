@@ -25,7 +25,6 @@ package com.artipie.asto;
 
 import com.artipie.asto.fs.RxFile;
 import io.reactivex.Flowable;
-import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -46,11 +45,10 @@ final class RxFileTest {
 
     @Test
     public void rxFileFlowWorks(@TempDir final Path tmp) throws IOException {
-        final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world";
         final Path temp = tmp.resolve("txt-file");
         Files.write(temp, hello.getBytes());
-        final String content = new RxFile(temp, vertx.fileSystem())
+        final String content = new RxFile(temp)
             .flow()
             .rebatchRequests(1)
             .toList()
@@ -62,56 +60,48 @@ final class RxFileTest {
             .map(bytes -> new String(new ByteArray(bytes).primitiveBytes()))
             .blockingGet();
         MatcherAssert.assertThat(hello, Matchers.equalTo(content));
-        vertx.close();
     }
 
     @Test
     public void rxFileTruncatesExistingFile(@TempDir final Path tmp) throws Exception {
-        final Vertx vertx = Vertx.vertx();
         final String one = "one";
         final String two = "two111";
         final Path target = tmp.resolve("target.txt");
-        new RxFile(target, vertx.fileSystem()).save(pubFromString(two)).blockingAwait();
-        new RxFile(target, vertx.fileSystem()).save(pubFromString(one)).blockingAwait();
+        new RxFile(target).save(pubFromString(two)).blockingAwait();
+        new RxFile(target).save(pubFromString(one)).blockingAwait();
         MatcherAssert.assertThat(
             new String(Files.readAllBytes(target), StandardCharsets.UTF_8),
             Matchers.equalTo(one)
         );
-        vertx.close();
     }
 
     // @checkstyle MagicNumberCheck (1 line)
     @RepeatedTest(100)
     public void rxFileSaveWorks(@TempDir final Path tmp) throws IOException {
-        final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
         final Path temp = tmp.resolve("saved.txt");
-        new RxFile(temp, vertx.fileSystem())
-            .save(
-                Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
-                    aByte -> {
-                        final byte[] bytes = new byte[1];
-                        bytes[0] = aByte;
-                        return ByteBuffer.wrap(bytes);
-                    }
-                )
-            ).blockingAwait();
+        new RxFile(temp).save(
+            Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
+                aByte -> {
+                    final byte[] bytes = new byte[1];
+                    bytes[0] = aByte;
+                    return ByteBuffer.wrap(bytes);
+                }
+            )
+        ).blockingAwait();
         MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
-        vertx.close();
     }
 
-    @Test()
+    @Test
     public void rxFileSizeWorks(@TempDir final Path tmp) throws IOException {
-        final Vertx vertx = Vertx.vertx();
         final byte[] data = "012345".getBytes();
         final Path temp = tmp.resolve("size-test.txt");
         Files.write(temp, data);
-        final Long size = new RxFile(temp, vertx.fileSystem()).size().blockingGet();
+        final Long size = new RxFile(temp).size().blockingGet();
         MatcherAssert.assertThat(
             size,
             Matchers.equalTo((long) data.length)
         );
-        vertx.close();
     }
 
     /**
