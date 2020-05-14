@@ -33,8 +33,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -44,6 +44,7 @@ import org.junit.jupiter.api.io.TempDir;
 final class RxFileTest {
 
     @Test
+    @Timeout(1)
     public void rxFileFlowWorks(@TempDir final Path tmp) throws IOException {
         final String hello = "hello-world";
         final Path temp = tmp.resolve("txt-file");
@@ -63,6 +64,7 @@ final class RxFileTest {
     }
 
     @Test
+    @Timeout(1)
     public void rxFileTruncatesExistingFile(@TempDir final Path tmp) throws Exception {
         final String one = "one";
         final String two = "two111";
@@ -76,7 +78,8 @@ final class RxFileTest {
     }
 
     // @checkstyle MagicNumberCheck (1 line)
-    @RepeatedTest(100)
+    @Test
+    @Timeout(1)
     public void rxFileSaveWorks(@TempDir final Path tmp) throws IOException {
         final String hello = "hello-world!!!";
         final Path temp = tmp.resolve("saved.txt");
@@ -93,6 +96,7 @@ final class RxFileTest {
     }
 
     @Test
+    @Timeout(1)
     public void rxFileSizeWorks(@TempDir final Path tmp) throws IOException {
         final byte[] data = "012345".getBytes();
         final Path temp = tmp.resolve("size-test.txt");
