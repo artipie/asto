@@ -79,7 +79,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void saveOverwrites() {
+    void saveOverwrites() throws Exception {
         final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
         final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
         final BlockingStorage blocking = new BlockingStorage(this.storage);
@@ -93,7 +93,19 @@ final class FileStorageTest {
     }
 
     @Test
-    void blockingWrapperWorks() {
+    void readsTheSize() throws Exception {
+        final BlockingStorage bsto = new BlockingStorage(this.storage);
+        final Key key = new Key.From("withSize");
+        bsto.save(key, new byte[]{0x00, 0x00, 0x00});
+        MatcherAssert.assertThat(
+            bsto.size(key),
+            // @checkstyle MagicNumberCheck (1 line)
+            Matchers.equalTo(3L)
+        );
+    }
+
+    @Test
+    void blockingWrapperWorks() throws Exception {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
@@ -108,7 +120,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void move() {
+    void move() throws Exception {
         final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key source = new Key.From("from");

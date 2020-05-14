@@ -27,11 +27,16 @@ import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.subjects.CompletableSubject;
+import io.reactivex.subjects.SingleSubject;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import wtf.g4s8.rio.file.File;
 
 /**
@@ -50,23 +55,26 @@ public class RxFile {
     private final Path file;
 
     /**
-     * Ctor.
-     * @param file The wrapped file.
-     * @param nothing Compatibility param
-     * @deprecated Use {@link #RxFile(Path)} instead, second parameter does nothing
+     * IO executor.
      */
-    @Deprecated
-    @SuppressWarnings("PMD.UnusedFormalParameter")
-    public RxFile(final Path file, final Object nothing) {
-        this(file);
+    private final ExecutorService exec;
+
+    /**
+     * Ctor.
+     * @param file File path
+     */
+    public RxFile(final Path file) {
+        this(file, Executors.newCachedThreadPool());
     }
 
     /**
      * Ctor.
-     * @param file The wrapped file.
+     * @param file The wrapped file
+     * @param exec IO executor
      */
-    public RxFile(final Path file) {
+    public RxFile(final Path file, final ExecutorService exec) {
         this.file = file;
+        this.exec = exec;
     }
 
     /**
@@ -74,7 +82,7 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return Flowable.fromPublisher(new File(this.file).content());
+        return Flowable.fromPublisher(new File(this.file).content(this.exec));
     }
 
     /**
@@ -87,6 +95,7 @@ public class RxFile {
         return CompletableInterop.fromFuture(
             new File(this.file).write(
                 flow,
+                this.exec,
                 StandardOpenOption.CREATE, StandardOpenOption.WRITE,
                 StandardOpenOption.TRUNCATE_EXISTING
             )
@@ -100,9 +109,18 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable move(final Path target) {
-        return Completable.fromAction(
-            () -> Files.move(this.file, target, StandardCopyOption.REPLACE_EXISTING)
+        final CompletableSubject res = CompletableSubject.create();
+        this.exec.submit(
+            () -> {
+                try {
+                    Files.move(this.file, target, StandardCopyOption.REPLACE_EXISTING);
+                    res.onComplete();
+                } catch (final IOException iex) {
+                    res.onError(iex);
+                }
+            }
         );
+        return res;
     }
 
     /**
@@ -111,7 +129,18 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable delete() {
-        return Completable.fromAction(() -> Files.delete(this.file));
+        final CompletableSubject res = CompletableSubject.create();
+        this.exec.submit(
+            () -> {
+                try {
+                    Files.delete(this.file);
+                    res.onComplete();
+                } catch (final IOException iex) {
+                    res.onError(iex);
+                }
+            }
+        );
+        return res;
     }
 
     /**
@@ -120,6 +149,16 @@ public class RxFile {
      * @return File size in bytes.
      */
     public Single<Long> size() {
-        return Single.fromCallable(() -> Files.size(this.file));
+        final SingleSubject<Long> res = SingleSubject.create();
+        this.exec.submit(
+            () -> {
+                try {
+                    res.onSuccess(Files.size(this.file));
+                } catch (final IOException iex) {
+                    res.onError(iex);
+                }
+            }
+        );
+        return res;
     }
 }
