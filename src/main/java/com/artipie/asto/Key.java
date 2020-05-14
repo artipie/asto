@@ -85,16 +85,6 @@ public interface Key {
         }
 
         @Override
-        public boolean equals(final Object another) {
-            return this.origin.equals(another);
-        }
-
-        @Override
-        public int hashCode() {
-            return this.origin.hashCode();
-        }
-
-        @Override
         public final String toString() {
             return this.string();
         }
