@@ -102,7 +102,7 @@ SOFTWARE.
     <dependency>
       <groupId>wtf.g4s8</groupId>
       <artifactId>rio</artifactId>
-      <version>0.1.1</version>
+      <version>0.1.2</version>
     </dependency>
     <!-- S3 client -->
     <dependency>
