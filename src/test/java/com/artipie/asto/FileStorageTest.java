@@ -30,6 +30,7 @@ import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,6 +39,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -121,20 +123,26 @@ final class FileStorageTest {
 
     @Test
     @EnabledIfSystemProperty(named = "test.storage.file.huge", matches = "true|on")
-    void saveAndLoadHugeFiles() throws Exception {
-        final Key key = new Key.From("huge");
-        this.storage.save(
-            key,
+    @Timeout(1L)
+    void saveAndLoadHugeFiles(@TempDir final Path tmp) throws Exception {
+        final String name = "huge";
+        new FileStorage(tmp).save(
+            new Key.From(name),
             new Content.From(
                 // @checkstyle MagicNumberCheck (1 line)
                 Flowable.generate(new WriteTestSource(1024 * 8, 1024 * 1024 / 8))
             )
         ).get();
+        MatcherAssert.assertThat(
+            Files.size(tmp.resolve(name)),
+            // @checkstyle MagicNumberCheck (1 line)
+            Matchers.equalTo(1024L * 1024 * 1024)
+        );
     }
 
     /**
      * Provider of byte buffers for write test.
-     * @since 0.1
+     * @since 0.2
      */
     private static final class WriteTestSource implements Consumer<Emitter<ByteBuffer>> {
 
