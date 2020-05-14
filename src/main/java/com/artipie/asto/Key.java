@@ -83,6 +83,11 @@ public interface Key {
         public Optional<Key> parent() {
             return this.origin.parent();
         }
+
+        @Override
+        public final String toString() {
+            return this.string();
+        }
     }
 
     /**
@@ -187,6 +192,11 @@ public interface Key {
         @Override
         public int hashCode() {
             return Objects.hash(this.parts);
+        }
+
+        @Override
+        public String toString() {
+            return this.string();
         }
     }
 }
