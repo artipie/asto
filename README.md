@@ -23,8 +23,7 @@ which requires to implement the following functionalities:
 Supported abstractions:
 
 - [x] [File system](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/fs/FileStorage.html) 
-- [ ] S3
-- [ ] PostgreSQL
+- [X] S3
 
 
 This is the dependency you need:
