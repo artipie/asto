@@ -27,8 +27,9 @@ name: Git linter
       - master
   pull_request:
     branches:
-      - masterjobs:
-  lint:
+      - master
+jobs:
+  gitlint:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
