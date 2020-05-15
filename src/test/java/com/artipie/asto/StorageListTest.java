@@ -41,7 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public final class StorageListTest {
 
     @TestTemplate
-    void shouldListNoKeysWhenEmpty(final Storage storage) {
+    void shouldListNoKeysWhenEmpty(final Storage storage) throws Exception {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Collection<String> keys = blocking.list(new Key.From("a", "b"))
             .stream()
@@ -51,7 +51,7 @@ public final class StorageListTest {
     }
 
     @TestTemplate
-    void shouldListKeysInOrder(final Storage storage) {
+    void shouldListKeysInOrder(final Storage storage) throws Exception {
         final byte[] data = "some data!".getBytes();
         final BlockingStorage blocking = new BlockingStorage(storage);
         blocking.save(new Key.From("1"), data);
