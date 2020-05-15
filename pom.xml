@@ -30,7 +30,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.3.2</version>
+    <version>0.3.3</version>
   </parent>
   <artifactId>asto</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -157,6 +157,67 @@ SOFTWARE.
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
           <version>2.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>jacoco-check</id>
+              <configuration combine.self="append">
+                <rules>
+                  <rule>
+                    <element>BUNDLE</element>
+                    <limits>
+                      <limit>
+                        <counter>INSTRUCTION</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.7</minimum>
+                      </limit>
+                      <limit>
+                        <counter>LINE</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.70</minimum>
+                      </limit>
+                      <limit>
+                        <counter>BRANCH</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.70</minimum>
+                      </limit>
+                      <limit>
+                        <counter>COMPLEXITY</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.70</minimum>
+                      </limit>
+                      <limit>
+                        <counter>METHOD</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.70</minimum>
+                      </limit>
+                      <limit>
+                        <counter>CLASS</counter>
+                        <value>MISSEDCOUNT</value>
+                        <maximum>5</maximum>
+                      </limit>
+                    </limits>
+                  </rule>
+                </rules>
+              </configuration>
+            </execution>
+            <execution>
+              <id>jacoco-site</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>jacoco-initialize</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
