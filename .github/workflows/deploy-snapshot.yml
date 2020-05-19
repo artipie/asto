@@ -1,0 +1,23 @@
+---
+name: Deploy snapshot
+"on":
+  push:
+    branches:
+      - master
+jobs:
+  deploy-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-jdk-1.8-mvn-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-jdk-1.8-mvn-
+      - name: Deploy snapshot to Artipie central
+        run: mvn clean deploy -B

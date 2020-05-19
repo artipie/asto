@@ -77,6 +77,10 @@ SOFTWARE.
       <id>github-pages</id>
       <url>https://github.com/artipie/asto</url>
     </site>
+    <snapshotRepository>
+      <id>artipie-central</id>
+      <url>http://artipie.central.com/maven</url>
+    </snapshotRepository>
   </distributionManagement>
   <dependencies>
     <dependency>
@@ -102,7 +106,7 @@ SOFTWARE.
     <dependency>
       <groupId>wtf.g4s8</groupId>
       <artifactId>rio</artifactId>
-      <version>0.1.5</version>
+      <version>0.1.6</version>
     </dependency>
     <!-- S3 client -->
     <dependency>
