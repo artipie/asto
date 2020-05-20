@@ -130,7 +130,7 @@ public interface Key {
         public From(final Key first, final Key second) {
             this(
                 Stream.concat(
-                    new From(first.string()).parts.stream(),
+                    new From(first).parts.stream(),
                     new From(second).parts.stream()
                 ).collect(Collectors.toList())
             );
