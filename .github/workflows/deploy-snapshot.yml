@@ -21,3 +21,6 @@ jobs:
             ${{ runner.os }}-jdk-1.8-mvn-
       - name: Deploy snapshot to Artipie central
         run: mvn clean deploy -B
+        env:
+          ARTIPIE_CENTRAL_USERNAME: ${{ secrets.ARTIPIE_CENTRAL_USERNAME }}
+          ARTIPIE_CENTRAL_PASSWORD: ${{ secrets.ARTIPIE_CENTRAL_PASSWORD }}
