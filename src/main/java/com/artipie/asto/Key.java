@@ -123,6 +123,20 @@ public interface Key {
         }
 
         /**
+         * Key from two keys.
+         * @param first First key
+         * @param second Second key
+         */
+        public From(final Key first, final Key second) {
+            this(
+                Stream.concat(
+                    new From(first.string()).parts.stream(),
+                    new From(second).parts.stream()
+                ).collect(Collectors.toList())
+            );
+        }
+
+        /**
          * From base path and parts.
          * @param base Base path
          * @param parts Parts
