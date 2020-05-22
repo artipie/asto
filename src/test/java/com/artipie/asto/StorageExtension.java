@@ -29,6 +29,7 @@ import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.s3.S3Storage;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.file.FileSystem;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -70,22 +71,18 @@ final class StorageExtension
         .build();
 
     /**
-     * Vert.x instance to use in tests.
+     * Vert.x file System.
      */
-    private Vertx vertx;
+    private final FileSystem fls = Vertx.vertx().fileSystem();
 
     @Override
     public void beforeAll(final ExtensionContext extension) {
         this.mock.beforeAll(extension);
-        this.vertx = Vertx.vertx();
     }
 
     @Override
     public void afterAll(final ExtensionContext extension) {
         this.mock.afterAll(extension);
-        if (this.vertx != null) {
-            this.vertx.rxClose().blockingAwait();
-        }
     }
 
     @Override
@@ -102,10 +99,7 @@ final class StorageExtension
                 new InMemoryStorage(),
                 new InMemoryStorage().transaction(Collections.emptyList()).get(),
                 this.s3Storage(),
-                new FileStorage(
-                    Files.createTempDirectory("junit"),
-                    this.vertx.fileSystem()
-                )
+                new FileStorage(Files.createTempDirectory("junit"), this.fls)
             );
         } catch (final InterruptedException | ExecutionException | IOException ex) {
             throw new IllegalStateException("Failed to generate storage", ex);

@@ -34,8 +34,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -45,6 +45,7 @@ import org.junit.jupiter.api.io.TempDir;
 final class RxFileTest {
 
     @Test
+    @Timeout(1)
     public void rxFileFlowWorks(@TempDir final Path tmp) throws IOException {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world";
@@ -66,6 +67,7 @@ final class RxFileTest {
     }
 
     @Test
+    @Timeout(1)
     public void rxFileTruncatesExistingFile(@TempDir final Path tmp) throws Exception {
         final Vertx vertx = Vertx.vertx();
         final String one = "one";
@@ -81,26 +83,27 @@ final class RxFileTest {
     }
 
     // @checkstyle MagicNumberCheck (1 line)
-    @RepeatedTest(100)
+    @Test
+    @Timeout(1)
     public void rxFileSaveWorks(@TempDir final Path tmp) throws IOException {
         final Vertx vertx = Vertx.vertx();
         final String hello = "hello-world!!!";
         final Path temp = tmp.resolve("saved.txt");
-        new RxFile(temp, vertx.fileSystem())
-            .save(
-                Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
-                    aByte -> {
-                        final byte[] bytes = new byte[1];
-                        bytes[0] = aByte;
-                        return ByteBuffer.wrap(bytes);
-                    }
-                )
-            ).blockingAwait();
+        new RxFile(temp, vertx.fileSystem()).save(
+            Flowable.fromArray(new ByteArray(hello.getBytes()).boxedBytes()).map(
+                aByte -> {
+                    final byte[] bytes = new byte[1];
+                    bytes[0] = aByte;
+                    return ByteBuffer.wrap(bytes);
+                }
+            )
+        ).blockingAwait();
         MatcherAssert.assertThat(new String(Files.readAllBytes(temp)), Matchers.equalTo(hello));
         vertx.close();
     }
 
-    @Test()
+    @Test
+    @Timeout(1)
     public void rxFileSizeWorks(@TempDir final Path tmp) throws IOException {
         final Vertx vertx = Vertx.vertx();
         final byte[] data = "012345".getBytes();
