@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -147,22 +148,28 @@ final class FileStorageTest {
     }
 
     @Test
-    @EnabledIfSystemProperty(named = "test.storage.file.huge", matches = "true|on")
-    @Timeout(1L)
     void saveAndLoadHugeFiles(@TempDir final Path tmp) throws Exception {
-        final String name = "huge";
-        new FileStorage(tmp, this.vertx.fileSystem()).save(
-            new Key.From(name),
-            new Content.From(
+        for (int i = 0; i < 20; i++) {
+            final long tick = System.nanoTime();
+            final String name = "huge";
+            new FileStorage(tmp, this.vertx.fileSystem()).save(
+                new Key.From(name),
+                new Content.From(
+                    // @checkstyle MagicNumberCheck (1 line)
+                    Flowable.generate(new WriteTestSource(1024 * 8, 1024 * 1024 / 8))
+                )
+            ).get();
+            MatcherAssert.assertThat(
+                Files.size(tmp.resolve(name)),
                 // @checkstyle MagicNumberCheck (1 line)
-                Flowable.generate(new WriteTestSource(1024 * 8, 1024 * 1024 / 8))
-            )
-        ).get();
-        MatcherAssert.assertThat(
-            Files.size(tmp.resolve(name)),
-            // @checkstyle MagicNumberCheck (1 line)
-            Matchers.equalTo(1024L * 1024 * 1024)
-        );
+                Matchers.equalTo(1024L * 1024 * 1024)
+            );
+            final long tock = System.nanoTime();
+            final long elapsed = tock - tick;
+            final long seconds = TimeUnit.NANOSECONDS.toSeconds(elapsed);
+            final long millis = TimeUnit.NANOSECONDS.toMillis(elapsed) - TimeUnit.SECONDS.toMillis(seconds);
+            System.out.println(String.format("Run #%d. Time: %ds%dms", i, seconds, millis));
+        }
     }
 
     /**
