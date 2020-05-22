@@ -92,6 +92,27 @@ SOFTWARE.
       <artifactId>jcabi-log</artifactId>
       <version>0.18.1</version>
     </dependency>
+    <!-- Vert.x dependencies -->
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-reactive-streams</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
     <!-- RxJava -->
     <dependency>
       <groupId>com.github.akarnokd</groupId>
@@ -103,11 +124,6 @@ SOFTWARE.
       <artifactId>rxjava2-extensions</artifactId>
       <version>0.20.10</version>
     </dependency>
-    <dependency>
-      <groupId>wtf.g4s8</groupId>
-      <artifactId>rio</artifactId>
-      <version>0.1.6</version>
-    </dependency>
     <!-- S3 client -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -117,6 +133,18 @@ SOFTWARE.
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.6.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.6.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>

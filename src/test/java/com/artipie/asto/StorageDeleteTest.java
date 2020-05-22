@@ -58,7 +58,7 @@ public final class StorageDeleteTest {
     }
 
     @TestTemplate
-    void shouldFailToDeleteParentOfSavedKey(final Storage storage) throws Exception {
+    void shouldFailToDeleteParentOfSavedKey(final Storage storage) {
         final Key parent = new Key.From("shouldFailToDeleteParentOfSavedKey");
         final Key key = new Key.From(parent, "child");
         final byte[] content = "content".getBytes();

@@ -23,8 +23,8 @@ jobs:
       - uses: actions/cache@v1
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-jdk-${{ matrix.java }}-mvn-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-jdk-${{ matrix.java }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-jdk-${{ matrix.java }}-mvn-
       - name: Build it with Maven
-        run: mvn clean verify -B -Pqulice
+        run: mvn -B verify -Pqulice

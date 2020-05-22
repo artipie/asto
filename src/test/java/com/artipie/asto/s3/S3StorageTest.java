@@ -136,7 +136,7 @@ class S3StorageTest {
     }
 
     @Test
-    void shouldExistForSavedObject(final AmazonS3 client) throws Exception {
+    void shouldExistForSavedObject(final AmazonS3 client) {
         final byte[] data = "content".getBytes();
         final String key = "some/existing/key";
         client.putObject(this.bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
@@ -149,7 +149,7 @@ class S3StorageTest {
     }
 
     @Test
-    void shouldListKeysInOrder(final AmazonS3 client) throws Exception {
+    void shouldListKeysInOrder(final AmazonS3 client) {
         final byte[] data = "some data!".getBytes();
         Arrays.asList(
             new Key.From("1"),
@@ -177,7 +177,7 @@ class S3StorageTest {
     }
 
     @Test
-    void shouldGetObjectWhenLoad(final AmazonS3 client) throws Exception {
+    void shouldGetObjectWhenLoad(final AmazonS3 client) {
         final byte[] data = "data".getBytes();
         final String key = "some/key";
         client.putObject(this.bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());
@@ -231,7 +231,7 @@ class S3StorageTest {
     }
 
     @Test
-    void shouldDeleteObject(final AmazonS3 client) throws Exception {
+    void shouldDeleteObject(final AmazonS3 client) {
         final byte[] data = "to be deleted".getBytes();
         final String key = "to/be/deleted";
         client.putObject(this.bucket, key, new ByteArrayInputStream(data), new ObjectMetadata());

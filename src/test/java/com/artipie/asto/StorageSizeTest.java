@@ -39,7 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public final class StorageSizeTest {
 
     @TestTemplate
-    void shouldGetSizeSave(final Storage storage) throws Exception {
+    void shouldGetSizeSave(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "0123456789".getBytes();
         final Key key = new Key.From("shouldGetSizeSave");

@@ -30,7 +30,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -42,8 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public final class StorageSaveAndLoadTest {
 
     @TestTemplate
-    @Timeout(1)
-    void shouldSave(final Storage storage) throws Exception {
+    void shouldSave(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "0".getBytes();
         final Key key = new Key.From("shouldSave");
@@ -55,7 +53,6 @@ public final class StorageSaveAndLoadTest {
     }
 
     @TestTemplate
-    @Timeout(1)
     void shouldSaveFromMultipleBuffers(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldSaveFromMultipleBuffers");
         storage.save(
@@ -75,7 +72,6 @@ public final class StorageSaveAndLoadTest {
     }
 
     @TestTemplate
-    @Timeout(1)
     void shouldSaveEmpty(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldSaveEmpty");
         storage.save(key, new Content.From(Flowable.empty())).get();
@@ -87,8 +83,7 @@ public final class StorageSaveAndLoadTest {
     }
 
     @TestTemplate
-    @Timeout(1)
-    void shouldSaveWhenValueAlreadyExists(final Storage storage) throws Exception {
+    void shouldSaveWhenValueAlreadyExists(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] original = "1".getBytes();
         final byte[] updated = "2".getBytes();
@@ -102,8 +97,7 @@ public final class StorageSaveAndLoadTest {
     }
 
     @TestTemplate
-    @Timeout(1)
-    void shouldFailToSaveErrorContent(final Storage storage) throws Exception {
+    void shouldFailToSaveErrorContent(final Storage storage) {
         Assertions.assertThrows(
             Exception.class,
             () -> storage.save(
@@ -114,8 +108,7 @@ public final class StorageSaveAndLoadTest {
     }
 
     @TestTemplate
-    @Timeout(1)
-    void shouldFailToLoadAbsentValue(final Storage storage) throws Exception {
+    void shouldFailToLoadAbsentValue(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Key key = new Key.From("shouldFailToLoadAbsentValue");
         Assertions.assertThrows(RuntimeException.class, () -> blocking.value(key));

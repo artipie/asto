@@ -28,7 +28,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -40,8 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public final class StorageMoveTest {
 
     @TestTemplate
-    @Timeout(1)
-    void shouldMove(final Storage storage) throws Exception {
+    void shouldMove(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "source".getBytes();
         final Key source = new Key.From("shouldMove-source");
@@ -52,8 +50,7 @@ public final class StorageMoveTest {
     }
 
     @TestTemplate
-    @Timeout(1)
-    void shouldMoveWhenDestinationExists(final Storage storage) throws Exception {
+    void shouldMoveWhenDestinationExists(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "source data".getBytes();
         final Key source = new Key.From("shouldMoveWhenDestinationExists-source");
@@ -68,8 +65,7 @@ public final class StorageMoveTest {
     }
 
     @TestTemplate
-    @Timeout(1)
-    void shouldFailToMoveAbsentValue(final Storage storage) throws Exception {
+    void shouldFailToMoveAbsentValue(final Storage storage) {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Key source = new Key.From("shouldFailToMoveAbsentValue-source");
         final Key destination = new Key.From("shouldFailToMoveAbsentValue-destination");
