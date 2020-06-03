@@ -92,12 +92,14 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return CompletableInterop.fromFuture(
-            new File(this.file).write(
-                flow,
-                this.exec,
-                StandardOpenOption.CREATE, StandardOpenOption.WRITE,
-                StandardOpenOption.TRUNCATE_EXISTING
+        return Completable.defer(
+            () -> CompletableInterop.fromFuture(
+                new File(this.file).write(
+                    flow,
+                    this.exec,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING
+                )
             )
         );
     }
@@ -109,18 +111,22 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable move(final Path target) {
-        final CompletableSubject res = CompletableSubject.create();
-        this.exec.submit(
+        return Completable.defer(
             () -> {
-                try {
-                    Files.move(this.file, target, StandardCopyOption.REPLACE_EXISTING);
-                    res.onComplete();
-                } catch (final IOException iex) {
-                    res.onError(iex);
-                }
+                final CompletableSubject res = CompletableSubject.create();
+                this.exec.submit(
+                    () -> {
+                        try {
+                            Files.move(this.file, target, StandardCopyOption.REPLACE_EXISTING);
+                            res.onComplete();
+                        } catch (final IOException iex) {
+                            res.onError(iex);
+                        }
+                    }
+                );
+                return res;
             }
         );
-        return res;
     }
 
     /**
@@ -129,18 +135,22 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable delete() {
-        final CompletableSubject res = CompletableSubject.create();
-        this.exec.submit(
+        return Completable.defer(
             () -> {
-                try {
-                    Files.delete(this.file);
-                    res.onComplete();
-                } catch (final IOException iex) {
-                    res.onError(iex);
-                }
+                final CompletableSubject res = CompletableSubject.create();
+                this.exec.submit(
+                    () -> {
+                        try {
+                            Files.delete(this.file);
+                            res.onComplete();
+                        } catch (final IOException iex) {
+                            res.onError(iex);
+                        }
+                    }
+                );
+                return res;
             }
         );
-        return res;
     }
 
     /**
@@ -149,16 +159,20 @@ public class RxFile {
      * @return File size in bytes.
      */
     public Single<Long> size() {
-        final SingleSubject<Long> res = SingleSubject.create();
-        this.exec.submit(
+        return Single.defer(
             () -> {
-                try {
-                    res.onSuccess(Files.size(this.file));
-                } catch (final IOException iex) {
-                    res.onError(iex);
-                }
+                final SingleSubject<Long> res = SingleSubject.create();
+                this.exec.submit(
+                    () -> {
+                        try {
+                            res.onSuccess(Files.size(this.file));
+                        } catch (final IOException iex) {
+                            res.onError(iex);
+                        }
+                    }
+                );
+                return res;
             }
         );
-        return res;
     }
 }
