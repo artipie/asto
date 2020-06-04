@@ -64,7 +64,13 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  Also whole operation does not complete until abort() is complete.
  *  It would be better to finish save() operation right away and do abort() in background,
  *  but it makes testing the method difficult.
+ * @todo #193:30min Too many methods in `S3Storage` class.
+ *  `S3Storage` has too many methods.
+ *  It could be refactored to move some of it's logic to other classes.
+ *  In particular there three methods related to saving bytes
+ *  (multipart or not, selecting proper method). This could be moved out of this class.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class S3Storage implements Storage {
 
     /**
@@ -83,14 +89,33 @@ public final class S3Storage implements Storage {
     private final String bucket;
 
     /**
+     * Multipart allowed flag.
+     */
+    private final boolean multipart;
+
+    /**
      * Ctor.
      *
      * @param client S3 client.
      * @param bucket Bucket name.
      */
     public S3Storage(final S3AsyncClient client, final String bucket) {
+        this(client, bucket, true);
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param client S3 client.
+     * @param bucket Bucket name.
+     * @param multipart Multipart allowed flag.
+     *  <code>true</code> - if multipart feature is allowed for larger blobs,
+     *  <code>false</code> otherwise.
+     */
+    public S3Storage(final S3AsyncClient client, final String bucket, final boolean multipart) {
         this.client = client;
         this.bucket = bucket;
+        this.multipart = multipart;
     }
 
     @Override
@@ -134,44 +159,13 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
-        return content.size()
-            .map(size -> CompletableFuture.completedFuture(Optional.of(size)))
-            .orElseGet(
-                () -> cache
-                    .map(Buffer::remaining)
-                    .scanWith(() -> 0L, (sum, item) -> sum + item)
-                    .takeUntil(total -> total >= S3Storage.MIN_MULTIPART)
-                    .lastOrError()
-                    .to(SingleInterop.get())
-                    .toCompletableFuture()
-                    .<Optional<Long>>thenApply(
-                        last -> {
-                            final Optional<Long> size;
-                            if (last >= S3Storage.MIN_MULTIPART) {
-                                size = Optional.empty();
-                            } else {
-                                size = Optional.of(last);
-                            }
-                            return size;
-                        }
-                    )
-            ).thenApply(
-                sizeOpt -> sizeOpt
-                    .<Content>map(size -> new Content.From(size, cache))
-                    .orElse(new Content.From(cache))
-            ).thenCompose(
-                updated -> {
-                    final CompletableFuture<Void> future;
-                    final Optional<Long> size = updated.size();
-                    if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
-                        future = this.put(key, updated);
-                    } else {
-                        future = this.uploadMultipart(key, updated);
-                    }
-                    return future;
-                }
-            );
+        final CompletableFuture<Void> result;
+        if (this.multipart) {
+            result = this.saveWithMultipartAllowed(key, content);
+        } else {
+            result = this.put(key, content);
+        }
+        return result;
     }
 
     @Override
@@ -245,6 +239,55 @@ public final class S3Storage implements Storage {
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Saves the bytes to the specified key.
+     * Uses multipart upload feature if size is greater or equal MIN_MULTIPART.
+     *
+     * @param key The key
+     * @param content Bytes to save
+     * @return Completion or error signal.
+     */
+    private CompletableFuture<Void> saveWithMultipartAllowed(final Key key, final Content content) {
+        final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
+        return content.size()
+            .map(size -> CompletableFuture.completedFuture(Optional.of(size)))
+            .orElseGet(
+                () -> cache
+                    .map(Buffer::remaining)
+                    .scanWith(() -> 0L, (sum, item) -> sum + item)
+                    .takeUntil(total -> total >= S3Storage.MIN_MULTIPART)
+                    .lastOrError()
+                    .to(SingleInterop.get())
+                    .toCompletableFuture()
+                    .<Optional<Long>>thenApply(
+                        last -> {
+                            final Optional<Long> size;
+                            if (last >= S3Storage.MIN_MULTIPART) {
+                                size = Optional.empty();
+                            } else {
+                                size = Optional.of(last);
+                            }
+                            return size;
+                        }
+                    )
+            ).thenApply(
+                sizeOpt -> sizeOpt
+                    .<Content>map(size -> new Content.From(size, cache))
+                    .orElse(new Content.From(cache))
+            ).thenCompose(
+                updated -> {
+                    final CompletableFuture<Void> future;
+                    final Optional<Long> size = updated.size();
+                    if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
+                        future = this.put(key, updated);
+                    } else {
+                        future = this.uploadMultipart(key, updated);
+                    }
+                    return future;
+                }
+            );
     }
 
     /**
