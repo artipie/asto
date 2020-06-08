@@ -58,15 +58,20 @@ public class Concatenation {
         return Flowable.fromPublisher(this.source).reduce(
             ByteBuffer.allocate(0),
             (left, right) -> {
-                left.mark();
                 right.mark();
-                final ByteBuffer concat = ByteBuffer.allocate(
-                    left.remaining() + right.remaining()
-                ).put(left).put(right);
-                left.reset();
+                final ByteBuffer result;
+                if (left.capacity() - left.limit() >= right.limit()) {
+                    left.position(left.limit());
+                    left.limit(left.limit() + right.limit());
+                    result = left.put(right);
+                } else {
+                    result = ByteBuffer.allocate(
+                        2 * Math.max(left.capacity(), right.capacity())
+                    ).put(left).put(right);
+                }
                 right.reset();
-                concat.flip();
-                return concat;
+                result.flip();
+                return result;
             }
         );
     }

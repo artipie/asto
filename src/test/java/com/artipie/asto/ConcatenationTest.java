@@ -25,9 +25,11 @@ package com.artipie.asto;
 
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.reactivestreams.Publisher;
@@ -68,6 +70,30 @@ final class ConcatenationTest {
         MatcherAssert.assertThat(
             second,
             new IsEqual<>(first)
+        );
+    }
+
+    @Test
+    // @checkstyle MagicNumberCheck (25 lines)
+    void shouldReadLargeContentCorrectly() {
+        final int sizekb = 8;
+        final int chunks = 128 * 1024 / sizekb + 1;
+        final Content content = new Content.From(
+            subscriber -> {
+                IntStream.range(0, chunks).forEach(
+                    unused -> subscriber.onNext(ByteBuffer.allocate(sizekb * 1024))
+                );
+                subscriber.onComplete();
+            }
+        );
+        final ByteBuffer result = new Concatenation(content).single().blockingGet();
+        MatcherAssert.assertThat(
+            result.limit(),
+            new IsEqual<>(chunks * sizekb * 1024)
+        );
+        MatcherAssert.assertThat(
+            result.capacity(),
+            new IsEqual<>(2 * (chunks - 1) * sizekb * 1024)
         );
     }
 
