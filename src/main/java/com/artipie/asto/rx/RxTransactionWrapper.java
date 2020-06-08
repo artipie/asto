@@ -55,59 +55,67 @@ public final class RxTransactionWrapper implements RxTransaction {
 
     @Override
     public Completable commit() {
-        return CompletableInterop.fromFuture(this.wrapped.commit());
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.wrapped.commit()));
     }
 
     @Override
     public Completable rollback() {
-        return CompletableInterop.fromFuture(this.wrapped.rollback());
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.wrapped.rollback()));
     }
 
     @Override
     public Single<Boolean> exists(final Key key) {
-        return SingleInterop.fromFuture(this.wrapped.exists(key));
+        return Single.defer(() -> SingleInterop.fromFuture(this.wrapped.exists(key)));
     }
 
     @Override
     public Single<Collection<Key>> list(final Key prefix) {
-        return SingleInterop.fromFuture(this.wrapped.list(prefix));
+        return Single.defer(() -> SingleInterop.fromFuture(this.wrapped.list(prefix)));
     }
 
     @Override
     public Completable save(final Key key, final Content content) {
-        return CompletableInterop.fromFuture(
-            this.wrapped.save(
-                key,
-                content
+        return Completable.defer(
+            () -> CompletableInterop.fromFuture(
+                this.wrapped.save(
+                    key,
+                    content
+                )
             )
         );
     }
 
     @Override
     public Completable move(final Key source, final Key destination) {
-        return CompletableInterop.fromFuture(
-            this.wrapped.move(source, destination)
+        return Completable.defer(
+            () -> CompletableInterop.fromFuture(
+                this.wrapped.move(source, destination)
+            )
         );
     }
 
     @Override
     public Single<Long> size(final Key key) {
-        return SingleInterop.fromFuture(this.wrapped.size(key));
+        return Single.defer(() -> SingleInterop.fromFuture(this.wrapped.size(key)));
     }
 
     @Override
     public Single<Content> value(final Key key) {
-        return SingleInterop.fromFuture(this.wrapped.value(key));
+        return Single.defer(() -> SingleInterop.fromFuture(this.wrapped.value(key)));
     }
 
     @Override
     public Completable delete(final Key key) {
-        return CompletableInterop.fromFuture(this.wrapped.delete(key));
+        return Completable.defer(
+            () -> Completable.defer(() -> CompletableInterop.fromFuture(this.wrapped.delete(key)))
+        );
     }
 
     @Override
     public Single<RxTransaction> transaction(final List<Key> keys) {
-        return SingleInterop.fromFuture(this.wrapped.transaction(keys))
-            .map(RxTransactionWrapper::new);
+        return Single.defer(
+            () -> SingleInterop.fromFuture(this.wrapped.transaction(keys))
+                .map(RxTransactionWrapper::new)
+        );
     }
 }

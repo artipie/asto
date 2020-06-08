@@ -92,6 +92,7 @@ final class StorageExtension
                 new InMemoryStorage(),
                 new InMemoryStorage().transaction(Collections.emptyList()).get(),
                 this.s3Storage(),
+                new SubStorage(new Key.From("prefix"), new InMemoryStorage()),
                 new FileStorage(Files.createTempDirectory("junit"))
             );
         } catch (final InterruptedException | ExecutionException | IOException ex) {

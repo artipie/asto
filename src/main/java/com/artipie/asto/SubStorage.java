@@ -26,6 +26,8 @@ package com.artipie.asto;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Sub storage is a storage in storage.
@@ -66,8 +68,13 @@ public final class SubStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final Key key) {
-        return this.origin.list(new PrefixedKed(this.prefix, key));
+    public CompletableFuture<Collection<Key>> list(final Key filter) {
+        final Pattern ptn = Pattern.compile(String.format("%s/", this.prefix.string()));
+        return this.origin.list(new PrefixedKed(this.prefix, filter)).thenApply(
+            keys -> keys.stream()
+                .map(key -> new Key.From(ptn.matcher(key.string()).replaceFirst("")))
+                .collect(Collectors.toList())
+        );
     }
 
     @Override
