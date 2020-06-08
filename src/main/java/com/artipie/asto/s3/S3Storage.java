@@ -161,9 +161,22 @@ public final class S3Storage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final CompletableFuture<Void> result;
         if (this.multipart) {
-            result = this.saveWithMultipartAllowed(key, content);
+            result = complementWithSize(content, S3Storage.MIN_MULTIPART).thenCompose(
+                updated -> {
+                    final CompletableFuture<Void> future;
+                    final Optional<Long> size = updated.size();
+                    if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
+                        future = this.put(key, updated);
+                    } else {
+                        future = this.uploadMultipart(key, updated);
+                    }
+                    return future;
+                }
+            );
         } else {
-            result = this.put(key, content);
+            result = complementWithSize(content).thenCompose(
+                updated -> this.put(key, updated)
+            );
         }
         return result;
     }
@@ -242,50 +255,61 @@ public final class S3Storage implements Storage {
     }
 
     /**
-     * Saves the bytes to the specified key.
-     * Uses multipart upload feature if size is greater or equal MIN_MULTIPART.
+     * Complements {@link Content} with size if size is unknown.
+     * Size calculated by reading all content bytes.
      *
-     * @param key The key
-     * @param content Bytes to save
-     * @return Completion or error signal.
+     * @param content Original content.
+     * @return Updated content with size.
      */
-    private CompletableFuture<Void> saveWithMultipartAllowed(final Key key, final Content content) {
-        final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
+    private static CompletableFuture<Content> complementWithSize(final Content content) {
+        return complementWithSize(content, Long.MAX_VALUE);
+    }
+
+    /**
+     * Complements {@link Content} with size if size is unknown.
+     * Size calculated by reading up to `limit` content bytes.
+     * If end of content has not been reached by reading `limit` of bytes
+     * then original content is returned.
+     *
+     * @param content Original content.
+     * @param limit Content reading limit.
+     * @return Updated content with size.
+     * @todo #183:60min Read no more then limit from Content.
+     *  Now method does not fulfil it's contract and caches all content bytes to `Flowable`,
+     *  then reads from them up to the limit.
+     *  This should be fixed, so no more then `limit` bytes is cached.
+     */
+    private static CompletableFuture<Content> complementWithSize(
+        final Content content,
+        final long limit
+    ) {
         return content.size()
-            .map(size -> CompletableFuture.completedFuture(Optional.of(size)))
+            .map(ignored -> CompletableFuture.completedFuture(content))
             .orElseGet(
-                () -> cache
-                    .map(Buffer::remaining)
-                    .scanWith(() -> 0L, (sum, item) -> sum + item)
-                    .takeUntil(total -> total >= S3Storage.MIN_MULTIPART)
-                    .lastOrError()
-                    .to(SingleInterop.get())
-                    .toCompletableFuture()
-                    .<Optional<Long>>thenApply(
-                        last -> {
-                            final Optional<Long> size;
-                            if (last >= S3Storage.MIN_MULTIPART) {
-                                size = Optional.empty();
-                            } else {
-                                size = Optional.of(last);
+                () -> {
+                    final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
+                    return cache
+                        .map(Buffer::remaining)
+                        .scanWith(() -> 0L, (sum, item) -> sum + item)
+                        .takeUntil(total -> total >= limit)
+                        .lastOrError()
+                        .to(SingleInterop.get())
+                        .toCompletableFuture()
+                        .<Optional<Long>>thenApply(
+                            last -> {
+                                final Optional<Long> size;
+                                if (last >= limit) {
+                                    size = Optional.empty();
+                                } else {
+                                    size = Optional.of(last);
+                                }
+                                return size;
                             }
-                            return size;
-                        }
-                    )
-            ).thenApply(
-                sizeOpt -> sizeOpt
-                    .<Content>map(size -> new Content.From(size, cache))
-                    .orElse(new Content.From(cache))
-            ).thenCompose(
-                updated -> {
-                    final CompletableFuture<Void> future;
-                    final Optional<Long> size = updated.size();
-                    if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
-                        future = this.put(key, updated);
-                    } else {
-                        future = this.uploadMultipart(key, updated);
-                    }
-                    return future;
+                        ).thenApply(
+                            sizeOpt -> sizeOpt
+                                .<Content>map(size -> new Content.From(size, cache))
+                                .orElse(new Content.From(cache))
+                        );
                 }
             );
     }
