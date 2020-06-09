@@ -29,14 +29,19 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -53,6 +58,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import wtf.g4s8.rio.file.File;
 
 /**
  * Storage that holds data in S3 storage.
@@ -69,6 +75,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  It could be refactored to move some of it's logic to other classes.
  *  In particular there three methods related to saving bytes
  *  (multipart or not, selecting proper method). This could be moved out of this class.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.TooManyMethods")
 public final class S3Storage implements Storage {
@@ -274,10 +281,6 @@ public final class S3Storage implements Storage {
      * @param content Original content.
      * @param limit Content reading limit.
      * @return Updated content with size.
-     * @todo #183:60min Read no more then limit from Content.
-     *  Now method does not fulfil it's contract and caches all content bytes to `Flowable`,
-     *  then reads from them up to the limit.
-     *  This should be fixed, so no more then `limit` bytes is cached.
      */
     private static CompletableFuture<Content> complementWithSize(
         final Content content,
@@ -286,32 +289,57 @@ public final class S3Storage implements Storage {
         return content.size()
             .map(ignored -> CompletableFuture.completedFuture(content))
             .orElseGet(
-                () -> {
-                    final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
-                    return cache
-                        .map(Buffer::remaining)
-                        .scanWith(() -> 0L, (sum, item) -> sum + item)
-                        .takeUntil(total -> total >= limit)
-                        .lastOrError()
-                        .to(SingleInterop.get())
-                        .toCompletableFuture()
-                        .<Optional<Long>>thenApply(
-                            last -> {
-                                final Optional<Long> size;
-                                if (last >= limit) {
-                                    size = Optional.empty();
-                                } else {
-                                    size = Optional.of(last);
-                                }
-                                return size;
-                            }
-                        ).thenApply(
-                            sizeOpt -> sizeOpt
-                                .<Content>map(size -> new Content.From(size, cache))
-                                .orElse(new Content.From(cache))
+                () -> cacheInTmpFile(content).thenCompose(
+                    tmp -> {
+                        final Flowable<ByteBuffer> cache = Flowable.fromPublisher(
+                            new File(tmp).content()
                         );
-                }
+                        return cache
+                            .map(Buffer::remaining)
+                            .scanWith(() -> 0L, (sum, item) -> sum + item)
+                            .takeUntil(total -> total >= limit)
+                            .lastOrError()
+                            .to(SingleInterop.get())
+                            .toCompletableFuture()
+                            .<Optional<Long>>thenApply(
+                                last -> {
+                                    final Optional<Long> size;
+                                    if (last >= limit) {
+                                        size = Optional.empty();
+                                    } else {
+                                        size = Optional.of(last);
+                                    }
+                                    return size;
+                                }
+                            ).thenApply(
+                                sizeOpt -> {
+                                    final Flowable<ByteBuffer> data = cache.doAfterTerminate(
+                                        () -> Files.delete(tmp)
+                                    );
+                                    return sizeOpt
+                                        .<Content>map(size -> new Content.From(size, data))
+                                        .orElse(new Content.From(data));
+                                }
+                            );
+                    }
+                ).toCompletableFuture()
             );
+    }
+
+    /**
+     * Creates temporary file and writes all data into it.
+     *
+     * @param publisher Data to store in tmp file.
+     * @return Path to temporary file.
+     */
+    private static CompletionStage<Path> cacheInTmpFile(final Publisher<ByteBuffer> publisher) {
+        final Path tmp;
+        try {
+            tmp = Files.createTempFile(S3Storage.class.getSimpleName(), ".upload.tmp");
+        } catch (final IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+        return new File(tmp).write(publisher).thenApply(nothing -> tmp);
     }
 
     /**
