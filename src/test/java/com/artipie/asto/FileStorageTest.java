@@ -25,23 +25,21 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Emitter;
 import io.reactivex.Flowable;
-import io.vertx.reactivex.core.Vertx;
+import io.reactivex.functions.Consumer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.apache.commons.codec.binary.Hex;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -54,26 +52,13 @@ import org.junit.jupiter.api.io.TempDir;
 final class FileStorageTest {
 
     /**
-     * Vert.x used to create tested FileStorage.
-     */
-    private Vertx vertx;
-
-    /**
      * File storage used in tests.
      */
     private FileStorage storage;
 
     @BeforeEach
     void setUp(@TempDir final Path tmp) {
-        this.vertx = Vertx.vertx();
-        this.storage = new FileStorage(tmp, this.vertx.fileSystem());
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (this.vertx != null) {
-            this.vertx.rxClose().blockingAwait();
-        }
+        this.storage = new FileStorage(tmp);
     }
 
     @Test
@@ -94,7 +79,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void saveOverwrites() {
+    void saveOverwrites() throws Exception {
         final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
         final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
         final BlockingStorage blocking = new BlockingStorage(this.storage);
@@ -108,7 +93,19 @@ final class FileStorageTest {
     }
 
     @Test
-    void blockingWrapperWorks() {
+    void readsTheSize() throws Exception {
+        final BlockingStorage bsto = new BlockingStorage(this.storage);
+        final Key key = new Key.From("withSize");
+        bsto.save(key, new byte[]{0x00, 0x00, 0x00});
+        MatcherAssert.assertThat(
+            bsto.size(key),
+            // @checkstyle MagicNumberCheck (1 line)
+            Matchers.equalTo(3L)
+        );
+    }
+
+    @Test
+    void blockingWrapperWorks() throws Exception {
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final String content = "hello, friend!";
         final Key key = new Key.From("t", "y", "testb.deb");
@@ -123,7 +120,7 @@ final class FileStorageTest {
     }
 
     @Test
-    void move() {
+    void move() throws Exception {
         final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
         final BlockingStorage blocking = new BlockingStorage(this.storage);
         final Key source = new Key.From("from");
@@ -138,52 +135,65 @@ final class FileStorageTest {
 
     @Test
     @EnabledIfSystemProperty(named = "test.storage.file.huge", matches = "true|on")
-    void saveAndLoadHugeFiles() throws Exception {
-        // @checkstyle MagicNumberCheck (30 lines)
-        // @checkstyle MethodBodyCommentsCheck (30 lines)
-        final Key key = new Key.From("huge");
-        // one 8KB fragment of repeated sequence of byte ranges 0x00..0xFF
-        final ByteBuffer fragment = ByteBuffer.wrap(
-            new ByteArray(
-                IntStream.range(0, 4 * 8).flatMap(
-                    cnt -> IntStream.range(0, 256)
-                ).mapToObj(x -> (byte) x)
-                    .collect(Collectors.toList())
-            ).primitiveBytes()
-        );
-        // 1 GB of 8KB byte fragments
-        final AtomicLong cnt = new AtomicLong(131_072);
-        this.storage.save(
-            key,
+    @Timeout(1L)
+    void saveAndLoadHugeFiles(@TempDir final Path tmp) throws Exception {
+        final String name = "huge";
+        new FileStorage(tmp).save(
+            new Key.From(name),
             new Content.From(
-                Flowable.generate(
-                    // @checkstyle ReturnCountCheck (10 lines)
-                    emitter -> {
-                        if (cnt.decrementAndGet() == 0) {
-                            emitter.onComplete();
-                            return;
-                        }
-                        if (cnt.get() == 0) {
-                            return;
-                        }
-                        emitter.onNext(fragment.slice());
-                    }
-                )
+                // @checkstyle MagicNumberCheck (1 line)
+                Flowable.generate(new WriteTestSource(1024 * 8, 1024 * 1024 / 8))
             )
         ).get();
-        final String hash = this.storage.value(key).thenCompose(
-            content -> Flowable.fromPublisher(content).reduceWith(
-                () -> MessageDigest.getInstance("SHA256"),
-                (digest, buf) -> {
-                    digest.update(buf);
-                    return digest;
-                }
-            ).map(digest -> new String(Hex.encodeHex(digest.digest())))
-                .to(SingleInterop.get())
-        ).get();
         MatcherAssert.assertThat(
-            hash,
-            new IsEqual<>("13b0e1029eae62b2cde3e918d384ce704319a1eca1cf268b962cb34dbbab04e4")
+            Files.size(tmp.resolve(name)),
+            // @checkstyle MagicNumberCheck (1 line)
+            Matchers.equalTo(1024L * 1024 * 1024)
         );
+    }
+
+    /**
+     * Provider of byte buffers for write test.
+     * @since 0.2
+     */
+    private static final class WriteTestSource implements Consumer<Emitter<ByteBuffer>> {
+
+        /**
+         * Counter.
+         */
+        private final AtomicInteger cnt;
+
+        /**
+         * Amount of buffers.
+         */
+        private final int length;
+
+        /**
+         * Buffer size.
+         */
+        private final int size;
+
+        /**
+         * New test source.
+         * @param size Buffer size
+         * @param length Amount of buffers
+         */
+        WriteTestSource(final int size, final int length) {
+            this.cnt = new AtomicInteger();
+            this.size = size;
+            this.length = length;
+        }
+
+        @Override
+        public void accept(final Emitter<ByteBuffer> src) {
+            final int val = this.cnt.getAndIncrement();
+            if (val < this.length) {
+                final byte[] data = new byte[this.size];
+                Arrays.fill(data, (byte) val);
+                src.onNext(ByteBuffer.wrap(data));
+            } else {
+                src.onComplete();
+            }
+        }
     }
 }

@@ -83,6 +83,11 @@ public interface Key {
         public Optional<Key> parent() {
             return this.origin.parent();
         }
+
+        @Override
+        public final String toString() {
+            return this.string();
+        }
     }
 
     /**
@@ -115,6 +120,20 @@ public interface Key {
          */
         public From(final String... parts) {
             this(Arrays.asList(parts));
+        }
+
+        /**
+         * Key from two keys.
+         * @param first First key
+         * @param second Second key
+         */
+        public From(final Key first, final Key second) {
+            this(
+                Stream.concat(
+                    new From(first).parts.stream(),
+                    new From(second).parts.stream()
+                ).collect(Collectors.toList())
+            );
         }
 
         /**
@@ -187,6 +206,11 @@ public interface Key {
         @Override
         public int hashCode() {
             return Objects.hash(this.parts);
+        }
+
+        @Override
+        public String toString() {
+            return this.string();
         }
     }
 }

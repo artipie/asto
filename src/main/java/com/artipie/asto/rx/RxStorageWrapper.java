@@ -54,68 +54,50 @@ public final class RxStorageWrapper implements RxStorage {
         this.storage = storage;
     }
 
-    /**
-     * This file exists?
-     *
-     * @param key The key (file name)
-     * @return TRUE if exists, FALSE otherwise
-     */
+    @Override
     public Single<Boolean> exists(final Key key) {
-        return SingleInterop.fromFuture(this.storage.exists(key));
+        return Single.defer(() -> SingleInterop.fromFuture(this.storage.exists(key)));
     }
 
     @Override
     public Single<Collection<Key>> list(final Key prefix) {
-        return SingleInterop.fromFuture(this.storage.list(prefix));
+        return Single.defer(() -> SingleInterop.fromFuture(this.storage.list(prefix)));
     }
 
-    /**
-     * Saves the bytes to the specified key.
-     *
-     * @param key The key
-     * @param content Bytes to save
-     * @return Completion or error signal.
-     */
+    @Override
     public Completable save(final Key key, final Content content) {
-        return CompletableInterop.fromFuture(this.storage.save(key, content));
+        return Completable.defer(
+            () -> CompletableInterop.fromFuture(this.storage.save(key, content))
+        );
     }
 
     @Override
     public Completable move(final Key source, final Key destination) {
-        return CompletableInterop.fromFuture(this.storage.move(source, destination));
+        return Completable.defer(
+            () -> CompletableInterop.fromFuture(this.storage.move(source, destination))
+        );
     }
 
     @Override
     public Single<Long> size(final Key key) {
-        return SingleInterop.fromFuture(this.storage.size(key));
+        return Single.defer(() -> SingleInterop.fromFuture(this.storage.size(key)));
     }
 
-    /**
-     * Obtain bytes by key.
-     *
-     * @param key The key
-     * @return Bytes.
-     */
+    @Override
     public Single<Content> value(final Key key) {
-        return SingleInterop.fromFuture(this.storage.value(key));
+        return Single.defer(() -> SingleInterop.fromFuture(this.storage.value(key)));
     }
 
     @Override
     public Completable delete(final Key key) {
-        return CompletableInterop.fromFuture(this.storage.delete(key));
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.storage.delete(key)));
     }
 
-    /**
-     * Start a transaction with specified keys. These specified keys are the scope of
-     * a transaction. You will be able to perform storage operations like
-     * {@link RxStorage#save(Key, Content)} or {@link RxStorage#value(Key)} only in
-     * the scope of a transaction.
-     *
-     * @param keys The keys regarding which transaction is atomic
-     * @return Transaction
-     */
+    @Override
     public Single<RxTransaction> transaction(final List<Key> keys) {
-        return SingleInterop.fromFuture(this.storage.transaction(keys))
-            .map(RxTransactionWrapper::new);
+        return Single.defer(
+            () -> SingleInterop.fromFuture(this.storage.transaction(keys))
+            .map(RxTransactionWrapper::new)
+        );
     }
 }

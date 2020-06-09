@@ -21,10 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-/**
- * Google storage.
- *
- * @since 0.17
- */
+package com.artipie.asto;
 
-package com.artipie.asto.google;
+/**
+ * Tests for {@link LoggingStorage}.
+ *
+ * @since 0.20.4
+ * @todo #87:60min Add tests for LoggingStorage.
+ *  LoggingStorage class lacks tests coverage.
+ *  At very base level the tests should check that `LoggingStorage` preserves results
+ *  provided by `Storage`. In very best case the tests should check that operation results
+ *  and parameters are properly logged.
+ */
+class LoggingStorageTest {
+
+}

@@ -7,6 +7,7 @@
 [![Build Status](https://img.shields.io/travis/artipie/asto/master.svg)](https://travis-ci.org/artipie/asto)
 [![Javadoc](http://www.javadoc.io/badge/com.artipie/asto.svg)](http://www.javadoc.io/doc/com.artipie/asto)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/asto/blob/master/LICENSE.txt)
+[![codecov](https://codecov.io/gh/artipie/asto/branch/master/graph/badge.svg)](https://codecov.io/gh/artipie/asto)
 [![Hits-of-Code](https://hitsofcode.com/github/artipie/asto)](https://hitsofcode.com/view/github/artipie/asto)
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/asto.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/asto)](http://www.0pdd.com/p?name=artipie/asto)
@@ -23,8 +24,7 @@ which requires to implement the following functionalities:
 Supported abstractions:
 
 - [x] [File system](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/fs/FileStorage.html) 
-- [ ] S3
-- [ ] PostgreSQL
+- [X] S3
 
 
 This is the dependency you need:

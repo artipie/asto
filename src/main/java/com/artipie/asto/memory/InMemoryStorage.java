@@ -29,6 +29,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -89,19 +90,17 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return CompletableFuture.runAsync(
-            () -> {
-                synchronized (this.data) {
-                    this.data.put(
-                        key.string(),
-                        new Remaining(
-                            new Concatenation(content).single().blockingGet(),
-                            true
-                        ).bytes()
-                    );
+        return new Concatenation(content).single().to(SingleInterop.get())
+            .thenApply(Remaining::new)
+            .thenApply(Remaining::bytes)
+            .thenAccept(
+                bytes -> {
+                    synchronized (this.data) {
+                        this.data.put(key.string(), bytes);
+                    }
                 }
-            }
-        );
+            )
+            .toCompletableFuture();
     }
 
     @Override

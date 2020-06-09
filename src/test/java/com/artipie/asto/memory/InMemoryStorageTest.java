@@ -21,36 +21,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
+package com.artipie.asto.memory;
 
-import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import java.util.concurrent.TimeUnit;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
- * Tests for {@link Storage#size(Key)}.
+ * Tests for {@link InMemoryStorage}.
  *
- * @since 0.17
+ * @since 0.18
  */
-@ExtendWith(StorageExtension.class)
-public final class StorageSizeTest {
+class InMemoryStorageTest {
 
-    @TestTemplate
-    void shouldGetSizeSave(final Storage storage) throws Exception {
-        final BlockingStorage blocking = new BlockingStorage(storage);
-        final byte[] data = "0123456789".getBytes();
-        final Key key = new Key.From("shouldGetSizeSave");
-        blocking.save(key, data);
-        MatcherAssert.assertThat(blocking.size(key), new IsEqual<>((long) data.length));
+    /**
+     * Storage being tested.
+     */
+    private InMemoryStorage storage;
+
+    @BeforeEach
+    void setUp() {
+        this.storage = new InMemoryStorage();
     }
 
-    @TestTemplate
-    void shouldFailToGetSizeOfAbsentValue(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
-        final Key key = new Key.From("shouldFailToGetSizeOfAbsentValue");
-        Assertions.assertThrows(RuntimeException.class, () -> blocking.size(key));
+    @Test
+    @Timeout(1)
+    void shouldNotBeBlockedByEndlessContent() throws Exception {
+        final Key.From key = new Key.From("data");
+        this.storage.save(
+            key,
+            new Content.From(
+                ignored -> {
+                }
+            )
+        );
+        // @checkstyle MagicNumberCheck (1 line)
+        Thread.sleep(100);
+        MatcherAssert.assertThat(
+            this.storage.exists(key).get(1, TimeUnit.SECONDS),
+            new IsEqual<>(false)
+        );
     }
 }

@@ -64,7 +64,13 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  Also whole operation does not complete until abort() is complete.
  *  It would be better to finish save() operation right away and do abort() in background,
  *  but it makes testing the method difficult.
+ * @todo #193:30min Too many methods in `S3Storage` class.
+ *  `S3Storage` has too many methods.
+ *  It could be refactored to move some of it's logic to other classes.
+ *  In particular there three methods related to saving bytes
+ *  (multipart or not, selecting proper method). This could be moved out of this class.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class S3Storage implements Storage {
 
     /**
@@ -83,14 +89,33 @@ public final class S3Storage implements Storage {
     private final String bucket;
 
     /**
+     * Multipart allowed flag.
+     */
+    private final boolean multipart;
+
+    /**
      * Ctor.
      *
      * @param client S3 client.
      * @param bucket Bucket name.
      */
     public S3Storage(final S3AsyncClient client, final String bucket) {
+        this(client, bucket, true);
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param client S3 client.
+     * @param bucket Bucket name.
+     * @param multipart Multipart allowed flag.
+     *  <code>true</code> - if multipart feature is allowed for larger blobs,
+     *  <code>false</code> otherwise.
+     */
+    public S3Storage(final S3AsyncClient client, final String bucket, final boolean multipart) {
         this.client = client;
         this.bucket = bucket;
+        this.multipart = multipart;
     }
 
     @Override
@@ -134,32 +159,9 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return content.size()
-            .map(size -> CompletableFuture.completedFuture(Optional.of(size)))
-            .orElseGet(
-                () -> Flowable.fromPublisher(content)
-                    .map(Buffer::remaining)
-                    .scanWith(() -> 0L, (sum, item) -> sum + item)
-                    .takeUntil(total -> total >= S3Storage.MIN_MULTIPART)
-                    .lastOrError()
-                    .to(SingleInterop.get())
-                    .toCompletableFuture()
-                    .<Optional<Long>>thenApply(
-                        last -> {
-                            final Optional<Long> size;
-                            if (last >= S3Storage.MIN_MULTIPART) {
-                                size = Optional.empty();
-                            } else {
-                                size = Optional.of(last);
-                            }
-                            return size;
-                        }
-                    )
-            ).thenApply(
-                sizeOpt -> sizeOpt
-                    .<Content>map(size -> new Content.From(size, content))
-                    .orElse(content)
-            ).thenCompose(
+        final CompletableFuture<Void> result;
+        if (this.multipart) {
+            result = complementWithSize(content, S3Storage.MIN_MULTIPART).thenCompose(
                 updated -> {
                     final CompletableFuture<Void> future;
                     final Optional<Long> size = updated.size();
@@ -171,6 +173,12 @@ public final class S3Storage implements Storage {
                     return future;
                 }
             );
+        } else {
+            result = complementWithSize(content).thenCompose(
+                updated -> this.put(key, updated)
+            );
+        }
+        return result;
     }
 
     @Override
@@ -244,6 +252,66 @@ public final class S3Storage implements Storage {
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Complements {@link Content} with size if size is unknown.
+     * Size calculated by reading all content bytes.
+     *
+     * @param content Original content.
+     * @return Updated content with size.
+     */
+    private static CompletableFuture<Content> complementWithSize(final Content content) {
+        return complementWithSize(content, Long.MAX_VALUE);
+    }
+
+    /**
+     * Complements {@link Content} with size if size is unknown.
+     * Size calculated by reading up to `limit` content bytes.
+     * If end of content has not been reached by reading `limit` of bytes
+     * then original content is returned.
+     *
+     * @param content Original content.
+     * @param limit Content reading limit.
+     * @return Updated content with size.
+     * @todo #183:60min Read no more then limit from Content.
+     *  Now method does not fulfil it's contract and caches all content bytes to `Flowable`,
+     *  then reads from them up to the limit.
+     *  This should be fixed, so no more then `limit` bytes is cached.
+     */
+    private static CompletableFuture<Content> complementWithSize(
+        final Content content,
+        final long limit
+    ) {
+        return content.size()
+            .map(ignored -> CompletableFuture.completedFuture(content))
+            .orElseGet(
+                () -> {
+                    final Flowable<ByteBuffer> cache = Flowable.fromPublisher(content).cache();
+                    return cache
+                        .map(Buffer::remaining)
+                        .scanWith(() -> 0L, (sum, item) -> sum + item)
+                        .takeUntil(total -> total >= limit)
+                        .lastOrError()
+                        .to(SingleInterop.get())
+                        .toCompletableFuture()
+                        .<Optional<Long>>thenApply(
+                            last -> {
+                                final Optional<Long> size;
+                                if (last >= limit) {
+                                    size = Optional.empty();
+                                } else {
+                                    size = Optional.of(last);
+                                }
+                                return size;
+                            }
+                        ).thenApply(
+                            sizeOpt -> sizeOpt
+                                .<Content>map(size -> new Content.From(size, cache))
+                                .orElse(new Content.From(cache))
+                        );
+                }
+            );
     }
 
     /**

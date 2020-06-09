@@ -23,34 +23,48 @@
  */
 package com.artipie.asto;
 
-import com.artipie.asto.blocking.BlockingStorage;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
+import com.artipie.asto.rx.RxCopy;
+import com.artipie.asto.rx.RxStorageWrapper;
+import hu.akarnokd.rxjava2.interop.CompletableInterop;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Tests for {@link Storage#size(Key)}.
- *
- * @since 0.17
+ * Storage synchronization.
+ * @since 0.19
+ * @checkstyle ParameterNameCheck (500 lines)
  */
-@ExtendWith(StorageExtension.class)
-public final class StorageSizeTest {
+public class Copy {
 
-    @TestTemplate
-    void shouldGetSizeSave(final Storage storage) throws Exception {
-        final BlockingStorage blocking = new BlockingStorage(storage);
-        final byte[] data = "0123456789".getBytes();
-        final Key key = new Key.From("shouldGetSizeSave");
-        blocking.save(key, data);
-        MatcherAssert.assertThat(blocking.size(key), new IsEqual<>((long) data.length));
+    /**
+     * The storage to copy from.
+     */
+    private final Storage from;
+
+    /**
+     * The keys to transfer.
+     */
+    private final List<Key> keys;
+
+    /**
+     * Ctor.
+     * @param from The storage to copy to.
+     * @param keys The keys to copy.
+     */
+    public Copy(final Storage from, final List<Key> keys) {
+        this.from = from;
+        this.keys = keys;
     }
 
-    @TestTemplate
-    void shouldFailToGetSizeOfAbsentValue(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
-        final Key key = new Key.From("shouldFailToGetSizeOfAbsentValue");
-        Assertions.assertThrows(RuntimeException.class, () -> blocking.size(key));
+    /**
+     * Copy keys to the specified storage.
+     * @param to The storage to copy to.
+     * @return When copy operation completes
+     */
+    public CompletableFuture<Void> copy(final Storage to) {
+        return new RxCopy(new RxStorageWrapper(this.from), this.keys).copy(new RxStorageWrapper(to))
+            .to(CompletableInterop.await())
+            .<Void>thenApply(o -> null)
+            .toCompletableFuture();
     }
 }
