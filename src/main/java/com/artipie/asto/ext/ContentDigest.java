@@ -26,16 +26,52 @@ package com.artipie.asto.ext;
 import com.artipie.asto.Content;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.apache.commons.codec.binary.Hex;
+import org.reactivestreams.Publisher;
 
 /**
- * Digest of content.
- * @since 0.6
+ * Digest of specified {@link Content}.
+ * @since 0.22
  */
 public final class ContentDigest {
+
+    /**
+     * Common digests.
+     * @since 0.22
+     */
+    public enum Digests implements Supplier<MessageDigest> {
+        /**
+         * Common digest algorithms.
+         */
+        SHA256("SHA-256"), SHA1("SHA-1"), MD5("MD5");
+
+        /**
+         * Digest name.
+         */
+        private final String name;
+
+        /**
+         * New digest for name.
+         * @param name Digest name
+         */
+        Digests(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public MessageDigest get() {
+            try {
+                return MessageDigest.getInstance(this.name);
+            } catch (final NoSuchAlgorithmException err) {
+                throw new IllegalStateException(String.format("No algorithm '%s'", this.name), err);
+            }
+        }
+    }
 
     /**
      * Content.
@@ -48,13 +84,71 @@ public final class ContentDigest {
     private final Supplier<MessageDigest> digest;
 
     /**
+     * Restore buffer position after read.
+     */
+    private final boolean restore;
+
+    /**
+     * Digest of content.
+     * @param content Content
+     * @param digest Digest
+     */
+    public ContentDigest(final Publisher<ByteBuffer> content,
+        final Supplier<MessageDigest> digest) {
+        this(content, digest, false);
+    }
+
+    /**
+     * Digest of content.
+     * @param content Content
+     * @param digest Digest
+     * @param restore Restore buffer position after reading
+     */
+    public ContentDigest(final Publisher<ByteBuffer> content, final Supplier<MessageDigest> digest,
+        final boolean restore) {
+        this(new Content.From(content), digest, restore);
+    }
+
+    /**
      * Digest of content.
      * @param content Content
      * @param digest Digest
      */
     public ContentDigest(final Content content, final Supplier<MessageDigest> digest) {
+        this(content, digest, false);
+    }
+
+    /**
+     * Digest of content.
+     * @param content Content
+     * @param digest Digest
+     * @param restore Restore buffer position after reading
+     */
+    public ContentDigest(final Content content, final Supplier<MessageDigest> digest,
+        final boolean restore) {
         this.content = content;
         this.digest = digest;
+        this.restore = restore;
+    }
+
+    /**
+     * Bytes digest.
+     * @return Bytes digest
+     */
+    public CompletionStage<byte[]> bytes() {
+        return Flowable.fromPublisher(this.content).reduceWith(
+            this.digest::get,
+            (dgst, buf) -> {
+                if (this.restore) {
+                    buf.mark();
+                }
+                dgst.update(buf);
+                if (this.restore) {
+                    buf.reset();
+                }
+                return dgst;
+            }
+        ).map(MessageDigest::digest).to(SingleInterop.get());
     }
 
     /**
@@ -62,16 +156,6 @@ public final class ContentDigest {
      * @return Hex string
      */
     public CompletionStage<String> hex() {
-        return Flowable.fromPublisher(this.content)
-            .reduceWith(
-                this.digest::get,
-                (dgst, buf) -> {
-                    dgst.update(buf);
-                    return dgst;
-                }
-            )
-            .map(MessageDigest::digest)
-            .map(Hex::encodeHexString)
-            .to(SingleInterop.get());
+        return this.bytes().thenApply(Hex::encodeHexString);
     }
 }
