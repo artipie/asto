@@ -55,6 +55,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -286,8 +287,20 @@ class S3StorageTest {
         @Override
         public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
             if (!this.complete.getAndSet(true)) {
-                subscriber.onNext(this.data);
-                subscriber.onComplete();
+                subscriber.onSubscribe(
+                    new Subscription() {
+                        @Override
+                        public void request(final long ignored) {
+                            subscriber.onNext(OneOffPublisher.this.data);
+                            subscriber.onComplete();
+                        }
+
+                        @Override
+                        @SuppressWarnings("PMD.UncommentedEmptyMethodBody")
+                        public void cancel() {
+                        }
+                    }
+                );
             }
         }
     }
