@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -320,7 +321,23 @@ public final class S3Storage implements Storage {
                                         .<Content>map(size -> new Content.From(size, data))
                                         .orElse(new Content.From(data));
                                 }
-                            );
+                            ).handle(
+                                (value, throwable) -> {
+                                    final CompletableFuture<Content> result;
+                                    result = new CompletableFuture<>();
+                                    if (throwable == null) {
+                                        result.complete(value);
+                                    } else {
+                                        try {
+                                            Files.delete(tmp);
+                                        } catch (final IOException ex) {
+                                            throw new UncheckedIOException(ex);
+                                        }
+                                        result.completeExceptionally(throwable);
+                                    }
+                                    return result;
+                                }
+                            ).thenCompose(Function.identity());
                     }
                 ).toCompletableFuture()
             );
