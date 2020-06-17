@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link OneTimePublisher}.
- * @since 1.0
+ * @since 0.23
  */
 public class OneTimePublisherTest {
 
