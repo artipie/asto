@@ -35,7 +35,7 @@ import org.reactivestreams.Subscriber;
  *  We need to wrap all publishers created in Storage implementations with this one
  *  and to wrap all incoming publishers in tests.
  */
-public final class OneTimeConsumablePublisher<T> implements Publisher<T> {
+public final class OneTimePublisher<T> implements Publisher<T> {
 
     /**
      * The original publisher.
@@ -51,7 +51,7 @@ public final class OneTimeConsumablePublisher<T> implements Publisher<T> {
      * Wrap a publish in a way it can be used only once.
      * @param original The original publisher.
      */
-    public OneTimeConsumablePublisher(final Publisher<T> original) {
+    public OneTimePublisher(final Publisher<T> original) {
         this.original = original;
         this.subscribers = new AtomicInteger(0);
     }
