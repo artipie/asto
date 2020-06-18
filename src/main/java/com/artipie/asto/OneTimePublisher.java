@@ -26,6 +26,7 @@ package com.artipie.asto;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 /**
  * A publish which can be consumed only once.
@@ -35,6 +36,7 @@ import org.reactivestreams.Subscriber;
  *  We need to wrap all publishers created in Storage implementations with this one
  *  and to wrap all incoming publishers in tests.
  */
+@SuppressWarnings("PMD.UncommentedEmptyMethodBody")
 public final class OneTimePublisher<T> implements Publisher<T> {
 
     /**
@@ -64,6 +66,17 @@ public final class OneTimePublisher<T> implements Publisher<T> {
         } else {
             final String msg =
                 "The subscriber could not be consumed more than once. Failed on #%d attempt";
+            sub.onSubscribe(
+                new Subscription() {
+                    @Override
+                    public void request(final long cnt) {
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
+                }
+            );
             sub.onError(new IllegalStateException(String.format(msg, subs)));
         }
     }

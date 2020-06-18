@@ -28,12 +28,22 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.tck.PublisherVerification;
+import org.reactivestreams.tck.TestEnvironment;
 
 /**
  * Test case for {@link OneTimePublisher}.
  * @since 0.23
  */
-public class OneTimePublisherTest {
+public final class OneTimePublisherTest extends PublisherVerification<Integer> {
+
+    /**
+     * Ctor.
+     */
+    public OneTimePublisherTest() {
+        super(new TestEnvironment());
+    }
 
     @Test
     public void secondAttemptLeadToFail() {
@@ -47,5 +57,22 @@ public class OneTimePublisherTest {
             IllegalStateException.class,
             () -> pub.firstOrError().blockingGet()
         );
+    }
+
+    @Override
+    public Publisher<Integer> createPublisher(final long elements) {
+        return Flowable.empty();
+    }
+
+    @Override
+    public Publisher<Integer> createFailedPublisher() {
+        final OneTimePublisher<Integer> publisher = new OneTimePublisher<>(Flowable.fromArray(1));
+        Flowable.fromPublisher(publisher).toList().blockingGet();
+        return publisher;
+    }
+
+    @Override
+    public long maxElementsFromPublisher() {
+        return 0;
     }
 }
