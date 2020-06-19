@@ -24,28 +24,38 @@
 package com.artipie.asto;
 
 import io.reactivex.Flowable;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.tck.PublisherVerification;
+import org.reactivestreams.tck.TestEnvironment;
 
 /**
- * Test case for {@link OneTimePublisher}.
+ * Reactive streams-tck verification suit for {@link OneTimePublisher}.
  * @since 0.23
  */
-public final class OneTimePublisherTest {
+@SuppressWarnings("PMD.TestClassWithoutTestCases")
+public final class OneTimePublisherVerificationTest extends PublisherVerification<Integer> {
 
-    @Test
-    public void secondAttemptLeadToFail() {
-        final int one = 1;
-        final Flowable<Integer> pub = Flowable.fromPublisher(
-            new OneTimePublisher<>(Flowable.fromArray(one))
-        );
-        final Integer last = pub.lastOrError().blockingGet();
-        MatcherAssert.assertThat(last, new IsEqual<>(one));
-        Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> pub.firstOrError().blockingGet()
-        );
+    /**
+     * Ctor.
+     */
+    public OneTimePublisherVerificationTest() {
+        super(new TestEnvironment());
+    }
+
+    @Override
+    public Publisher<Integer> createPublisher(final long elements) {
+        return Flowable.empty();
+    }
+
+    @Override
+    public Publisher<Integer> createFailedPublisher() {
+        final OneTimePublisher<Integer> publisher = new OneTimePublisher<>(Flowable.fromArray(1));
+        Flowable.fromPublisher(publisher).toList().blockingGet();
+        return publisher;
+    }
+
+    @Override
+    public long maxElementsFromPublisher() {
+        return 0;
     }
 }
