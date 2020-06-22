@@ -32,9 +32,6 @@ import org.reactivestreams.Subscription;
  * A publish which can be consumed only once.
  * @param <T> The type of publisher elements.
  * @since 0.23
- * @todo #204:30min Use one time publisher in Storage.
- *  We need to wrap all publishers created in Storage implementations with this one
- *  and to wrap all incoming publishers in tests.
  */
 @SuppressWarnings("PMD.UncommentedEmptyMethodBody")
 public final class OneTimePublisher<T> implements Publisher<T> {

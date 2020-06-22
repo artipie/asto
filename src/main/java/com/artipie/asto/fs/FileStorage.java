@@ -25,6 +25,7 @@ package com.artipie.asto.fs;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
@@ -164,7 +165,8 @@ public final class FileStorage implements Storage {
             this.exec
         ).thenCompose(
             path -> new File(path).write(
-                content, this.exec,
+                new OneTimePublisher<>(content),
+                this.exec,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
@@ -223,7 +225,10 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Content> value(final Key key) {
         return this.size(key).thenApply(
-            size -> new Content.From(size, new File(this.path(key)).content(this.exec))
+            size -> new Content.From(
+                size,
+                new OneTimePublisher<>(new File(this.path(key)).content(this.exec))
+            )
         );
     }
 
