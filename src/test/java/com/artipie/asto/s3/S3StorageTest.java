@@ -94,7 +94,7 @@ class S3StorageTest {
     void shouldUploadObjectWhenSave(final AmazonS3 client) throws Exception {
         final byte[] data = "data2".getBytes();
         final String key = "a/b/c";
-        this.storage().save(new Key.From(key), new Content.From(data)).join();
+        this.storage().save(new Key.From(key), new Content.OneTime(new Content.From(data))).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
 
@@ -105,7 +105,7 @@ class S3StorageTest {
         final String key = "unknown/size";
         this.storage().save(
             new Key.From(key),
-            new Content.From(new OneOffPublisher(ByteBuffer.wrap(data)))
+            new Content.OneTime(new Content.From(new OneOffPublisher(ByteBuffer.wrap(data))))
         ).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
@@ -119,7 +119,7 @@ class S3StorageTest {
         final String key = "big/data";
         this.storage().save(
             new Key.From(key),
-            new Content.From(new OneOffPublisher(ByteBuffer.wrap(data)))
+            new Content.OneTime(new Content.From(new OneOffPublisher(ByteBuffer.wrap(data))))
         ).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
@@ -128,7 +128,7 @@ class S3StorageTest {
     void shouldAbortMultipartUploadWhenFailedToReadContent(final AmazonS3 client) {
         this.storage().save(
             new Key.From("abort"),
-            new Content.From(Flowable.error(new IllegalStateException()))
+            new Content.OneTime(new Content.From(Flowable.error(new IllegalStateException())))
         ).exceptionally(ignore -> null).join();
         final List<MultipartUpload> uploads = client.listMultipartUploads(
             new ListMultipartUploadsRequest(this.bucket)

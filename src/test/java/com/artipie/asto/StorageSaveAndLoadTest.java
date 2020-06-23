@@ -60,11 +60,13 @@ public final class StorageSaveAndLoadTest {
         final Key key = new Key.From("shouldSaveFromMultipleBuffers");
         storage.save(
             key,
-            new Content.From(
-                Flowable.fromArray(
-                    ByteBuffer.wrap("12".getBytes()),
-                    ByteBuffer.wrap("34".getBytes()),
-                    ByteBuffer.wrap("5".getBytes())
+            new Content.OneTime(
+                new Content.From(
+                    Flowable.fromArray(
+                        ByteBuffer.wrap("12".getBytes()),
+                        ByteBuffer.wrap("34".getBytes()),
+                        ByteBuffer.wrap("5".getBytes())
+                    )
                 )
             )
         ).get();
@@ -78,7 +80,7 @@ public final class StorageSaveAndLoadTest {
     @Timeout(1)
     void shouldSaveEmpty(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldSaveEmpty");
-        storage.save(key, new Content.From(Flowable.empty())).get();
+        storage.save(key, new Content.OneTime(new Content.From(Flowable.empty()))).get();
         MatcherAssert.assertThat(
             "Saved content should be empty",
             new BlockingStorage(storage).value(key),
@@ -108,7 +110,7 @@ public final class StorageSaveAndLoadTest {
             Exception.class,
             () -> storage.save(
                 new Key.From("shouldFailToSaveErrorContent"),
-                new Content.From(Flowable.error(new IllegalStateException()))
+                new Content.OneTime(new Content.From(Flowable.error(new IllegalStateException())))
             ).join()
         );
     }

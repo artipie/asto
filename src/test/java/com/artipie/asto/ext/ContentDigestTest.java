@@ -39,9 +39,11 @@ final class ContentDigestTest {
     void calculatesHex() throws Exception {
         MatcherAssert.assertThat(
             new ContentDigest(
-                new Content.From(
-                    // @checkstyle MagicNumberCheck (1 line)
-                    new byte[]{(byte) 0xca, (byte) 0xfe, (byte) 0xba, (byte) 0xbe}
+                new Content.OneTime(
+                    new Content.From(
+                        // @checkstyle MagicNumberCheck (1 line)
+                        new byte[]{(byte) 0xca, (byte) 0xfe, (byte) 0xba, (byte) 0xbe}
+                    )
                 ),
                 ContentDigest.Digests.SHA256
             ).hex().toCompletableFuture().get(),

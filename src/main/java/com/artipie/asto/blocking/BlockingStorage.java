@@ -26,6 +26,7 @@ package com.artipie.asto.blocking;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -93,7 +94,10 @@ public class BlockingStorage {
      */
     public void save(final Key key, final byte[] content) throws InterruptedException {
         try {
-            this.storage.save(key, new Content.From(content)).get();
+            this.storage.save(
+                key,
+                new Content.From(content.length, new OneTimePublisher<>(new Content.From(content)))
+            ).get();
         } catch (final ExecutionException err) {
             throw new UncheckedExecutionException(err);
         }
@@ -140,7 +144,7 @@ public class BlockingStorage {
         try {
             return new Remaining(
                 this.storage.value(key).thenApplyAsync(
-                    pub -> new Concatenation(pub).single().blockingGet()
+                    pub -> new Concatenation(new OneTimePublisher<>(pub)).single().blockingGet()
                 ).get(),
                 true
             ).bytes();

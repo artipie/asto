@@ -113,4 +113,36 @@ public interface Content extends Publisher<ByteBuffer> {
             return this.length;
         }
     }
+
+    /**
+     * A content which can be consumed only once.
+     *
+     * @since 0.24
+     */
+    final class OneTime implements Content {
+
+        /**
+         * The wrapped content.
+         */
+        private final Content wrapped;
+
+        /**
+         * Ctor.
+         *
+         * @param original The original content
+         */
+        public OneTime(final Content original) {
+            this.wrapped = new Content.From(original.size(), new OneTimePublisher<>(original));
+        }
+
+        @Override
+        public Optional<Long> size() {
+            return this.wrapped.size();
+        }
+
+        @Override
+        public void subscribe(final Subscriber<? super ByteBuffer> sub) {
+            this.wrapped.subscribe(sub);
+        }
+    }
 }

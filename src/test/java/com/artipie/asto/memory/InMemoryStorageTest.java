@@ -55,9 +55,11 @@ class InMemoryStorageTest {
         final Key.From key = new Key.From("data");
         this.storage.save(
             key,
-            new Content.From(
-                ignored -> {
-                }
+            new Content.OneTime(
+                new Content.From(
+                    ignored -> {
+                    }
+                )
             )
         );
         // @checkstyle MagicNumberCheck (1 line)
