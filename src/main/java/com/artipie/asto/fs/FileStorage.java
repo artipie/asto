@@ -41,11 +41,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import wtf.g4s8.rio.file.File;
 
@@ -154,23 +156,43 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Content content) {
         return CompletableFuture.supplyAsync(
             () -> {
-                final Path file = this.path(key);
-                try {
-                    Files.createDirectories(file.getParent());
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
-                }
-                return file;
-            },
-            this.exec
+                final Path tmp = Paths.get(
+                    this.dir.toString(),
+                    String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
+                );
+                tmp.getParent().toFile().mkdirs();
+                return tmp;
+            }
         ).thenCompose(
-            path -> new File(path).write(
+            tmp -> new File(tmp).write(
                 new OneTimePublisher<>(content),
                 this.exec,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
-            )
+            ).thenApply(
+                nothing -> {
+                    try {
+                        final Path target = this.path(key);
+                        target.getParent().toFile().mkdirs();
+                        Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (final IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    }
+                    return null;
+                }
+            ).handle(
+                (nothing, throwable) -> {
+                    tmp.toFile().delete();
+                    final CompletableFuture<Void> result = new CompletableFuture<>();
+                    if (throwable == null) {
+                        result.complete(null);
+                    } else {
+                        result.completeExceptionally(throwable);
+                    }
+                    return result;
+                }
+            ).thenCompose(Function.identity())
         );
     }
 
