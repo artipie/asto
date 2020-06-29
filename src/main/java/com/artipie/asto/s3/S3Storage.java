@@ -168,8 +168,9 @@ public final class S3Storage implements Storage {
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final CompletableFuture<Void> result;
+        final Content onetime = new Content.OneTime(content);
         if (this.multipart) {
-            result = complementWithSize(content, S3Storage.MIN_MULTIPART).thenCompose(
+            result = complementWithSize(onetime, S3Storage.MIN_MULTIPART).thenCompose(
                 updated -> {
                     final CompletableFuture<Void> future;
                     final Optional<Long> size = updated.size();
@@ -182,7 +183,7 @@ public final class S3Storage implements Storage {
                 }
             );
         } else {
-            result = complementWithSize(content).thenCompose(
+            result = complementWithSize(onetime).thenCompose(
                 updated -> this.put(key, updated)
             );
         }
@@ -229,7 +230,7 @@ public final class S3Storage implements Storage {
                 .build(),
             new ResponseAdapter(promise)
         );
-        return promise;
+        return promise.thenApply(Content.OneTime::new);
     }
 
     @Override

@@ -26,6 +26,7 @@ package com.artipie.asto.memory;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
@@ -90,7 +91,7 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return new Concatenation(content).single().to(SingleInterop.get())
+        return new Concatenation(new OneTimePublisher<>(content)).single().to(SingleInterop.get())
             .thenApply(Remaining::new)
             .thenApply(Remaining::bytes)
             .thenAccept(
@@ -149,7 +150,7 @@ public final class InMemoryStorage implements Storage {
                             String.format("No value for key: %s", key.string())
                         );
                     }
-                    return new Content.From(content);
+                    return new Content.OneTime(new Content.From(content));
                 }
             }
         );

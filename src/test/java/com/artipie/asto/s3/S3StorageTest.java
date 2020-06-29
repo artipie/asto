@@ -37,13 +37,11 @@ import io.reactivex.Flowable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -53,9 +51,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -94,7 +89,7 @@ class S3StorageTest {
     void shouldUploadObjectWhenSave(final AmazonS3 client) throws Exception {
         final byte[] data = "data2".getBytes();
         final String key = "a/b/c";
-        this.storage().save(new Key.From(key), new Content.From(data)).join();
+        this.storage().save(new Key.From(key), new Content.OneTime(new Content.From(data))).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
 
@@ -105,7 +100,7 @@ class S3StorageTest {
         final String key = "unknown/size";
         this.storage().save(
             new Key.From(key),
-            new Content.From(new OneOffPublisher(ByteBuffer.wrap(data)))
+            new Content.OneTime(new Content.From(data))
         ).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
@@ -119,7 +114,7 @@ class S3StorageTest {
         final String key = "big/data";
         this.storage().save(
             new Key.From(key),
-            new Content.From(new OneOffPublisher(ByteBuffer.wrap(data)))
+            new Content.OneTime(new Content.From(data))
         ).join();
         MatcherAssert.assertThat(this.download(client, key), Matchers.equalTo(data));
     }
@@ -128,7 +123,7 @@ class S3StorageTest {
     void shouldAbortMultipartUploadWhenFailedToReadContent(final AmazonS3 client) {
         this.storage().save(
             new Key.From("abort"),
-            new Content.From(Flowable.error(new IllegalStateException()))
+            new Content.OneTime(new Content.From(Flowable.error(new IllegalStateException())))
         ).exceptionally(ignore -> null).join();
         final List<MultipartUpload> uploads = client.listMultipartUploads(
             new ListMultipartUploadsRequest(this.bucket)
@@ -260,48 +255,5 @@ class S3StorageTest {
             )
             .build();
         return new S3Storage(client, this.bucket);
-    }
-
-    /**
-     * Publisher that produces value only once for first subscription.
-     *
-     * @since 0.19
-     */
-    private static class OneOffPublisher implements Publisher<ByteBuffer> {
-
-        /**
-         * Data for subscriber.
-         */
-        private final ByteBuffer data;
-
-        /**
-         * Flag for completion.
-         */
-        private final AtomicBoolean complete;
-
-        OneOffPublisher(final ByteBuffer data) {
-            this.data = data;
-            this.complete = new AtomicBoolean(false);
-        }
-
-        @Override
-        public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
-            if (!this.complete.getAndSet(true)) {
-                subscriber.onSubscribe(
-                    new Subscription() {
-                        @Override
-                        public void request(final long ignored) {
-                            subscriber.onNext(OneOffPublisher.this.data);
-                            subscriber.onComplete();
-                        }
-
-                        @Override
-                        @SuppressWarnings("PMD.UncommentedEmptyMethodBody")
-                        public void cancel() {
-                        }
-                    }
-                );
-            }
-        }
     }
 }

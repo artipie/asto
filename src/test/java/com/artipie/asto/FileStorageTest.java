@@ -67,7 +67,7 @@ final class FileStorageTest {
         final Key key = new Key.From("a", "b", "test.deb");
         this.storage.save(
             key,
-            new Content.From(content)
+            new Content.OneTime(new Content.From(content))
         ).get();
         MatcherAssert.assertThat(
             new Remaining(
@@ -140,9 +140,11 @@ final class FileStorageTest {
         final String name = "huge";
         new FileStorage(tmp).save(
             new Key.From(name),
-            new Content.From(
-                // @checkstyle MagicNumberCheck (1 line)
-                Flowable.generate(new WriteTestSource(1024 * 8, 1024 * 1024 / 8))
+            new Content.OneTime(
+                new Content.From(
+                    // @checkstyle MagicNumberCheck (1 line)
+                    Flowable.generate(new WriteTestSource(1024 * 8, 1024 * 1024 / 8))
+                )
             )
         ).get();
         MatcherAssert.assertThat(
