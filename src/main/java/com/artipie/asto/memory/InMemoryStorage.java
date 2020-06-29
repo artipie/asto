@@ -150,10 +150,7 @@ public final class InMemoryStorage implements Storage {
                             String.format("No value for key: %s", key.string())
                         );
                     }
-                    return new Content.From(
-                        content.length,
-                        new OneTimePublisher<>(new Content.From(content))
-                    );
+                    return new Content.OneTime(new Content.From(content));
                 }
             }
         );

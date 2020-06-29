@@ -25,7 +25,6 @@ package com.artipie.asto.s3;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
@@ -169,7 +168,7 @@ public final class S3Storage implements Storage {
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final CompletableFuture<Void> result;
-        final Content onetime = new Content.From(content.size(), new OneTimePublisher<>(content));
+        final Content onetime = new Content.OneTime(content);
         if (this.multipart) {
             result = complementWithSize(onetime, S3Storage.MIN_MULTIPART).thenCompose(
                 updated -> {
@@ -231,9 +230,7 @@ public final class S3Storage implements Storage {
                 .build(),
             new ResponseAdapter(promise)
         );
-        return promise.thenApply(
-            content -> new Content.From(content.size(), new OneTimePublisher<>(content))
-        );
+        return promise.thenApply(Content.OneTime::new);
     }
 
     @Override

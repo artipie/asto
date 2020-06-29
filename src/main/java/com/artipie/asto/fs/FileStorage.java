@@ -225,10 +225,7 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Content> value(final Key key) {
         return this.size(key).thenApply(
-            size -> new Content.From(
-                size,
-                new OneTimePublisher<>(new File(this.path(key)).content(this.exec))
-            )
+            size -> new Content.From(new File(this.path(key)).content(this.exec))
         );
     }
 

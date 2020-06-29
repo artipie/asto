@@ -96,7 +96,7 @@ public class BlockingStorage {
         try {
             this.storage.save(
                 key,
-                new Content.From(content.length, new OneTimePublisher<>(new Content.From(content)))
+                new Content.OneTime(new Content.From(content))
             ).get();
         } catch (final ExecutionException err) {
             throw new UncheckedExecutionException(err);
