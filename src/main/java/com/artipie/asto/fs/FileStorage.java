@@ -162,7 +162,8 @@ public final class FileStorage implements Storage {
                 );
                 tmp.getParent().toFile().mkdirs();
                 return tmp;
-            }
+            },
+            this.exec
         ).thenCompose(
             tmp -> new File(tmp).write(
                 new OneTimePublisher<>(content),
@@ -172,7 +173,7 @@ public final class FileStorage implements Storage {
                 StandardOpenOption.TRUNCATE_EXISTING
             ).thenCompose(
                 nothing -> this.move(tmp, this.path(key))
-            ).handle(
+            ).handleAsync(
                 (nothing, throwable) -> {
                     tmp.toFile().delete();
                     final CompletableFuture<Void> result = new CompletableFuture<>();
@@ -182,7 +183,8 @@ public final class FileStorage implements Storage {
                         result.completeExceptionally(throwable);
                     }
                     return result;
-                }
+                },
+                this.exec
             ).thenCompose(Function.identity())
         );
     }
@@ -239,7 +241,7 @@ public final class FileStorage implements Storage {
      * @param dest Destination path.
      * @return Completion of moving file.
      */
-    public CompletableFuture<Void> move(final Path source, final Path dest) {
+    private CompletableFuture<Void> move(final Path source, final Path dest) {
         return CompletableFuture.supplyAsync(
             () -> {
                 dest.getParent().toFile().mkdirs();
