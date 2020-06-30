@@ -170,17 +170,8 @@ public final class FileStorage implements Storage {
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
-            ).thenApply(
-                nothing -> {
-                    try {
-                        final Path target = this.path(key);
-                        target.getParent().toFile().mkdirs();
-                        Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (final IOException ex) {
-                        throw new UncheckedIOException(ex);
-                    }
-                    return null;
-                }
+            ).thenCompose(
+                nothing -> this.move(tmp, this.path(key))
             ).handle(
                 (nothing, throwable) -> {
                     tmp.toFile().delete();
@@ -198,22 +189,7 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                final Path dest = this.path(destination);
-                dest.getParent().toFile().mkdirs();
-                return dest;
-            },
-            this.exec
-        ).thenAccept(
-            dst -> {
-                try {
-                    Files.move(this.path(source), dst, StandardCopyOption.REPLACE_EXISTING);
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
-                }
-            }
-        );
+        return this.move(this.path(source), this.path(destination));
     }
 
     @Override
@@ -254,6 +230,32 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Transaction> transaction(final List<Key> keys) {
         return CompletableFuture.completedFuture(new FileSystemTransaction(this));
+    }
+
+    /**
+     * Moves file from source path to destination.
+     *
+     * @param source Source path.
+     * @param dest Destination path.
+     * @return Completion of moving file.
+     */
+    public CompletableFuture<Void> move(final Path source, final Path dest) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                dest.getParent().toFile().mkdirs();
+                return dest;
+            },
+            this.exec
+        ).thenAcceptAsync(
+            dst -> {
+                try {
+                    Files.move(source, dst, StandardCopyOption.REPLACE_EXISTING);
+                } catch (final IOException iex) {
+                    throw new UncheckedIOException(iex);
+                }
+            },
+            this.exec
+        );
     }
 
     /**
