@@ -122,4 +122,23 @@ public final class StorageSaveAndLoadTest {
         final Key key = new Key.From("shouldFailToLoadAbsentValue");
         Assertions.assertThrows(RuntimeException.class, () -> blocking.value(key));
     }
+
+    @TestTemplate
+    @Timeout(1)
+    void shouldNotSavePartial(final Storage storage) {
+        final Key key = new Key.From("shouldNotSavePartial");
+        storage.save(
+            key,
+            new Content.From(
+                Flowable.concat(
+                    Flowable.just(ByteBuffer.wrap(new byte[] {1})),
+                    Flowable.error(new IllegalStateException())
+                )
+            )
+        ).exceptionally(ignored -> null).join();
+        MatcherAssert.assertThat(
+            storage.exists(key).join(),
+            Matchers.equalTo(false)
+        );
+    }
 }

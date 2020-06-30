@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,6 +90,18 @@ final class FileStorageTest {
         MatcherAssert.assertThat(
             blocking.value(key),
             new IsEqual<>(updated)
+        );
+    }
+
+    @Test
+    void saveBadContentDoesNotLeaveTrace() {
+        this.storage.save(
+            new Key.From("a/b/c/"),
+            new Content.From(Flowable.error(new IllegalStateException()))
+        ).exceptionally(ignored -> null).join();
+        MatcherAssert.assertThat(
+            this.storage.list(Key.ROOT).join(),
+            new IsEmptyCollection<>()
         );
     }
 
