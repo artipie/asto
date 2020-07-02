@@ -118,18 +118,16 @@ public final class StorageSaveAndLoadTest {
     @TestTemplate
     @Timeout(1)
     void shouldFailOnSecondConsumeAttempt(final Storage storage) {
+        final Key.From key = new Key.From("key");
+        storage.save(
+            key,
+            new Content.OneTime(new Content.From("val".getBytes()))
+        ).join();
+        final Content value = storage.value(key).join();
+        Flowable.fromPublisher(value).toList().blockingGet();
         Assertions.assertThrows(
             IllegalStateException.class,
-            () -> {
-                final Key.From key = new Key.From("key");
-                storage.save(
-                    key,
-                    new Content.OneTime(new Content.From("val".getBytes()))
-                ).join();
-                final Content value = storage.value(key).join();
-                Flowable.fromPublisher(value).toList().blockingGet();
-                Flowable.fromPublisher(value).toList().blockingGet();
-            }
+            () -> Flowable.fromPublisher(value).toList().blockingGet()
         );
     }
 
