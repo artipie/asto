@@ -50,7 +50,8 @@ public interface Storage {
 
     /**
      * Return the list of keys that start with this prefix, for
-     * example "foo/bar/".
+     * example "foo/bar/". Resulting list is sorted by string
+     * representation of the keys.
      *
      * @param prefix The prefix.
      * @return Collection of relative keys.
