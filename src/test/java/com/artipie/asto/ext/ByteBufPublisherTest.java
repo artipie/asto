@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Test for {@link ByteBufPublisher}.
- * @since 0.3
+ * @since 0.24
  */
 class ByteBufPublisherTest {
 

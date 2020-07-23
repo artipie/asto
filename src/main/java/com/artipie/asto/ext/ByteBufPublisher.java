@@ -36,7 +36,7 @@ import org.reactivestreams.Publisher;
  * Read bytes from content to memory.
  * Using this class keep in mind that it reads ByteBuffer from publisher into memory and is not
  * suitable for large content.
- * @since 0.3
+ * @since 0.24
  */
 public final class ByteBufPublisher {
 
