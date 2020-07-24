@@ -30,27 +30,36 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link ByteBufPublisher}.
+ * Test for {@link PublisherAs}.
  * @since 0.24
  */
-class ByteBufPublisherTest {
+class PublisherAsTest {
 
     @Test
     void readsBytes() {
         final byte[] buf = "abc".getBytes();
         MatcherAssert.assertThat(
-            new ByteBufPublisher(new Content.From(buf)).bytes().toCompletableFuture().join(),
+            new PublisherAs(new Content.From(buf)).bytes().toCompletableFuture().join(),
             new IsEqual<>(buf)
         );
     }
 
     @Test
-    void readsString() {
-        final byte[] buf = "абв".getBytes();
+    void readsAsciiString() {
+        final byte[] buf = "абв".getBytes(StandardCharsets.US_ASCII);
         MatcherAssert.assertThat(
-            new ByteBufPublisher(new Content.From(buf)).asciiString()
-                .toCompletableFuture().join(),
+            new PublisherAs(new Content.From(buf)).asciiString().toCompletableFuture().join(),
             new IsEqual<>(new String(buf, StandardCharsets.US_ASCII))
+        );
+    }
+
+    @Test
+    void readsString() {
+        final byte[] buf = "фыв".getBytes(StandardCharsets.UTF_8);
+        MatcherAssert.assertThat(
+            new PublisherAs(new Content.From(buf)).string(StandardCharsets.UTF_8)
+                .toCompletableFuture().join(),
+            new IsEqual<>(new String(buf, StandardCharsets.UTF_8))
         );
     }
 

@@ -28,6 +28,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
@@ -38,7 +39,7 @@ import org.reactivestreams.Publisher;
  * suitable for large content.
  * @since 0.24
  */
-public final class ByteBufPublisher {
+public final class PublisherAs {
 
     /**
      * Content to read bytes from.
@@ -49,7 +50,7 @@ public final class ByteBufPublisher {
      * Ctor.
      * @param content Content
      */
-    public ByteBufPublisher(final Content content) {
+    public PublisherAs(final Content content) {
         this.content = content;
     }
 
@@ -57,7 +58,7 @@ public final class ByteBufPublisher {
      * Ctor.
      * @param content Content
      */
-    public ByteBufPublisher(final Publisher<ByteBuffer> content) {
+    public PublisherAs(final Publisher<ByteBuffer> content) {
         this(new Content.From(content));
     }
 
@@ -74,11 +75,20 @@ public final class ByteBufPublisher {
     }
 
     /**
+     * Reads bytes from content as string.
+     * @param charset Charset to read string
+     * @return String as CompletionStage
+     */
+    public CompletionStage<String> string(final Charset charset) {
+        return this.bytes().thenApply(bytes -> new String(bytes, charset));
+    }
+
+    /**
      * Reads bytes from content as {@link StandardCharsets#US_ASCII} string.
      * @return String as CompletionStage
      */
     public CompletionStage<String> asciiString() {
-        return this.bytes().thenApply(bytes -> new String(bytes, StandardCharsets.US_ASCII));
+        return this.string(StandardCharsets.US_ASCII);
     }
 
 }
