@@ -49,7 +49,7 @@ public final class KeyLastPart {
      * @return Key last part as string
      */
     public String get() {
-        final String[] parts = this.origin.string().split("/");
+        final String[] parts = this.origin.string().replaceAll("/$", "").split("/");
         return parts[parts.length - 1];
     }
 }

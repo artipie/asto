@@ -40,6 +40,7 @@ class KeyLastPartTest {
         "abc/def/some_file.txt,some_file.txt",
         "a/b/c/e/c,c",
         "one,one",
+        "four/,four",
         "'',''"
     })
     void normalisesNames(final String key, final String expected) {
