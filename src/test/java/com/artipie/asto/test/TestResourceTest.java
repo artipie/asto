@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 class TestResourceTest {
 
     @Test
-    void readsRecourseBytes() {
+    void readsResourceBytes() {
         MatcherAssert.assertThat(
             new TestResource("test.txt").asBytes(),
             new IsEqual<>("hello world".getBytes())
@@ -49,7 +49,7 @@ class TestResourceTest {
     }
 
     @Test
-    void readsRecourseAsStream() {
+    void readsResourceAsStream() {
         MatcherAssert.assertThat(
             new TestResource("test.txt").asInputStream(),
             new IsNot<>(new IsNull<>())
@@ -60,7 +60,7 @@ class TestResourceTest {
     void addsToStorage() {
         final Storage storage = new InMemoryStorage();
         final String path = "test.txt";
-        new TestResource(path).saveToStorage(storage);
+        new TestResource(path).saveTo(storage);
         MatcherAssert.assertThat(
             new PublisherAs(storage.value(new Key.From(path)).join())
                 .bytes().toCompletableFuture().join(),
@@ -72,7 +72,7 @@ class TestResourceTest {
     void addsToStorageBySpecifiedKey() {
         final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("one");
-        new TestResource("test.txt").saveToStorage(storage, key);
+        new TestResource("test.txt").saveTo(storage, key);
         MatcherAssert.assertThat(
             new PublisherAs(storage.value(key).join()).bytes().toCompletableFuture().join(),
             new IsEqual<>("hello world".getBytes())

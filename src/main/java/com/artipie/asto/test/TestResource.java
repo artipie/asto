@@ -43,14 +43,14 @@ public final class TestResource {
     /**
      * Relative to test resources folder resource path.
      */
-    private final String path;
+    private final String name;
 
     /**
      * Ctor.
-     * @param path Resource path
+     * @param name Resource path
      */
-    public TestResource(final String path) {
-        this.path = path;
+    public TestResource(final String name) {
+        this.name = name;
     }
 
     /**
@@ -58,7 +58,7 @@ public final class TestResource {
      * @param storage Where to save
      * @param key Key to save by
      */
-    public void saveToStorage(final Storage storage, final Key key) {
+    public void saveTo(final Storage storage, final Key key) {
         storage.save(key, new Content.From(this.asBytes())).join();
     }
 
@@ -66,19 +66,19 @@ public final class TestResource {
      * Reads recourse and saves it to storage by given path as a key.
      * @param storage Where to save
      */
-    public void saveToStorage(final Storage storage) {
-        this.saveToStorage(storage, new Key.From(this.path));
+    public void saveTo(final Storage storage) {
+        this.saveTo(storage, new Key.From(this.name));
     }
 
     /**
      * Obtains resources from context loader.
      * @return File path
      */
-    public Path file() {
+    public Path asPath() {
         try {
             return Paths.get(
                 Objects.requireNonNull(
-                    Thread.currentThread().getContextClassLoader().getResource(this.path)
+                    Thread.currentThread().getContextClassLoader().getResource(this.name)
                 ).toURI()
             );
         } catch (final URISyntaxException ex) {
@@ -92,7 +92,7 @@ public final class TestResource {
      */
     public InputStream asInputStream() {
         return Objects.requireNonNull(
-            Thread.currentThread().getContextClassLoader().getResourceAsStream(this.path)
+            Thread.currentThread().getContextClassLoader().getResourceAsStream(this.name)
         );
     }
 
@@ -103,8 +103,8 @@ public final class TestResource {
      */
     @SuppressWarnings("PMD.AssignmentInOperand")
     public byte[] asBytes() {
-        try (InputStream stream = this.asInputStream();
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+        try (InputStream stream = this.asInputStream()) {
+            final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int count;
             final byte[] data = new byte[8 * 1024];
             while ((count = stream.read(data, 0, data.length)) != -1) {
