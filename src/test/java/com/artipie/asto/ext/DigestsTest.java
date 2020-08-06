@@ -23,31 +23,53 @@
  */
 package com.artipie.asto.ext;
 
-import com.artipie.asto.Content;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * Test case for {@link ContentDigest}.
- *
- * @since 0.22
+ * Test for {@link Digests}.
+ * @since 0.24
  */
-final class ContentDigestTest {
+class DigestsTest {
 
-    @Test
-    void calculatesHex() throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+        "MD5,MD5",
+        "SHA1,SHA-1",
+        "SHA256,SHA-256",
+        "SHA512,SHA-512"
+    })
+    void providesCorrectMessageDigestAlgorithm(final Digests item, final String expected) {
         MatcherAssert.assertThat(
-            new ContentDigest(
-                new Content.OneTime(
-                    new Content.From(
-                        // @checkstyle MagicNumberCheck (1 line)
-                        new byte[]{(byte) 0xca, (byte) 0xfe, (byte) 0xba, (byte) 0xbe}
-                    )
-                ),
-                Digests.SHA256
-            ).hex().toCompletableFuture().get(),
-            new IsEqual<>("65ab12a8ff3263fbc257e5ddf0aa563c64573d0bab1f1115b9b107834cfa6971")
+            item.get().getAlgorithm(),
+            new IsEqual<>(expected)
         );
     }
+
+    @ParameterizedTest
+    @CsvSource({
+        "md5,MD5",
+        "SHA-1,SHA1",
+        "sha-256,SHA256",
+        "SHa-512,SHA512"
+    })
+    void returnsCorrectDigestItem(final String from, final Digests item) {
+        MatcherAssert.assertThat(
+            new Digests.FromString(from).get(),
+            new IsEqual<>(item)
+        );
+    }
+
+    @Test
+    void throwsExceptionOnUnknownAlgorithm() {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new Digests.FromString("123").get()
+        );
+    }
+
 }
