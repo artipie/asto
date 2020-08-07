@@ -28,7 +28,6 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.apache.commons.codec.binary.Hex;
@@ -39,39 +38,6 @@ import org.reactivestreams.Publisher;
  * @since 0.22
  */
 public final class ContentDigest {
-
-    /**
-     * Common digests.
-     * @since 0.22
-     */
-    public enum Digests implements Supplier<MessageDigest> {
-        /**
-         * Common digest algorithms.
-         */
-        SHA256("SHA-256"), SHA1("SHA-1"), MD5("MD5");
-
-        /**
-         * Digest name.
-         */
-        private final String name;
-
-        /**
-         * New digest for name.
-         * @param name Digest name
-         */
-        Digests(final String name) {
-            this.name = name;
-        }
-
-        @Override
-        public MessageDigest get() {
-            try {
-                return MessageDigest.getInstance(this.name);
-            } catch (final NoSuchAlgorithmException err) {
-                throw new IllegalStateException(String.format("No algorithm '%s'", this.name), err);
-            }
-        }
-    }
 
     /**
      * Content.
