@@ -26,10 +26,10 @@ package com.artipie.asto.lock;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.collection.IsEmptyCollection;
-import org.hamcrest.core.IsNot;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -54,19 +54,24 @@ final class StorageLockTest {
 
     @Test
     void shouldAddValueWhenAcquiredLock() {
-        new StorageLock(this.storage, this.target).acquire().join();
+        final String uuid = UUID.randomUUID().toString();
+        new StorageLock(this.storage, this.target, uuid).acquire().join();
         MatcherAssert.assertThat(
-            this.storage.list(new StorageLock.ProposalsKey(this.target))
+            this.storage.exists(new Key.From(new StorageLock.ProposalsKey(this.target), uuid))
                 .toCompletableFuture().join(),
-            new IsNot<>(new IsEmptyCollection<>())
+            new IsEqual<>(true)
         );
     }
 
     @Test
-    void shouldAcquireSameLockTwice() {
-        final StorageLock lock = new StorageLock(this.storage, this.target);
-        lock.acquire().join();
-        lock.acquire().join();
+    void shouldAcquireWhenValuePresents() {
+        final String uuid = UUID.randomUUID().toString();
+        this.storage.save(
+            new Key.From(new StorageLock.ProposalsKey(this.target), uuid),
+            new Content.From(new byte[] {})
+        ).toCompletableFuture().join();
+        final StorageLock lock = new StorageLock(this.storage, this.target, uuid);
+        Assertions.assertDoesNotThrow(() -> lock.acquire().join());
     }
 
     @Test
