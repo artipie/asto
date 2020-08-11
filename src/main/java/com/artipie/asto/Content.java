@@ -38,11 +38,34 @@ import org.reactivestreams.Subscriber;
 public interface Content extends Publisher<ByteBuffer> {
 
     /**
+     * Empty content.
+     */
+    Content EMPTY = new Empty();
+
+    /**
      * Provides size of content in bytes if known.
      *
      * @return Size of content in bytes if known.
      */
     Optional<Long> size();
+
+    /**
+     * Empty content.
+     *
+     * @since 0.24
+     */
+    final class Empty implements Content {
+
+        @Override
+        public Optional<Long> size() {
+            return Optional.of(0L);
+        }
+
+        @Override
+        public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
+            Flowable.<ByteBuffer>empty().subscribe(subscriber);
+        }
+    }
 
     /**
      * Key built from byte buffers publisher and total size if it is known.
