@@ -81,7 +81,7 @@ public final class StorageLock implements Lock {
     @Override
     public CompletionStage<Void> acquire() {
         final Key proposal = this.proposalKey();
-        return this.storage.save(proposal, new Content.From(new byte[] {})).thenCompose(
+        return this.storage.save(proposal, Content.EMPTY).thenCompose(
             nothing -> this.storage.list(new ProposalsKey(this.target)).thenCompose(
                 proposals -> {
                     if (proposals.size() != 1 || !proposals.contains(proposal)) {

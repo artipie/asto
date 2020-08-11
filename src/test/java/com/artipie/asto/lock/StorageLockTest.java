@@ -71,7 +71,7 @@ final class StorageLockTest {
         final String uuid = UUID.randomUUID().toString();
         this.storage.save(
             new Key.From(new StorageLock.ProposalsKey(this.target), uuid),
-            new Content.From(new byte[] {})
+            Content.EMPTY
         ).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target, uuid);
         Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
@@ -81,7 +81,7 @@ final class StorageLockTest {
     void shouldFailAcquireLockIfOtherProposalExists() {
         final String uuid = UUID.randomUUID().toString();
         final Key proposal = new Key.From(new StorageLock.ProposalsKey(this.target), uuid);
-        this.storage.save(proposal, new Content.From(new byte[] {})).toCompletableFuture().join();
+        this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target);
         final CompletionException exception = Assertions.assertThrows(
             CompletionException.class,
@@ -108,7 +108,7 @@ final class StorageLockTest {
     void shouldRemoveProposalOnRelease() {
         final String uuid = UUID.randomUUID().toString();
         final Key proposal = new Key.From(new StorageLock.ProposalsKey(this.target), uuid);
-        this.storage.save(proposal, new Content.From(new byte[] {})).toCompletableFuture().join();
+        this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
         new StorageLock(this.storage, this.target, uuid).release().toCompletableFuture().join();
         MatcherAssert.assertThat(
             this.storage.exists(proposal).toCompletableFuture().join(),
