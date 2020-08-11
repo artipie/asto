@@ -28,6 +28,8 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -77,11 +79,10 @@ public final class StorageLock implements Lock {
     }
 
     @Override
-    public CompletableFuture<Void> acquire() {
-        final Key root = new ProposalsKey(this.target);
-        final Key proposal = new Key.From(root, this.uuid);
+    public CompletionStage<Void> acquire() {
+        final Key proposal = this.proposalKey();
         return this.storage.save(proposal, new Content.From(new byte[] {})).thenCompose(
-            nothing -> this.storage.list(root).thenCompose(
+            nothing -> this.storage.list(new ProposalsKey(this.target)).thenCompose(
                 proposals -> {
                     if (proposals.size() != 1 || !proposals.contains(proposal)) {
                         throw new IllegalStateException(
@@ -98,12 +99,37 @@ public final class StorageLock implements Lock {
                     return CompletableFuture.allOf();
                 }
             )
-        );
+        ).handle(
+            (nothing, throwable) -> {
+                final CompletionStage<Void> result;
+                if (throwable == null) {
+                    result = CompletableFuture.allOf();
+                } else {
+                    result = this.release().thenCompose(
+                        released -> {
+                            final CompletableFuture<Void> failed = new CompletableFuture<>();
+                            failed.completeExceptionally(throwable);
+                            return failed;
+                        }
+                    );
+                }
+                return result;
+            }
+        ).thenCompose(Function.identity());
     }
 
     @Override
-    public CompletableFuture<Void> release() {
-        throw new UnsupportedOperationException();
+    public CompletionStage<Void> release() {
+        return this.storage.delete(this.proposalKey());
+    }
+
+    /**
+     * Construct proposal key.
+     *
+     * @return Proposal key.
+     */
+    private Key proposalKey() {
+        return new Key.From(new ProposalsKey(this.target), this.uuid);
     }
 
     /**
