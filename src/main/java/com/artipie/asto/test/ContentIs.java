@@ -23,10 +23,11 @@
  */
 package com.artipie.asto.test;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
+import com.artipie.asto.ext.PublisherAs;
+import com.google.common.util.concurrent.Uninterruptibles;
 import java.nio.charset.Charset;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -75,8 +76,14 @@ public final class ContentIs extends TypeSafeMatcher<Content> {
 
     @Override
     public boolean matchesSafely(final Content item) {
-        final byte[] actual = new Concatenation(item).single()
-            .map(buf -> new Remaining(buf).bytes()).blockingGet();
-        return this.matcher.matches(actual);
+        try {
+            return this.matcher.matches(
+                Uninterruptibles.getUninterruptibly(
+                    new PublisherAs(item).bytes().toCompletableFuture()
+                )
+            );
+        } catch (final ExecutionException err) {
+            throw new IllegalStateException("Failed to read content", err);
+        }
     }
 }

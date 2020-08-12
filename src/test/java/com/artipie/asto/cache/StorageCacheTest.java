@@ -55,14 +55,18 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class StorageCacheTest {
 
+    /**
+     * Storage for tests.
+     */
+    private final Storage storage = new InMemoryStorage();
+
     @Test
     void loadsFromCache() throws Exception {
-        final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("key1");
         final byte[] data = "hello1".getBytes();
-        new BlockingStorage(storage).save(key, data);
+        new BlockingStorage(this.storage).save(key, data);
         MatcherAssert.assertThat(
-            new StorageCache(storage).load(
+            new StorageCache(this.storage).load(
                 key,
                 () -> CompletableFuture.supplyAsync(
                     () -> {
@@ -77,10 +81,9 @@ final class StorageCacheTest {
 
     @Test
     void savesToCacheFromRemote() throws Exception {
-        final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("key2");
         final byte[] data = "hello2".getBytes();
-        final StorageCache cache = new StorageCache(storage);
+        final StorageCache cache = new StorageCache(this.storage);
         final Content load = cache.load(
             key,
             () -> CompletableFuture.supplyAsync(() -> new Content.From(data)),
@@ -107,10 +110,9 @@ final class StorageCacheTest {
 
     @Test
     void dontCacheFailedRemote() throws Exception {
-        final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("key3");
         final AtomicInteger cnt = new AtomicInteger();
-        new StorageCache(storage).load(
+        new StorageCache(this.storage).load(
             key,
             () -> CompletableFuture.supplyAsync(
                 () -> new Content.From(
@@ -133,14 +135,13 @@ final class StorageCacheTest {
             }
         ).toCompletableFuture().get();
         MatcherAssert.assertThat(
-            new BlockingStorage(storage).exists(key), Matchers.is(false)
+            new BlockingStorage(this.storage).exists(key), Matchers.is(false)
         );
     }
 
     @Test
     void processMultipleRequestsSimultaneously() throws Exception {
-        final Storage storage = new InMemoryStorage();
-        final StorageCache cache = new StorageCache(storage);
+        final StorageCache cache = new StorageCache(this.storage);
         final Key key = new Key.From("key4");
         final int count = 100;
         final CountDownLatch latch = new CountDownLatch(10);
@@ -163,13 +164,13 @@ final class StorageCacheTest {
             num -> SingleInterop.fromFuture(cache.load(key, remote, CacheControl.Standard.ALWAYS))
                 .flatMapCompletable(
                     pub -> CompletableInterop.fromFuture(
-                        storage.save(new Key.From("out", num.toString()), pub)
+                        this.storage.save(new Key.From("out", num.toString()), pub)
                     )
                 )
         ).blockingAwait();
         for (int num = 0; num < count; ++num) {
             MatcherAssert.assertThat(
-                new BlockingStorage(storage).value(new Key.From("out", String.valueOf(num))),
+                new BlockingStorage(this.storage).value(new Key.From("out", String.valueOf(num))),
                 Matchers.equalTo(data)
             );
         }

@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorageWrapper;
+import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -57,12 +58,11 @@ public final class StorageCache implements Cache {
         final RxStorageWrapper rxsto = new RxStorageWrapper(this.storage);
         return rxsto.exists(key)
             .filter(exists -> exists)
-            .flatMapSingleElement(
-                exists -> SingleInterop.fromFuture(control.validate(key))
-                    .map(valid -> exists && valid)
-            )
+            .flatMapSingleElement(exists -> SingleInterop.fromFuture(control.validate(key)))
             .filter(valid -> valid)
             .flatMapSingleElement(ignore -> rxsto.value(key))
+            .doOnError(err -> Logger.warn(this, "Failed to read cached item: %[exception]s", err))
+            .onErrorComplete()
             .switchIfEmpty(
                 SingleInterop.fromFuture(remote.get()).flatMapCompletable(
                     content -> rxsto.save(
