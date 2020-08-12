@@ -28,8 +28,11 @@ import com.artipie.asto.Key;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -55,7 +58,7 @@ final class StorageLockTest {
     @Test
     void shouldAddValueWhenAcquiredLock() {
         final String uuid = UUID.randomUUID().toString();
-        new StorageLock(this.storage, this.target, uuid).acquire().join();
+        new StorageLock(this.storage, this.target, uuid).acquire().toCompletableFuture().join();
         MatcherAssert.assertThat(
             this.storage.exists(new Key.From(new StorageLock.ProposalsKey(this.target), uuid))
                 .toCompletableFuture().join(),
@@ -68,22 +71,48 @@ final class StorageLockTest {
         final String uuid = UUID.randomUUID().toString();
         this.storage.save(
             new Key.From(new StorageLock.ProposalsKey(this.target), uuid),
-            new Content.From(new byte[] {})
+            Content.EMPTY
         ).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target, uuid);
-        Assertions.assertDoesNotThrow(() -> lock.acquire().join());
+        Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
     }
 
     @Test
     void shouldFailAcquireLockIfOtherProposalExists() {
-        this.storage.save(
-            new Key.From(new StorageLock.ProposalsKey(this.target), "123"),
-            new Content.From(new byte[] {})
-        ).toCompletableFuture().join();
+        final String uuid = UUID.randomUUID().toString();
+        final Key proposal = new Key.From(new StorageLock.ProposalsKey(this.target), uuid);
+        this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target);
-        Assertions.assertThrows(
+        final CompletionException exception = Assertions.assertThrows(
             CompletionException.class,
-            () -> lock.acquire().join()
+            () -> lock.acquire().toCompletableFuture().join(),
+            "Fails to acquire"
+        );
+        MatcherAssert.assertThat(
+            "Reason for failure is IllegalStateException",
+            exception.getCause(),
+            new IsInstanceOf(IllegalStateException.class)
+        );
+        MatcherAssert.assertThat(
+            "Proposals unmodified",
+            this.storage.list(new StorageLock.ProposalsKey(this.target))
+                .toCompletableFuture().join()
+                .stream()
+                .map(Key::string)
+                .collect(Collectors.toList()),
+            Matchers.contains(proposal.string())
+        );
+    }
+
+    @Test
+    void shouldRemoveProposalOnRelease() {
+        final String uuid = UUID.randomUUID().toString();
+        final Key proposal = new Key.From(new StorageLock.ProposalsKey(this.target), uuid);
+        this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
+        new StorageLock(this.storage, this.target, uuid).release().toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            this.storage.exists(proposal).toCompletableFuture().join(),
+            new IsEqual<>(false)
         );
     }
 }
