@@ -70,7 +70,7 @@ public interface CacheControl {
      * Validate cached item: checks if cached value can be used or needs to be updated by fresh
      * value.
      * @param item Cached item
-     * @return True if cached item can be user, false if needs to be updated
+     * @return True if cached item can be used, false if needs to be updated
      */
     CompletionStage<Boolean> validate(Key item);
 }
