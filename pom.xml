@@ -108,6 +108,11 @@ SOFTWARE.
       <artifactId>rio</artifactId>
       <version>0.1.6</version>
     </dependency>
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-retry</artifactId>
+      <version>1.5.0</version>
+    </dependency>
     <!-- S3 client -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
