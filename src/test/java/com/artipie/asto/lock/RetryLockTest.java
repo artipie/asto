@@ -31,7 +31,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.number.IsCloseTo;
@@ -47,6 +46,8 @@ import org.junit.jupiter.api.Timeout;
  * @since 0.24
  * @checkstyle MagicNumberCheck (500 lines)
  */
+@SuppressWarnings("PMD.ProhibitPlainJunitAssertionsRule")
+@Timeout(3)
 final class RetryLockTest {
 
     /**
@@ -65,64 +66,52 @@ final class RetryLockTest {
     }
 
     @Test
-    @Timeout(3)
-    void shouldSucceedAfterSomeAttempts() {
+    void shouldSucceedAcquireAfterSomeAttempts() {
         final int attempts = 2;
-        final AtomicInteger attempt = new AtomicInteger();
-        new RetryLock(
-            this.scheduler,
-            new Lock() {
-                @Override
-                public CompletionStage<Void> acquire() {
-                    final CompletableFuture<Void> result;
-                    if (attempt.incrementAndGet() < attempts) {
-                        result = new CompletableFuture<>();
-                        result.completeExceptionally(new RuntimeException());
-                    } else {
-                        result = CompletableFuture.allOf();
-                    }
-                    return result;
-                }
-
-                @Override
-                public CompletionStage<Void> release() {
-                    throw new UnsupportedOperationException();
-                }
-            }
-        ).acquire().toCompletableFuture().join();
+        final FailingLock mock = new FailingLock(attempts);
+        new RetryLock(this.scheduler, mock).acquire().toCompletableFuture().join();
         MatcherAssert.assertThat(
-            attempt.get(),
+            mock.acquire.invocations.size(),
             new IsEqual<>(attempts)
         );
     }
 
     @Test
-    @Timeout(10)
-    void shouldFailAfterMaxRetriesWithExtendingInterval() {
-        final List<Long> attempts = new ArrayList<>(3);
-        final Stopwatch stopwatch = Stopwatch.createStarted();
-        final CompletionStage<Void> acquired = new RetryLock(
-            this.scheduler,
-            new Lock() {
-                @Override
-                public CompletionStage<Void> acquire() {
-                    attempts.add(stopwatch.elapsed(TimeUnit.MILLISECONDS));
-                    final CompletableFuture<Void> result = new CompletableFuture<>();
-                    result.completeExceptionally(new RuntimeException());
-                    return result;
-                }
-
-                @Override
-                public CompletionStage<Void> release() {
-                    throw new UnsupportedOperationException();
-                }
-            }
-        ).acquire();
+    void shouldFailAcquireAfterMaxRetriesWithExtendingInterval() {
+        final FailingLock mock = new FailingLock(5);
+        final CompletionStage<Void> acquired = new RetryLock(this.scheduler, mock).acquire();
         Assertions.assertThrows(
             Exception.class,
             () -> acquired.toCompletableFuture().join(),
             "Fails to acquire"
         );
+        assertRetryAttempts(mock.acquire.invocations);
+    }
+
+    @Test
+    void shouldSucceedReleaseAfterSomeAttempts() {
+        final int attempts = 2;
+        final FailingLock mock = new FailingLock(attempts);
+        new RetryLock(this.scheduler, mock).release().toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            mock.release.invocations.size(),
+            new IsEqual<>(attempts)
+        );
+    }
+
+    @Test
+    void shouldFailReleaseAfterMaxRetriesWithExtendingInterval() {
+        final FailingLock mock = new FailingLock(5);
+        final CompletionStage<Void> released = new RetryLock(this.scheduler, mock).release();
+        Assertions.assertThrows(
+            Exception.class,
+            () -> released.toCompletableFuture().join(),
+            "Fails to release"
+        );
+        assertRetryAttempts(mock.release.invocations);
+    }
+
+    private static void assertRetryAttempts(final List<Long> attempts) {
         MatcherAssert.assertThat(
             "Makes 3 attempts",
             attempts.size(), new IsEqual<>(3)
@@ -142,5 +131,84 @@ final class RetryLockTest {
             attempts.get(2).doubleValue() - attempts.get(1),
             new IsCloseTo(750, 100)
         );
+    }
+
+    /**
+     * Lock failing acquire & release specified number of times before producing successful result.
+     * Collects history of invocation timings.
+     *
+     * @since 0.24
+     */
+    @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
+    private static class FailingLock implements Lock {
+
+        /**
+         * Acquire task.
+         */
+        private final FailingTask acquire;
+
+        /**
+         * Release task.
+         */
+        private final FailingTask release;
+
+        FailingLock(final int failures) {
+            this.acquire = new FailingTask(failures);
+            this.release = new FailingTask(failures);
+        }
+
+        @Override
+        public CompletionStage<Void> acquire() {
+            return this.acquire.invoke();
+        }
+
+        @Override
+        public CompletionStage<Void> release() {
+            return this.release.invoke();
+        }
+    }
+
+    /**
+     * Task failing specified number of times before producing successful result.
+     * Collects history of invocation timings.
+     *
+     * @since 0.24
+     */
+    private static class FailingTask {
+
+        /**
+         * Number of failures before successful result.
+         */
+        private final int failures;
+
+        /**
+         * Invocations history.
+         */
+        private final List<Long> invocations;
+
+        /**
+         * Stopwatch to track invocation times.
+         */
+        private final Stopwatch stopwatch;
+
+        FailingTask(final int failures) {
+            this.failures = failures;
+            this.invocations = new ArrayList<>(failures);
+            this.stopwatch = Stopwatch.createStarted();
+        }
+
+        CompletionStage<Void> invoke() {
+            synchronized (this.invocations) {
+                this.invocations.add(this.stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                final CompletableFuture<Void> result;
+                if (this.invocations.size() < this.failures) {
+                    result = new CompletableFuture<>();
+                    result.completeExceptionally(new RuntimeException());
+                } else {
+                    result = CompletableFuture.allOf();
+                }
+                return result;
+            }
+        }
     }
 }

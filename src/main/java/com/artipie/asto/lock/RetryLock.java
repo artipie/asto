@@ -100,6 +100,9 @@ public final class RetryLock implements Lock {
 
     @Override
     public CompletionStage<Void> release() {
-        return this.origin.release();
+        return this.registry.retry("lock-release").executeCompletionStage(
+            this.scheduler,
+            this.origin::release
+        );
     }
 }
