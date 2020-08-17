@@ -60,7 +60,7 @@ final class StorageLockTest {
         final String uuid = UUID.randomUUID().toString();
         new StorageLock(this.storage, this.target, uuid).acquire().toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.storage.exists(new Key.From(new StorageLock.ProposalsKey(this.target), uuid))
+            this.storage.exists(new Key.From(new Proposals.RootKey(this.target), uuid))
                 .toCompletableFuture().join(),
             new IsEqual<>(true)
         );
@@ -70,7 +70,7 @@ final class StorageLockTest {
     void shouldAcquireWhenValuePresents() {
         final String uuid = UUID.randomUUID().toString();
         this.storage.save(
-            new Key.From(new StorageLock.ProposalsKey(this.target), uuid),
+            new Key.From(new Proposals.RootKey(this.target), uuid),
             Content.EMPTY
         ).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target, uuid);
@@ -80,7 +80,7 @@ final class StorageLockTest {
     @Test
     void shouldFailAcquireLockIfOtherProposalExists() {
         final String uuid = UUID.randomUUID().toString();
-        final Key proposal = new Key.From(new StorageLock.ProposalsKey(this.target), uuid);
+        final Key proposal = new Key.From(new Proposals.RootKey(this.target), uuid);
         this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target);
         final CompletionException exception = Assertions.assertThrows(
@@ -95,7 +95,7 @@ final class StorageLockTest {
         );
         MatcherAssert.assertThat(
             "Proposals unmodified",
-            this.storage.list(new StorageLock.ProposalsKey(this.target))
+            this.storage.list(new Proposals.RootKey(this.target))
                 .toCompletableFuture().join()
                 .stream()
                 .map(Key::string)
@@ -107,7 +107,7 @@ final class StorageLockTest {
     @Test
     void shouldRemoveProposalOnRelease() {
         final String uuid = UUID.randomUUID().toString();
-        final Key proposal = new Key.From(new StorageLock.ProposalsKey(this.target), uuid);
+        final Key proposal = new Key.From(new Proposals.RootKey(this.target), uuid);
         this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
         new StorageLock(this.storage, this.target, uuid).release().toCompletableFuture().join();
         MatcherAssert.assertThat(
