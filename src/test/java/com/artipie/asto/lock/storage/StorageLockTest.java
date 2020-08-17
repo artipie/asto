@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto.lock;
+package com.artipie.asto.lock.storage;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
