@@ -58,7 +58,11 @@ public final class StorageCache implements Cache {
         final RxStorageWrapper rxsto = new RxStorageWrapper(this.storage);
         return rxsto.exists(key)
             .filter(exists -> exists)
-            .flatMapSingleElement(exists -> SingleInterop.fromFuture(control.validate(key)))
+            .flatMapSingleElement(
+                exists -> SingleInterop.fromFuture(
+                    control.validate(key, () -> this.storage.value(key))
+                )
+            )
             .filter(valid -> valid)
             .flatMapSingleElement(ignore -> rxsto.value(key))
             .doOnError(err -> Logger.warn(this, "Failed to read cached item: %[exception]s", err))
