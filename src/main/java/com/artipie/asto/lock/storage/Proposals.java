@@ -85,6 +85,7 @@ final class Proposals {
      * @return Completion of proposals check operation.
      */
     public CompletionStage<Void> checkSingle(final String uuid) {
+        final Instant now = Instant.now();
         final Key own = this.proposalKey(uuid);
         return this.storage.list(new RootKey(this.target)).thenCompose(
             proposals -> CompletableFuture.allOf(
@@ -96,7 +97,7 @@ final class Proposals {
                             .thenCompose(PublisherAs::asciiString)
                             .thenCompose(
                                 expiration -> {
-                                    if (isNotExpired(expiration)) {
+                                    if (isNotExpired(expiration, now)) {
                                         throw new IllegalStateException(
                                             String.join(
                                                 "\n",
@@ -151,10 +152,11 @@ final class Proposals {
      * Empty string considered to never expire.
      *
      * @param instant Instant in string format.
+     * @param now Current time.
      * @return True if instant is not expired, false - otherwise.
      */
-    private static boolean isNotExpired(final String instant) {
-        return instant.isEmpty() || Instant.parse(instant).isAfter(Instant.now());
+    private static boolean isNotExpired(final String instant, final Instant now) {
+        return instant.isEmpty() || Instant.parse(instant).isAfter(now);
     }
 
     /**
