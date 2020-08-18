@@ -26,6 +26,8 @@ package com.artipie.asto.lock.storage;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.lock.Lock;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -50,13 +52,29 @@ public final class StorageLock implements Lock {
     private final String uuid;
 
     /**
+     * Expiration time.
+     */
+    private final Optional<Instant> expiration;
+
+    /**
      * Ctor.
      *
      * @param storage Storage.
      * @param target Target key.
      */
     public StorageLock(final Storage storage, final Key target) {
-        this(storage, target, UUID.randomUUID().toString());
+        this(storage, target, UUID.randomUUID().toString(), Optional.empty());
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param storage Storage.
+     * @param target Target key.
+     * @param expiration Expiration time.
+     */
+    public StorageLock(final Storage storage, final Key target, final Instant expiration) {
+        this(storage, target, UUID.randomUUID().toString(), Optional.of(expiration));
     }
 
     /**
@@ -65,15 +83,23 @@ public final class StorageLock implements Lock {
      * @param storage Storage.
      * @param target Target key.
      * @param uuid Identifier.
+     * @param expiration Expiration time.
+     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    public StorageLock(final Storage storage, final Key target, final String uuid) {
+    public StorageLock(
+        final Storage storage,
+        final Key target,
+        final String uuid,
+        final Optional<Instant> expiration
+    ) {
         this.proposals = new Proposals(storage, target);
         this.uuid = uuid;
+        this.expiration = expiration;
     }
 
     @Override
     public CompletionStage<Void> acquire() {
-        return this.proposals.create(this.uuid).thenCompose(
+        return this.proposals.create(this.uuid, this.expiration).thenCompose(
             nothing -> this.proposals.checkSingle(this.uuid)
         ).handle(
             (nothing, throwable) -> {

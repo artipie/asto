@@ -26,6 +26,9 @@ package com.artipie.asto.lock.storage;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -62,10 +65,16 @@ final class Proposals {
      * Create proposal with specified UUID.
      *
      * @param uuid UUID.
+     * @param expiration Expiration time.
      * @return Completion of proposal create operation.
      */
-    public CompletionStage<Void> create(final String uuid) {
-        return this.storage.save(this.proposalKey(uuid), Content.EMPTY);
+    public CompletionStage<Void> create(final String uuid, final Optional<Instant> expiration) {
+        return this.storage.save(
+            this.proposalKey(uuid),
+            expiration.<Content>map(
+                instant -> new Content.From(instant.toString().getBytes(StandardCharsets.US_ASCII))
+            ).orElse(Content.EMPTY)
+        );
     }
 
     /**
