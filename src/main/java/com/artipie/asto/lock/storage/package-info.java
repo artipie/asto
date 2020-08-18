@@ -23,8 +23,8 @@
  */
 
 /**
- * Locks for controlling access to shared resources.
+ * Storage implementation for {@link com.artipie.asto.lock.Lock}.
  *
  * @since 0.24
  */
-package com.artipie.asto.lock;
+package com.artipie.asto.lock.storage;
