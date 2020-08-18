@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.cache;
 
+import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -30,7 +31,6 @@ import com.artipie.asto.rx.RxStorageWrapper;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 /**
  * Storage cache implementation.
@@ -52,8 +52,7 @@ public final class StorageCache implements Cache {
     }
 
     @Override
-    public CompletionStage<? extends Content> load(final Key key,
-        final Supplier<? extends CompletionStage<? extends Content>> remote,
+    public CompletionStage<? extends Content> load(final Key key, final AsyncContent remote,
         final CacheControl control) {
         final RxStorageWrapper rxsto = new RxStorageWrapper(this.storage);
         return rxsto.exists(key)

@@ -23,7 +23,7 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.Content;
+import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Key;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Observable;
@@ -31,13 +31,21 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 /**
  * Cache control.
  * @since 0.24
  */
 public interface CacheControl {
+
+    /**
+     * Validate cached item: checks if cached value can be used or needs to be updated by fresh
+     * value.
+     * @param item Cached item
+     * @param content Content supplier
+     * @return True if cached item can be used, false if needs to be updated
+     */
+    CompletionStage<Boolean> validate(Key item, AsyncContent content);
 
     /**
      * Standard cache controls.
@@ -67,21 +75,10 @@ public interface CacheControl {
         }
 
         @Override
-        public CompletionStage<Boolean> validate(final Key item,
-            final Supplier<? extends CompletionStage<? extends Content>> supplier) {
+        public CompletionStage<Boolean> validate(final Key item, final AsyncContent supplier) {
             return this.origin.validate(item, supplier);
         }
     }
-
-    /**
-     * Validate cached item: checks if cached value can be used or needs to be updated by fresh
-     * value.
-     * @param item Cached item
-     * @param content Content supplier
-     * @return True if cached item can be used, false if needs to be updated
-     */
-    CompletionStage<Boolean> validate(Key item,
-        Supplier<? extends CompletionStage<? extends Content>> content);
 
     /**
      * All cache controls should validate the cache.
@@ -111,8 +108,7 @@ public interface CacheControl {
         }
 
         @Override
-        public CompletionStage<Boolean> validate(final Key key,
-            final Supplier<? extends CompletionStage<? extends Content>> content) {
+        public CompletionStage<Boolean> validate(final Key key, final AsyncContent content) {
             return Observable.fromIterable(this.items)
                 .flatMapSingle(item -> SingleInterop.fromFuture(item.validate(key, content)))
                 .all(item -> item)

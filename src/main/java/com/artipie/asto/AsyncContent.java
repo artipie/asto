@@ -21,46 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto.cache;
+package com.artipie.asto;
 
-import com.artipie.asto.AsyncContent;
-import com.artipie.asto.Key;
-import com.artipie.asto.ext.ContentDigest;
-import java.security.MessageDigest;
-import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 /**
- * By digest verification.
+ * Async {@link java.util.function.Supplier} of {@link java.util.concurrent.CompletionStage}
+ * with {@link Content}. It's a {@link FunctionalInterface}.
+ *
  * @since 0.25
  */
-public final class DigestVerification implements CacheControl {
+@FunctionalInterface
+public interface AsyncContent extends Supplier<CompletionStage<? extends Content>> {
 
     /**
-     * Message digest.
+     * Empty async content.
      */
-    private final Supplier<MessageDigest> digest;
-
-    /**
-     * Expected digest.
-     */
-    private final byte[] expected;
-
-    /**
-     * New digest verification.
-     * @param digest Message digest has func
-     * @param expected Expected digest bytes
-     */
-    @SuppressWarnings("PMD.ArrayIsStoredDirectly")
-    public DigestVerification(final Supplier<MessageDigest> digest, final byte[] expected) {
-        this.digest = digest;
-        this.expected = expected;
-    }
+    AsyncContent EMPTY = () -> CompletableFuture.completedFuture(Content.EMPTY);
 
     @Override
-    public CompletionStage<Boolean> validate(final Key item, final AsyncContent content) {
-        return content.get().thenCompose(pub -> new ContentDigest(pub, this.digest).bytes())
-            .thenApply(actual -> Arrays.equals(this.expected, actual));
-    }
+    CompletionStage<? extends Content> get();
 }

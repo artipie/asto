@@ -23,10 +23,10 @@
  */
 package com.artipie.asto.cache;
 
+import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 /**
  * Generic reactive cache which returns cached content by key of exist or loads from remote and
@@ -50,7 +50,6 @@ public interface Cache {
      * @return Content for key
      */
     CompletionStage<? extends Content> load(
-        Key key, Supplier<? extends CompletionStage<? extends Content>> remote,
-        CacheControl control
+        Key key, AsyncContent remote, CacheControl control
     );
 }
