@@ -23,33 +23,43 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import java.util.concurrent.CompletionStage;
+import com.artipie.asto.ext.Digests;
+import java.util.concurrent.CompletableFuture;
+import org.apache.commons.codec.binary.Hex;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
 /**
- * Generic reactive cache which returns cached content by key of exist or loads from remote and
- * cache if doesn't exit.
+ * Test case for {@link DigestVerification}.
  *
- * @since 0.24
+ * @since 0.25
+ * @checkstyle MagicNumberCheck (500 lines)
  */
-public interface Cache {
+final class DigestVerificationTest {
 
-    /**
-     * No cache, just load remote resource.
-     */
-    Cache NOP = (key, remote, ctl) -> remote.get();
+    @Test
+    void validatesCorrectDigest() throws Exception {
+        final boolean result = new DigestVerification(
+            Digests.MD5,
+            Hex.decodeHex("5289df737df57326fcdd22597afb1fac")
+        ).validate(
+            new Key.From("any"),
+            () -> CompletableFuture.supplyAsync(() -> new Content.From(new byte[]{1, 2, 3}))
+        ).toCompletableFuture().get();
+        MatcherAssert.assertThat(result, Matchers.is(true));
+    }
 
-    /**
-     * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
-     * When loading remote item, the cache may save its content to the cache storage.
-     * @param key Cached item key
-     * @param remote Remote source
-     * @param control Cache control
-     * @return Content for key
-     */
-    CompletionStage<? extends Content> load(
-        Key key, AsyncContent remote, CacheControl control
-    );
+    @Test
+    void doesntValidatesIncorrectDigest() throws Exception {
+        final boolean result = new DigestVerification(
+            Digests.MD5, new byte[16]
+        ).validate(
+            new Key.From("other"),
+            () -> CompletableFuture.supplyAsync(() -> new Content.From(new byte[]{1, 2, 3}))
+        ).toCompletableFuture().get();
+        MatcherAssert.assertThat(result, Matchers.is(false));
+    }
 }

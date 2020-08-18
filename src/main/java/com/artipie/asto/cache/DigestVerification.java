@@ -24,32 +24,43 @@
 package com.artipie.asto.cache;
 
 import com.artipie.asto.AsyncContent;
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.ext.ContentDigest;
+import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
- * Generic reactive cache which returns cached content by key of exist or loads from remote and
- * cache if doesn't exit.
- *
- * @since 0.24
+ * By digest verification.
+ * @since 0.25
  */
-public interface Cache {
+public final class DigestVerification implements CacheControl {
 
     /**
-     * No cache, just load remote resource.
+     * Message digest.
      */
-    Cache NOP = (key, remote, ctl) -> remote.get();
+    private final Supplier<MessageDigest> digest;
 
     /**
-     * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
-     * When loading remote item, the cache may save its content to the cache storage.
-     * @param key Cached item key
-     * @param remote Remote source
-     * @param control Cache control
-     * @return Content for key
+     * Expected digest.
      */
-    CompletionStage<? extends Content> load(
-        Key key, AsyncContent remote, CacheControl control
-    );
+    private final byte[] expected;
+
+    /**
+     * New digest verification.
+     * @param digest Message digest has func
+     * @param expected Expected digest bytes
+     */
+    @SuppressWarnings("PMD.ArrayIsStoredDirectly")
+    public DigestVerification(final Supplier<MessageDigest> digest, final byte[] expected) {
+        this.digest = digest;
+        this.expected = expected;
+    }
+
+    @Override
+    public CompletionStage<Boolean> validate(final Key item, final AsyncContent content) {
+        return content.get().thenCompose(pub -> new ContentDigest(pub, this.digest).bytes())
+            .thenApply(actual -> Arrays.equals(this.expected, actual));
+    }
 }

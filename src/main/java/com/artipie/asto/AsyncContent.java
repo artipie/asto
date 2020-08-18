@@ -21,35 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto.cache;
+package com.artipie.asto;
 
-import com.artipie.asto.AsyncContent;
-import com.artipie.asto.Content;
-import com.artipie.asto.Key;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
- * Generic reactive cache which returns cached content by key of exist or loads from remote and
- * cache if doesn't exit.
+ * Async {@link java.util.function.Supplier} of {@link java.util.concurrent.CompletionStage}
+ * with {@link Content}. It's a {@link FunctionalInterface}.
  *
- * @since 0.24
+ * @since 0.25
  */
-public interface Cache {
+@FunctionalInterface
+public interface AsyncContent extends Supplier<CompletionStage<? extends Content>> {
 
     /**
-     * No cache, just load remote resource.
+     * Empty async content.
      */
-    Cache NOP = (key, remote, ctl) -> remote.get();
+    AsyncContent EMPTY = () -> CompletableFuture.completedFuture(Content.EMPTY);
 
-    /**
-     * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
-     * When loading remote item, the cache may save its content to the cache storage.
-     * @param key Cached item key
-     * @param remote Remote source
-     * @param control Cache control
-     * @return Content for key
-     */
-    CompletionStage<? extends Content> load(
-        Key key, AsyncContent remote, CacheControl control
-    );
+    @Override
+    CompletionStage<? extends Content> get();
 }
