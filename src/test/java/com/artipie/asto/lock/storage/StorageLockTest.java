@@ -25,7 +25,7 @@ package com.artipie.asto.lock.storage;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.ext.PublisherAs;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.time.Instant;
 import java.util.Optional;
@@ -59,33 +59,31 @@ final class StorageLockTest {
     private final Key target = new Key.From("a/b/c");
 
     @Test
-    void shouldAddEmptyValueWhenAcquiredLock() {
+    void shouldAddEmptyValueWhenAcquiredLock() throws Exception {
         final String uuid = UUID.randomUUID().toString();
         new StorageLock(this.storage, this.target, uuid, Optional.empty())
             .acquire()
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.storage.value(new Key.From(new Proposals.RootKey(this.target), uuid))
-                .thenApply(PublisherAs::new)
-                .thenCompose(PublisherAs::bytes)
-                .toCompletableFuture().join(),
+            new BlockingStorage(this.storage).value(
+                new Key.From(new Proposals.RootKey(this.target), uuid)
+            ),
             new IsEqual<>(new byte[]{})
         );
     }
 
     @Test
-    void shouldAddDateValueWhenAcquiredLock() {
+    void shouldAddDateValueWhenAcquiredLock() throws Exception {
         final String uuid = UUID.randomUUID().toString();
         final String time = "2020-08-18T13:09:30.429Z";
         new StorageLock(this.storage, this.target, uuid, Optional.of(Instant.parse(time)))
             .acquire()
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.storage.value(new Key.From(new Proposals.RootKey(this.target), uuid))
-                .thenApply(PublisherAs::new)
-                .thenCompose(PublisherAs::asciiString)
-                .toCompletableFuture().join(),
-            new IsEqual<>(time)
+            new BlockingStorage(this.storage).value(
+                new Key.From(new Proposals.RootKey(this.target), uuid)
+            ),
+            new IsEqual<>(time.getBytes())
         );
     }
 
