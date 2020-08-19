@@ -25,7 +25,10 @@ package com.artipie.asto.lock.storage;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -56,13 +59,31 @@ final class StorageLockTest {
     private final Key target = new Key.From("a/b/c");
 
     @Test
-    void shouldAddValueWhenAcquiredLock() {
+    void shouldAddEmptyValueWhenAcquiredLock() throws Exception {
         final String uuid = UUID.randomUUID().toString();
-        new StorageLock(this.storage, this.target, uuid).acquire().toCompletableFuture().join();
+        new StorageLock(this.storage, this.target, uuid, Optional.empty())
+            .acquire()
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.storage.exists(new Key.From(new Proposals.RootKey(this.target), uuid))
-                .toCompletableFuture().join(),
-            new IsEqual<>(true)
+            new BlockingStorage(this.storage).value(
+                new Key.From(new Proposals.RootKey(this.target), uuid)
+            ),
+            new IsEqual<>(new byte[]{})
+        );
+    }
+
+    @Test
+    void shouldAddDateValueWhenAcquiredLock() throws Exception {
+        final String uuid = UUID.randomUUID().toString();
+        final String time = "2020-08-18T13:09:30.429Z";
+        new StorageLock(this.storage, this.target, uuid, Optional.of(Instant.parse(time)))
+            .acquire()
+            .toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            new BlockingStorage(this.storage).value(
+                new Key.From(new Proposals.RootKey(this.target), uuid)
+            ),
+            new IsEqual<>(time.getBytes())
         );
     }
 
@@ -73,7 +94,7 @@ final class StorageLockTest {
             new Key.From(new Proposals.RootKey(this.target), uuid),
             Content.EMPTY
         ).toCompletableFuture().join();
-        final StorageLock lock = new StorageLock(this.storage, this.target, uuid);
+        final StorageLock lock = new StorageLock(this.storage, this.target, uuid, Optional.empty());
         Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
     }
 
@@ -109,7 +130,9 @@ final class StorageLockTest {
         final String uuid = UUID.randomUUID().toString();
         final Key proposal = new Key.From(new Proposals.RootKey(this.target), uuid);
         this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
-        new StorageLock(this.storage, this.target, uuid).release().toCompletableFuture().join();
+        new StorageLock(this.storage, this.target, uuid, Optional.empty())
+            .release()
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(
             this.storage.exists(proposal).toCompletableFuture().join(),
             new IsEqual<>(false)
