@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +40,8 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test cases for {@link StorageLock}.
@@ -98,11 +101,21 @@ final class StorageLockTest {
         Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
     }
 
-    @Test
-    void shouldFailAcquireLockIfOtherProposalExists() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldFailAcquireLockIfOtherProposalExists(final boolean expiring) throws Exception {
+        final Optional<Instant> expiration;
+        if (expiring) {
+            expiration = Optional.of(Instant.now().plus(Duration.ofHours(1)));
+        } else {
+            expiration = Optional.empty();
+        }
         final String uuid = UUID.randomUUID().toString();
         final Key proposal = new Key.From(new Proposals.RootKey(this.target), uuid);
-        this.storage.save(proposal, Content.EMPTY).toCompletableFuture().join();
+        new BlockingStorage(this.storage).save(
+            proposal,
+            expiration.map(Instant::toString).orElse("").getBytes()
+        );
         final StorageLock lock = new StorageLock(this.storage, this.target);
         final CompletionException exception = Assertions.assertThrows(
             CompletionException.class,
@@ -123,6 +136,17 @@ final class StorageLockTest {
                 .collect(Collectors.toList()),
             Matchers.contains(proposal.string())
         );
+    }
+
+    @Test
+    void shouldAcquireLockIfOtherExpiredProposalExists() throws Exception {
+        final String uuid = UUID.randomUUID().toString();
+        new BlockingStorage(this.storage).save(
+            new Key.From(new Proposals.RootKey(this.target), uuid),
+            Instant.now().plus(Duration.ofHours(1)).toString().getBytes()
+        );
+        final StorageLock lock = new StorageLock(this.storage, this.target, uuid, Optional.empty());
+        Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
     }
 
     @Test
