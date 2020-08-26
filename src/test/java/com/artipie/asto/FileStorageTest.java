@@ -167,20 +167,6 @@ final class FileStorageTest {
         );
     }
 
-    @Test
-    void shouldReturnContentWithSpecifiedSize() throws Exception {
-        final byte[] content = "1234".getBytes();
-        final Key key = new Key.From("key");
-        this.storage.save(
-            key,
-            new Content.OneTime(new Content.From(content))
-        ).get();
-        MatcherAssert.assertThat(
-            this.storage.value(key).get().size().get(),
-            new IsEqual<>((long) content.length)
-        );
-    }
-
     /**
      * Provider of byte buffers for write test.
      * @since 0.2
