@@ -226,7 +226,7 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         return this.size(key).thenApply(
             size -> new Content.OneTime(
-                new Content.From(new File(this.path(key)).content(this.exec))
+                new Content.From(size, new File(this.path(key)).content(this.exec))
             )
         );
     }

@@ -28,6 +28,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.Timeout;
@@ -155,6 +156,20 @@ public final class StorageSaveAndLoadTest {
         MatcherAssert.assertThat(
             storage.exists(key).join(),
             Matchers.equalTo(false)
+        );
+    }
+
+    @TestTemplate
+    void shouldReturnContentWithSpecifiedSize(final Storage storage) throws Exception {
+        final byte[] content = "1234".getBytes();
+        final Key key = new Key.From("shouldReturnContentWithSpecifiedSize");
+        storage.save(
+            key,
+            new Content.OneTime(new Content.From(content))
+        ).get();
+        MatcherAssert.assertThat(
+            storage.value(key).get().size().get(),
+            new IsEqual<>((long) content.length)
         );
     }
 }
