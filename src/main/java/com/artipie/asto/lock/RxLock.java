@@ -27,55 +27,41 @@ import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import io.reactivex.Completable;
 
 /**
- * Asynchronous lock that might be successfully obtained by one thread only at a time.
+ * Reactive adapter for {@link Lock}.
  *
  * @since 0.27
  */
-public interface RxLock {
+public final class RxLock {
+
+    /**
+     * Origin.
+     */
+    private final Lock origin;
+
+    /**
+     * Ctor.
+     *
+     * @param origin Origin.
+     */
+    public RxLock(final Lock origin) {
+        this.origin = origin;
+    }
 
     /**
      * Acquire the lock.
      *
      * @return Completion of lock acquire operation.
      */
-    Completable acquire();
+    public Completable acquire() {
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.origin.acquire()));
+    }
 
     /**
      * Release the lock.
      *
      * @return Completion of lock release operation.
      */
-    Completable release();
-
-    /**
-     * Reactive adapter for {@link Lock}.
-     *
-     * @since 0.27
-     */
-    final class From implements RxLock {
-
-        /**
-         * Origin.
-         */
-        private final Lock origin;
-
-        /**
-         * Ctor.
-         *
-         * @param origin Origin.
-         */
-        public From(final Lock origin) {
-            this.origin = origin;
-        }
-
-        @Override
-        public Completable acquire() {
-            return Completable.defer(() -> CompletableInterop.fromFuture(this.origin.acquire()));
-        }
-
-        @Override
-        public Completable release() {
-            return Completable.defer(() -> CompletableInterop.fromFuture(this.origin.release()));
-        }
+    public Completable release() {
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.origin.release()));
     }
 }
