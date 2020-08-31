@@ -83,6 +83,10 @@ public final class StorageExclusivelyTest {
 
     /**
      * Fake operation with controllable start and finish.
+     * Started future is completed when operation is invoked.
+     * It could be used to await operation invocation.
+     * Finished future is returned as result of operation.
+     * It could be completed in order to finish operation.
      *
      * @since 0.27
      */
