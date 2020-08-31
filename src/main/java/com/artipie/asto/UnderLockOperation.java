@@ -65,22 +65,34 @@ public final class UnderLockOperation<T> {
      *
      * @param storage Storage.
      * @return Operation result.
+     * @checkstyle IllegalCatchCheck (10 lines)
      */
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public CompletionStage<T> perform(final Storage storage) {
         return this.lock.acquire().thenCompose(
-            nothing -> this.operation.apply(storage).handle(
-                (value, throwable) -> this.lock.release().thenCompose(
-                    nthng -> {
-                        final CompletableFuture<T> future = new CompletableFuture<>();
-                        if (throwable == null) {
-                            future.complete(value);
-                        } else {
-                            future.completeExceptionally(throwable);
+            nothing -> {
+                CompletionStage<T> result;
+                try {
+                    result = this.operation.apply(storage);
+                } catch (final Throwable throwable) {
+                    final CompletableFuture<T> future = new CompletableFuture<>();
+                    future.completeExceptionally(throwable);
+                    result = future;
+                }
+                return result.handle(
+                    (value, throwable) -> this.lock.release().thenCompose(
+                        nthng -> {
+                            final CompletableFuture<T> future = new CompletableFuture<>();
+                            if (throwable == null) {
+                                future.complete(value);
+                            } else {
+                                future.completeExceptionally(throwable);
+                            }
+                            return future;
                         }
-                        return future;
-                    }
-                )
-            ).thenCompose(Function.identity())
+                    )
+                ).thenCompose(Function.identity());
+            }
         );
     }
 }
