@@ -28,7 +28,7 @@ import com.artipie.asto.Key;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import java.util.Collection;
-import java.util.List;
+import java.util.function.Function;
 
 /**
  * A reactive version of {@link com.artipie.asto.Storage}.
@@ -97,10 +97,15 @@ public interface RxStorage {
     Completable delete(Key key);
 
     /**
-     * Start a transaction with specified keys.
+     * Runs operation exclusively for specified key.
      *
-     * @param keys The keys regarding which transaction is atomic
-     * @return Transaction
+     * @param key Key which is scope of operation.
+     * @param operation Operation to be performed exclusively.
+     * @param <T> Operation result type.
+     * @return Result of operation.
      */
-    Single<RxTransaction> transaction(List<Key> keys);
+    <T> Single<T> exclusively(
+        Key key,
+        Function<RxStorage, Single<T>> operation
+    );
 }
