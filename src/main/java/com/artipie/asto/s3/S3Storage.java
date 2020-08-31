@@ -257,9 +257,9 @@ public final class S3Storage implements Storage {
     }
 
     @Override
-    public CompletionStage<Void> exclusively(
+    public <T> CompletionStage<T> exclusively(
         final Key key,
-        final Function<Storage, CompletionStage<Void>> operation
+        final Function<Storage, CompletionStage<T>> operation
     ) {
         throw new UnsupportedOperationException();
     }

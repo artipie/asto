@@ -101,10 +101,11 @@ public interface RxStorage {
      *
      * @param key Key which is scope of operation.
      * @param operation Operation to be performed exclusively.
-     * @return Completion or error signal.
+     * @param <T> Operation result type.
+     * @return Result of operation.
      */
-    Completable exclusively(
+    <T> Single<T> exclusively(
         Key key,
-        Function<RxStorage, Completable> operation
+        Function<RxStorage, Single<T>> operation
     );
 }

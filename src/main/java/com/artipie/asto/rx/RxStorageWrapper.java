@@ -94,15 +94,15 @@ public final class RxStorageWrapper implements RxStorage {
     }
 
     @Override
-    public Completable exclusively(
+    public <T> Single<T> exclusively(
         final Key key,
-        final Function<RxStorage, Completable> operation
+        final Function<RxStorage, Single<T>> operation
     ) {
-        return Completable.defer(
-            () -> CompletableInterop.fromFuture(
+        return Single.defer(
+            () -> SingleInterop.fromFuture(
                 this.storage.exclusively(
                     key,
-                    st -> operation.apply(new RxStorageWrapper(st)).to(CompletableInterop.await())
+                    st -> operation.apply(new RxStorageWrapper(st)).to(SingleInterop.get())
                 )
             )
         );

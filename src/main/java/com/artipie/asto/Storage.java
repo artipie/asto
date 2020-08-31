@@ -105,11 +105,12 @@ public interface Storage {
      *
      * @param key Key which is scope of operation.
      * @param operation Operation to be performed exclusively.
-     * @return Completion or error signal.
+     * @param <T> Operation result type.
+     * @return Result of operation.
      */
-    CompletionStage<Void> exclusively(
+    <T> CompletionStage<T> exclusively(
         Key key,
-        Function<Storage, CompletionStage<Void>> operation
+        Function<Storage, CompletionStage<T>> operation
     );
 
     /**
@@ -169,9 +170,9 @@ public interface Storage {
         }
 
         @Override
-        public final CompletionStage<Void> exclusively(
+        public final <T> CompletionStage<T> exclusively(
             final Key key,
-            final Function<Storage, CompletionStage<Void>> operation
+            final Function<Storage, CompletionStage<T>> operation
         ) {
             return this.delegate.exclusively(key, operation);
         }
