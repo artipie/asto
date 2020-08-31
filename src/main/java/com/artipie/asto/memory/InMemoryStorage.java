@@ -29,6 +29,8 @@ import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -178,6 +180,6 @@ public final class InMemoryStorage implements Storage {
         final Key key,
         final Function<Storage, CompletionStage<T>> operation
     ) {
-        throw new UnsupportedOperationException();
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 }
