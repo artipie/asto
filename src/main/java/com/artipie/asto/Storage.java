@@ -25,8 +25,9 @@ package com.artipie.asto;
 
 import com.artipie.asto.fs.FileStorage;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 /**
  * The storage.
@@ -100,15 +101,16 @@ public interface Storage {
     CompletableFuture<Void> delete(Key key);
 
     /**
-     * Start a transaction with specified keys. These specified keys are the scope of
-     * a transaction. You will be able to perform storage operations like
-     * {@link Storage#save(Key, Content)} or {@link Storage#value(Key)} only in
-     * the scope of a transaction.
+     * Runs operation exclusively for specified key.
      *
-     * @param keys The keys regarding which transaction is atomic
-     * @return Transaction
+     * @param key Key which is scope of operation.
+     * @param operation Operation to be performed exclusively.
+     * @return Completion or error signal.
      */
-    CompletableFuture<Transaction> transaction(List<Key> keys);
+    CompletionStage<Void> exclusively(
+        Key key,
+        Function<Storage, CompletionStage<Void>> operation
+    );
 
     /**
      * Forwarding decorator for {@link Storage}.
@@ -167,8 +169,11 @@ public interface Storage {
         }
 
         @Override
-        public final CompletableFuture<Transaction> transaction(final List<Key> keys) {
-            return this.delegate.transaction(keys);
+        public final CompletionStage<Void> exclusively(
+            final Key key,
+            final Function<Storage, CompletionStage<Void>> operation
+        ) {
+            return this.delegate.exclusively(key, operation);
         }
     }
 }

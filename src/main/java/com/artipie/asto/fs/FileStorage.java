@@ -27,7 +27,6 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
-import com.artipie.asto.Transaction;
 import com.jcabi.log.Logger;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -40,9 +39,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -232,8 +231,11 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new FileSystemTransaction(this));
+    public CompletionStage<Void> exclusively(
+        final Key key,
+        final Function<Storage, CompletionStage<Void>> operation
+    ) {
+        throw new UnsupportedOperationException();
     }
 
     /**
