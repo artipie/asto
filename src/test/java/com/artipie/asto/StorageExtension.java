@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -90,12 +89,11 @@ final class StorageExtension
         try {
             storages = Arrays.asList(
                 new InMemoryStorage(),
-                new InMemoryStorage().transaction(Collections.emptyList()).get(),
                 this.s3Storage(),
                 new SubStorage(new Key.From("prefix"), new InMemoryStorage()),
                 new FileStorage(Files.createTempDirectory("junit"))
             );
-        } catch (final InterruptedException | ExecutionException | IOException ex) {
+        } catch (final IOException ex) {
             throw new IllegalStateException("Failed to generate storage", ex);
         }
         return storages.stream().map(StorageContext::new);

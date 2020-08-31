@@ -29,14 +29,14 @@ import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.artipie.asto.Transaction;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 /**
  * Simple implementation of Storage that holds all data in memory.
@@ -174,7 +174,10 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new InMemoryTransaction(this));
+    public <T> CompletionStage<T> exclusively(
+        final Key key,
+        final Function<Storage, CompletionStage<T>> operation
+    ) {
+        throw new UnsupportedOperationException();
     }
 }
