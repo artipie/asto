@@ -28,7 +28,6 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.Transaction;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -88,7 +87,7 @@ public final class InMemoryTransaction implements Transaction {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+    public CompletableFuture<Transaction> transaction(final Key key) {
         return CompletableFuture.completedFuture(this);
     }
 

@@ -36,7 +36,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -259,7 +258,7 @@ public final class S3Storage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+    public CompletableFuture<Transaction> transaction(final Key key) {
         throw new UnsupportedOperationException();
     }
 

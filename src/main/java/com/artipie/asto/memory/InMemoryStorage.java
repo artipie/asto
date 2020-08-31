@@ -33,7 +33,6 @@ import com.artipie.asto.Transaction;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -174,7 +173,7 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+    public CompletableFuture<Transaction> transaction(final Key key) {
         return CompletableFuture.completedFuture(new InMemoryTransaction(this));
     }
 }

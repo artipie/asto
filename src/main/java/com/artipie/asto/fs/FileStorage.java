@@ -40,7 +40,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -232,7 +231,7 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
+    public CompletableFuture<Transaction> transaction(final Key key) {
         return CompletableFuture.completedFuture(new FileSystemTransaction(this));
     }
 

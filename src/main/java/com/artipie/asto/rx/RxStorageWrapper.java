@@ -31,7 +31,6 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Reactive wrapper over {@code Storage}.
@@ -94,9 +93,9 @@ public final class RxStorageWrapper implements RxStorage {
     }
 
     @Override
-    public Single<RxTransaction> transaction(final List<Key> keys) {
+    public Single<RxTransaction> transaction(final Key key) {
         return Single.defer(
-            () -> SingleInterop.fromFuture(this.storage.transaction(keys))
+            () -> SingleInterop.fromFuture(this.storage.transaction(key))
             .map(RxTransactionWrapper::new)
         );
     }

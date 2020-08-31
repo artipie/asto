@@ -90,7 +90,7 @@ final class StorageExtension
         try {
             storages = Arrays.asList(
                 new InMemoryStorage(),
-                new InMemoryStorage().transaction(Collections.emptyList()).get(),
+                new InMemoryStorage().transaction(Key.ROOT).get(),
                 this.s3Storage(),
                 new SubStorage(new Key.From("prefix"), new InMemoryStorage()),
                 new FileStorage(Files.createTempDirectory("junit"))
