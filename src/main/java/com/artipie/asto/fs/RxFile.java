@@ -37,13 +37,14 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import wtf.g4s8.rio.file.File;
+import org.cqfn.rio.file.File;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
  * and {@link RxFile#save(Flowable)} methods respectively.
  * <p>
- * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
+ * The implementation is based on {@link org.cqfn.rio.file.File} from
+ * <a href="https://github.com/cqfn/rio">cqfn/rio</a>.
  *
  * @since 0.12
  */
