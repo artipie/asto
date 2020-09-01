@@ -26,6 +26,8 @@ package com.artipie.asto.s3;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.io.IOException;
@@ -261,7 +263,7 @@ public final class S3Storage implements Storage {
         final Key key,
         final Function<Storage, CompletionStage<T>> operation
     ) {
-        throw new UnsupportedOperationException();
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**

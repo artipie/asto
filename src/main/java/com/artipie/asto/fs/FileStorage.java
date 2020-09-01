@@ -27,6 +27,8 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
+import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -54,6 +56,7 @@ import wtf.g4s8.rio.file.File;
  * Simple storage, in files.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class FileStorage implements Storage {
 
@@ -235,7 +238,7 @@ public final class FileStorage implements Storage {
         final Key key,
         final Function<Storage, CompletionStage<T>> operation
     ) {
-        throw new UnsupportedOperationException();
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**
