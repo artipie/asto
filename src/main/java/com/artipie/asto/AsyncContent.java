@@ -21,10 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.asto;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
- * Locks for controlling access to shared resources.
+ * Async {@link java.util.function.Supplier} of {@link java.util.concurrent.CompletionStage}
+ * with {@link Content}. It's a {@link FunctionalInterface}.
  *
- * @since 0.24
+ * @since 0.25
  */
-package com.artipie.asto.lock;
+@FunctionalInterface
+public interface AsyncContent extends Supplier<CompletionStage<? extends Content>> {
+
+    /**
+     * Empty async content.
+     */
+    AsyncContent EMPTY = () -> CompletableFuture.completedFuture(Content.EMPTY);
+
+    @Override
+    CompletionStage<? extends Content> get();
+}

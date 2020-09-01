@@ -21,10 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.asto.lock;
+
+import hu.akarnokd.rxjava2.interop.CompletableInterop;
+import io.reactivex.Completable;
 
 /**
- * Locks for controlling access to shared resources.
+ * Reactive adapter for {@link Lock}.
  *
- * @since 0.24
+ * @since 0.27
  */
-package com.artipie.asto.lock;
+public final class RxLock {
+
+    /**
+     * Origin.
+     */
+    private final Lock origin;
+
+    /**
+     * Ctor.
+     *
+     * @param origin Origin.
+     */
+    public RxLock(final Lock origin) {
+        this.origin = origin;
+    }
+
+    /**
+     * Acquire the lock.
+     *
+     * @return Completion of lock acquire operation.
+     */
+    public Completable acquire() {
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.origin.acquire()));
+    }
+
+    /**
+     * Release the lock.
+     *
+     * @return Completion of lock release operation.
+     */
+    public Completable release() {
+        return Completable.defer(() -> CompletableInterop.fromFuture(this.origin.release()));
+    }
+}

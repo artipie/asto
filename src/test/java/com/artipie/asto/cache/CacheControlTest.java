@@ -24,32 +24,37 @@
 package com.artipie.asto.cache;
 
 import com.artipie.asto.AsyncContent;
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import java.util.concurrent.CompletionStage;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * Generic reactive cache which returns cached content by key of exist or loads from remote and
- * cache if doesn't exit.
+ * Test case for {@link CacheControl}.
  *
- * @since 0.24
+ * @since 0.25
  */
-public interface Cache {
+final class CacheControlTest {
 
-    /**
-     * No cache, just load remote resource.
-     */
-    Cache NOP = (key, remote, ctl) -> remote.get();
+    static Object[][] verifyAllItemsParams() {
+        return new Object[][]{
+            new Object[]{CacheControl.Standard.ALWAYS, CacheControl.Standard.ALWAYS, true},
+            new Object[]{CacheControl.Standard.ALWAYS, CacheControl.Standard.NO_CACHE, false},
+            new Object[]{CacheControl.Standard.NO_CACHE, CacheControl.Standard.ALWAYS, false},
+            new Object[]{CacheControl.Standard.NO_CACHE, CacheControl.Standard.NO_CACHE, false},
+        };
+    }
 
-    /**
-     * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
-     * When loading remote item, the cache may save its content to the cache storage.
-     * @param key Cached item key
-     * @param remote Remote source
-     * @param control Cache control
-     * @return Content for key
-     */
-    CompletionStage<? extends Content> load(
-        Key key, AsyncContent remote, CacheControl control
-    );
+    @ParameterizedTest
+    @MethodSource("verifyAllItemsParams")
+    void verifyAllItems(final CacheControl first, final CacheControl second,
+        final boolean expects) throws Exception {
+        MatcherAssert.assertThat(
+            new CacheControl.All(first, second)
+                .validate(Key.ROOT, AsyncContent.EMPTY)
+                .toCompletableFuture().get(),
+            Matchers.is(expects)
+        );
+    }
 }

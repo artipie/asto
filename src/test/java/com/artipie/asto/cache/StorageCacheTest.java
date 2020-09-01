@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.cache;
 
+import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -36,10 +37,8 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -146,7 +145,7 @@ final class StorageCacheTest {
         final int count = 100;
         final CountDownLatch latch = new CountDownLatch(10);
         final byte[] data = "data".getBytes();
-        final Supplier<CompletionStage<? extends Content>> remote =
+        final AsyncContent remote =
             () -> CompletableFuture.supplyAsync(
                 // @checkstyle ReturnCountCheck (10 lines)
                 () -> {

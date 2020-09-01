@@ -27,7 +27,8 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
-import com.artipie.asto.Transaction;
+import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -40,9 +41,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -55,6 +56,7 @@ import org.cqfn.rio.file.File;
  * Simple storage, in files.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class FileStorage implements Storage {
 
@@ -226,14 +228,17 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         return this.size(key).thenApply(
             size -> new Content.OneTime(
-                new Content.From(new File(this.path(key)).content(this.exec))
+                new Content.From(size, new File(this.path(key)).content(this.exec))
             )
         );
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return CompletableFuture.completedFuture(new FileSystemTransaction(this));
+    public <T> CompletionStage<T> exclusively(
+        final Key key,
+        final Function<Storage, CompletionStage<T>> operation
+    ) {
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**

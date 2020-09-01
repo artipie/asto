@@ -21,16 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto.lock;
+package com.artipie.asto.lock.storage;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.lock.Lock;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * {@link Lock} allowing to obtain lock on target {@link Key} in specified {@link Storage}.
@@ -41,19 +42,19 @@ import java.util.stream.Collectors;
 public final class StorageLock implements Lock {
 
     /**
-     * Storage.
+     * Proposals.
      */
-    private final Storage storage;
-
-    /**
-     * Target key.
-     */
-    private final Key target;
+    private final Proposals proposals;
 
     /**
      * Identifier.
      */
     private final String uuid;
+
+    /**
+     * Expiration time.
+     */
+    private final Optional<Instant> expiration;
 
     /**
      * Ctor.
@@ -62,7 +63,18 @@ public final class StorageLock implements Lock {
      * @param target Target key.
      */
     public StorageLock(final Storage storage, final Key target) {
-        this(storage, target, UUID.randomUUID().toString());
+        this(storage, target, UUID.randomUUID().toString(), Optional.empty());
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param storage Storage.
+     * @param target Target key.
+     * @param expiration Expiration time.
+     */
+    public StorageLock(final Storage storage, final Key target, final Instant expiration) {
+        this(storage, target, UUID.randomUUID().toString(), Optional.of(expiration));
     }
 
     /**
@@ -71,34 +83,24 @@ public final class StorageLock implements Lock {
      * @param storage Storage.
      * @param target Target key.
      * @param uuid Identifier.
+     * @param expiration Expiration time.
+     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    public StorageLock(final Storage storage, final Key target, final String uuid) {
-        this.storage = storage;
-        this.target = target;
+    public StorageLock(
+        final Storage storage,
+        final Key target,
+        final String uuid,
+        final Optional<Instant> expiration
+    ) {
+        this.proposals = new Proposals(storage, target);
         this.uuid = uuid;
+        this.expiration = expiration;
     }
 
     @Override
     public CompletionStage<Void> acquire() {
-        final Key proposal = this.proposalKey();
-        return this.storage.save(proposal, Content.EMPTY).thenCompose(
-            nothing -> this.storage.list(new ProposalsKey(this.target)).thenCompose(
-                proposals -> {
-                    if (proposals.size() != 1 || !proposals.contains(proposal)) {
-                        throw new IllegalStateException(
-                            String.format(
-                                "Failed to acquire lock. Own: `%s` Found: %s",
-                                proposal,
-                                proposals.stream()
-                                    .map(Key::toString)
-                                    .map(str -> String.format("`%s`", str))
-                                    .collect(Collectors.joining(", "))
-                            )
-                        );
-                    }
-                    return CompletableFuture.allOf();
-                }
-            )
+        return this.proposals.create(this.uuid, this.expiration).thenCompose(
+            nothing -> this.proposals.checkSingle(this.uuid)
         ).handle(
             (nothing, throwable) -> {
                 final CompletionStage<Void> result;
@@ -120,32 +122,6 @@ public final class StorageLock implements Lock {
 
     @Override
     public CompletionStage<Void> release() {
-        return this.storage.delete(this.proposalKey());
-    }
-
-    /**
-     * Construct proposal key.
-     *
-     * @return Proposal key.
-     */
-    private Key proposalKey() {
-        return new Key.From(new ProposalsKey(this.target), this.uuid);
-    }
-
-    /**
-     * Root key for lock proposals.
-     *
-     * @since 0.24
-     */
-    static class ProposalsKey extends Key.Wrap {
-
-        /**
-         * Ctor.
-         *
-         * @param target Target key.
-         */
-        protected ProposalsKey(final Key target) {
-            super(new Key.From(new Key.From(".artipie-locks"), new Key.From(target)));
-        }
+        return this.proposals.delete(this.uuid);
     }
 }

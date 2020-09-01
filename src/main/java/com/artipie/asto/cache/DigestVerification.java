@@ -21,27 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto.rx;
+package com.artipie.asto.cache;
 
-import com.artipie.asto.Transaction;
-import io.reactivex.Completable;
+import com.artipie.asto.AsyncContent;
+import com.artipie.asto.Key;
+import com.artipie.asto.ext.ContentDigest;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
- * A reactive version of {@link Transaction}.
- *
- * @since 0.10
+ * By digest verification.
+ * @since 0.25
  */
-public interface RxTransaction extends RxStorage {
+public final class DigestVerification implements CacheControl {
 
     /**
-     * A reactive version of {@link Transaction#commit()}.
-     * @return Completion or error signal
+     * Message digest.
      */
-    Completable commit();
+    private final Supplier<MessageDigest> digest;
 
     /**
-     * A reactive version of {@link Transaction#rollback()}.
-     * @return Completion or error signal
+     * Expected digest.
      */
-    Completable rollback();
+    private final byte[] expected;
+
+    /**
+     * New digest verification.
+     * @param digest Message digest has func
+     * @param expected Expected digest bytes
+     */
+    @SuppressWarnings("PMD.ArrayIsStoredDirectly")
+    public DigestVerification(final Supplier<MessageDigest> digest, final byte[] expected) {
+        this.digest = digest;
+        this.expected = expected;
+    }
+
+    @Override
+    public CompletionStage<Boolean> validate(final Key item, final AsyncContent content) {
+        return content.get().thenCompose(pub -> new ContentDigest(pub, this.digest).bytes())
+            .thenApply(actual -> Arrays.equals(this.expected, actual));
+    }
 }

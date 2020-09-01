@@ -26,7 +26,8 @@ package com.artipie.asto.s3;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.Transaction;
+import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.io.IOException;
@@ -36,7 +37,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -259,8 +259,11 @@ public final class S3Storage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        throw new UnsupportedOperationException();
+    public <T> CompletionStage<T> exclusively(
+        final Key key,
+        final Function<Storage, CompletionStage<T>> operation
+    ) {
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**

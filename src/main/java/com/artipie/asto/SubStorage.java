@@ -23,9 +23,11 @@
  */
 package com.artipie.asto;
 
+import com.artipie.asto.lock.storage.StorageLock;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -106,8 +108,11 @@ public final class SubStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        throw new UnsupportedOperationException();
+    public <T> CompletionStage<T> exclusively(
+        final Key key,
+        final Function<Storage, CompletionStage<T>> operation
+    ) {
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**

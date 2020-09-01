@@ -25,10 +25,10 @@ package com.artipie.asto;
 
 import com.jcabi.log.Logger;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Storage that logs performed operations.
@@ -138,13 +138,13 @@ public final class LoggingStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return this.storage.transaction(keys).thenApply(
+    public <T> CompletionStage<T> exclusively(
+        final Key key,
+        final Function<Storage, CompletionStage<T>> operation
+    ) {
+        return this.storage.exclusively(key, operation).thenApply(
             result -> {
-                this.log(
-                    "Transaction '%s'",
-                    keys.stream().map(Key::string).collect(Collectors.joining(", "))
-                );
+                this.log("Exclusively for '%s': %s", key, operation);
                 return result;
             }
         );

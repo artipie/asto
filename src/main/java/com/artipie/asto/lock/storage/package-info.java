@@ -21,26 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.asto;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Transaction is an atomic operation performed under a certain scope.
+ * Storage implementation for {@link com.artipie.asto.lock.Lock}.
  *
- * @since 0.10.0
+ * @since 0.24
  */
-public interface Transaction extends Storage {
-
-    /**
-     * Commit the transaction.
-     * @return Completion or error signal
-     */
-    CompletableFuture<Void> commit();
-
-    /**
-     * Rollback the transaction.
-     * @return Completion or error signal
-     */
-    CompletableFuture<Void> rollback();
-}
+package com.artipie.asto.lock.storage;
