@@ -81,7 +81,7 @@ public final class UnderLockOperation<T> {
                 }
                 return result.handle(
                     (value, throwable) -> this.lock.release().thenCompose(
-                        nthng -> {
+                        released -> {
                             final CompletableFuture<T> future = new CompletableFuture<>();
                             if (throwable == null) {
                                 future.complete(value);
