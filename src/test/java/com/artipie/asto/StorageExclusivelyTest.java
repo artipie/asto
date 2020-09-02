@@ -81,6 +81,39 @@ public final class StorageExclusivelyTest {
         );
     }
 
+    @TestTemplate
+    void shouldRunExclusivelyWhenPrevFinishedWithAsyncFailure(final Storage storage) {
+        final Key key = new Key.From("shouldRunExclusivelyWhenPrevFinishedWithAsyncFailure");
+        final FakeOperation operation = new FakeOperation();
+        operation.finished.completeExceptionally(new IllegalStateException());
+        Assertions.assertThrows(
+            CompletionException.class,
+            () -> storage.exclusively(key, operation).toCompletableFuture().join()
+        );
+        Assertions.assertDoesNotThrow(
+            () -> storage.exclusively(key, new FakeOperation(CompletableFuture.allOf()))
+                .toCompletableFuture().join()
+        );
+    }
+
+    @TestTemplate
+    void shouldRunExclusivelyWhenPrevFinishedWithSyncFailure(final Storage storage) {
+        final Key key = new Key.From("shouldRunExclusivelyWhenPrevFinishedWithSyncFailure");
+        Assertions.assertThrows(
+            CompletionException.class,
+            () -> storage.exclusively(
+                key,
+                ignored -> {
+                    throw new IllegalStateException();
+                }
+            ).toCompletableFuture().join()
+        );
+        Assertions.assertDoesNotThrow(
+            () -> storage.exclusively(key, new FakeOperation(CompletableFuture.allOf()))
+                .toCompletableFuture().join()
+        );
+    }
+
     /**
      * Fake operation with controllable start and finish.
      * Started future is completed when operation is invoked.
