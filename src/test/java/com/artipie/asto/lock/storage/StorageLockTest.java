@@ -25,13 +25,19 @@ package com.artipie.asto.lock.storage;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -47,6 +53,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * Test cases for {@link StorageLock}.
  *
  * @since 0.24
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @Timeout(1)
 final class StorageLockTest {
@@ -98,6 +105,20 @@ final class StorageLockTest {
             Content.EMPTY
         ).toCompletableFuture().join();
         final StorageLock lock = new StorageLock(this.storage, this.target, uuid, Optional.empty());
+        Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
+    }
+
+    @Test
+    void shouldAcquireWhenOtherProposalIsDeletedConcurrently() {
+        final StorageLock lock = new StorageLock(
+            new PhantomKeyStorage(
+                this.storage,
+                new Key.From(new Proposals.RootKey(this.target), UUID.randomUUID().toString())
+            ),
+            this.target,
+            UUID.randomUUID().toString(),
+            Optional.empty()
+        );
         Assertions.assertDoesNotThrow(() -> lock.acquire().toCompletableFuture().join());
     }
 
@@ -161,5 +182,86 @@ final class StorageLockTest {
             this.storage.exists(proposal).toCompletableFuture().join(),
             new IsEqual<>(false)
         );
+    }
+
+    /**
+     * Storage with one extra "phantom" key.
+     * This key present in `list` method results, but cannot be found otherwise.
+     * Class is designed to test cases when key returned by list and then deleted concurrently,
+     * so it is not found when accessed by `value` method later.
+     *
+     * @since 0.28
+     */
+    private static class PhantomKeyStorage implements Storage {
+
+        /**
+         * Origin storage.
+         */
+        private final Storage storage;
+
+        /**
+         * Phantom key.
+         */
+        private final Key phantom;
+
+        /**
+         * Ctor.
+         *
+         * @param storage Origin storage.
+         * @param phantom Phantom key.
+         */
+        PhantomKeyStorage(final Storage storage, final Key phantom) {
+            this.storage = storage;
+            this.phantom = phantom;
+        }
+
+        @Override
+        public CompletableFuture<Boolean> exists(final Key key) {
+            return this.storage.exists(key);
+        }
+
+        @Override
+        public CompletableFuture<Collection<Key>> list(final Key prefix) {
+            return this.storage.list(prefix).thenApply(
+                keys -> {
+                    final Collection<Key> copy = new ArrayList<>(keys);
+                    copy.add(this.phantom);
+                    return copy;
+                }
+            );
+        }
+
+        @Override
+        public CompletableFuture<Void> save(final Key key, final Content content) {
+            return this.storage.save(key, content);
+        }
+
+        @Override
+        public CompletableFuture<Void> move(final Key source, final Key destination) {
+            return this.storage.move(source, destination);
+        }
+
+        @Override
+        public CompletableFuture<Long> size(final Key key) {
+            return this.storage.size(key);
+        }
+
+        @Override
+        public CompletableFuture<Content> value(final Key key) {
+            return this.storage.value(key);
+        }
+
+        @Override
+        public CompletableFuture<Void> delete(final Key key) {
+            return this.storage.delete(key);
+        }
+
+        @Override
+        public <T> CompletionStage<T> exclusively(
+            final Key key,
+            final Function<Storage, CompletionStage<T>> operation
+        ) {
+            return this.storage.exclusively(key, operation);
+        }
     }
 }

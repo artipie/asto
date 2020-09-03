@@ -26,12 +26,14 @@ package com.artipie.asto.lock.storage;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.PublisherAs;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -92,35 +94,36 @@ final class Proposals {
                 proposals.stream()
                     .filter(key -> !key.equals(own))
                     .map(
-                        proposal -> this.storage.value(proposal)
-                            .thenApply(PublisherAs::new)
-                            .thenCompose(PublisherAs::asciiString)
-                            .thenCompose(
-                                expiration -> {
-                                    if (isNotExpired(expiration, now)) {
-                                        throw new IllegalStateException(
-                                            String.join(
-                                                "\n",
-                                                "Failed to acquire lock.",
-                                                String.format("Own: `%s`", own),
-                                                String.format(
-                                                    "Others: %s",
-                                                    proposals.stream()
-                                                        .map(Key::toString)
-                                                        .map(str -> String.format("`%s`", str))
-                                                        .collect(Collectors.joining(", "))
-                                                ),
-                                                String.format(
-                                                    "Not expired: `%s` `%s`",
-                                                    proposal,
-                                                    expiration
+                        proposal -> this.valueIfPresent(proposal).thenCompose(
+                            value -> value.map(
+                                content -> new PublisherAs(content).asciiString().thenCompose(
+                                    expiration -> {
+                                        if (isNotExpired(expiration, now)) {
+                                            throw new IllegalStateException(
+                                                String.join(
+                                                    "\n",
+                                                    "Failed to acquire lock.",
+                                                    String.format("Own: `%s`", own),
+                                                    String.format(
+                                                        "Others: %s",
+                                                        proposals.stream()
+                                                            .map(Key::toString)
+                                                            .map(str -> String.format("`%s`", str))
+                                                            .collect(Collectors.joining(", "))
+                                                    ),
+                                                    String.format(
+                                                        "Not expired: `%s` `%s`",
+                                                        proposal,
+                                                        expiration
+                                                    )
                                                 )
-                                            )
-                                        );
+                                            );
+                                        }
+                                        return CompletableFuture.allOf();
                                     }
-                                    return CompletableFuture.allOf();
-                                }
-                            )
+                                )
+                            ).orElse(CompletableFuture.allOf())
+                        )
                     )
                     .toArray(CompletableFuture[]::new)
             )
@@ -157,6 +160,28 @@ final class Proposals {
      */
     private static boolean isNotExpired(final String instant, final Instant now) {
         return instant.isEmpty() || Instant.parse(instant).isAfter(now);
+    }
+
+    /**
+     * Loads value content is it is present.
+     *
+     * @param key Key for the value.
+     * @return Content if value presents, empty otherwise.
+     */
+    private CompletableFuture<Optional<Content>> valueIfPresent(final Key key) {
+        final CompletableFuture<Optional<Content>> value = this.storage.value(key)
+            .thenApply(Optional::of);
+        return value.handle(
+            (content, throwable) -> {
+                final CompletableFuture<Optional<Content>> result;
+                if (throwable != null && throwable.getCause() instanceof ValueNotFoundException) {
+                    result = CompletableFuture.completedFuture(Optional.empty());
+                } else {
+                    result = value;
+                }
+                return result;
+            }
+        ).thenCompose(Function.identity());
     }
 
     /**
