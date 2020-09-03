@@ -79,4 +79,23 @@ class TestResourceTest {
         );
     }
 
+    @Test
+    void addsFilesToStorage() {
+        final Storage storage = new InMemoryStorage();
+        final Key base = new Key.From("base");
+        new TestResource("folder").addFilesTo(storage, base);
+        MatcherAssert.assertThat(
+            "Adds one.txt",
+            new PublisherAs(storage.value(new Key.From(base, "one.txt")).join())
+                .bytes().toCompletableFuture().join(),
+            new IsEqual<>("one".getBytes())
+        );
+        MatcherAssert.assertThat(
+            "Adds two.txt",
+            new PublisherAs(storage.value(new Key.From(base, "two.txt")).join())
+                .bytes().toCompletableFuture().join(),
+            new IsEqual<>("two".getBytes())
+        );
+    }
+
 }

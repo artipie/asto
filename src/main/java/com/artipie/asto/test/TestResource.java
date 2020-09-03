@@ -26,6 +26,7 @@ package com.artipie.asto.test;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.fs.FileStorage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +34,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Test resource.
@@ -68,6 +70,25 @@ public final class TestResource {
      */
     public void saveTo(final Storage storage) {
         this.saveTo(storage, new Key.From(this.name));
+    }
+
+    /**
+     * Adds files from resources (specified folder) to storage, storage items keys are constructed
+     * from the `base` key and filename.
+     * @param storage Where to save
+     * @param base Base key
+     */
+    public void addFilesTo(final Storage storage, final Key base) {
+        final Storage resources = new FileStorage(this.asPath());
+        resources.list(Key.ROOT).thenCompose(
+            keys -> CompletableFuture.allOf(
+                keys.stream().map(Key::string).map(
+                    item -> resources.value(new Key.From(item)).thenCompose(
+                        content -> storage.save(new Key.From(base, item), content)
+                    )
+                ).toArray(CompletableFuture[]::new)
+            )
+        ).join();
     }
 
     /**
