@@ -24,8 +24,11 @@
 package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,8 +52,16 @@ public final class StorageSizeTest {
 
     @TestTemplate
     void shouldFailToGetSizeOfAbsentValue(final Storage storage) {
-        final BlockingStorage blocking = new BlockingStorage(storage);
-        final Key key = new Key.From("shouldFailToGetSizeOfAbsentValue");
-        Assertions.assertThrows(RuntimeException.class, () -> blocking.size(key));
+        final CompletableFuture<Long> size = storage.size(
+            new Key.From("shouldFailToGetSizeOfAbsentValue")
+        );
+        final Exception exception = Assertions.assertThrows(
+            CompletionException.class,
+            size::join
+        );
+        MatcherAssert.assertThat(
+            exception.getCause(),
+            new IsInstanceOf(ValueNotFoundException.class)
+        );
     }
 }

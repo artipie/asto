@@ -30,6 +30,7 @@ import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
@@ -44,6 +45,7 @@ import java.util.function.Function;
  * Simple implementation of Storage that holds all data in memory.
  *
  * @since 0.14
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class InMemoryStorage implements Storage {
@@ -131,9 +133,7 @@ public final class InMemoryStorage implements Storage {
                 synchronized (this.data) {
                     final byte[] content = this.data.get(key.string());
                     if (content == null) {
-                        throw new IllegalArgumentException(
-                            String.format("No value for key: %s", key.string())
-                        );
+                        throw new ValueNotFoundException(key);
                     }
                     return (long) content.length;
                 }
@@ -148,9 +148,7 @@ public final class InMemoryStorage implements Storage {
                 synchronized (this.data) {
                     final byte[] content = this.data.get(key.string());
                     if (content == null) {
-                        throw new IllegalArgumentException(
-                            String.format("No value for key: %s", key.string())
-                        );
+                        throw new ValueNotFoundException(key);
                     }
                     return new Content.OneTime(new Content.From(content));
                 }

@@ -28,12 +28,14 @@ import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -216,6 +218,8 @@ public final class FileStorage implements Storage {
             () -> {
                 try {
                     return Files.size(this.path(key));
+                } catch (final NoSuchFileException nofile) {
+                    throw new ValueNotFoundException(key, nofile);
                 } catch (final IOException iex) {
                     throw new UncheckedIOException(iex);
                 }

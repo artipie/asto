@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
@@ -39,6 +40,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -212,12 +214,15 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Long> size(final Key key) {
-        return this.client.headObject(
-            HeadObjectRequest.builder()
-                .bucket(this.bucket)
-                .key(key.string())
-                .build()
-        ).thenApply(HeadObjectResponse::contentLength);
+        return handleNoSuchKey(
+            key,
+            this.client.headObject(
+                HeadObjectRequest.builder()
+                    .bucket(this.bucket)
+                    .key(key.string())
+                    .build()
+            ).thenApply(HeadObjectResponse::contentLength)
+        );
     }
 
     @Override
@@ -230,7 +235,7 @@ public final class S3Storage implements Storage {
                 .build(),
             new ResponseAdapter(promise)
         );
-        return promise.thenApply(Content.OneTime::new);
+        return handleNoSuchKey(key, promise).thenApply(Content.OneTime::new);
     }
 
     @Override
@@ -416,6 +421,33 @@ public final class S3Storage implements Storage {
                 }
             ).thenCompose(self -> self)
         );
+    }
+
+    /**
+     * Translate {@link NoSuchKeyException} to {@link ValueNotFoundException} in future.
+     *
+     * @param key Key that was accessed by the future.
+     * @param future Future to translate excpetion in.
+     * @param <T> Future result type.
+     * @return Translated future.
+     */
+    private static <T> CompletableFuture<T> handleNoSuchKey(
+        final Key key,
+        final CompletableFuture<T> future
+    ) {
+        return future.handle(
+            (content, throwable) -> {
+                CompletableFuture<T> result = future;
+                if (throwable instanceof CompletionException) {
+                    final Throwable cause = throwable.getCause();
+                    if (cause instanceof NoSuchKeyException) {
+                        result = new CompletableFuture<>();
+                        result.completeExceptionally(new ValueNotFoundException(key, cause));
+                    }
+                }
+                return result;
+            }
+        ).thenCompose(Function.identity());
     }
 
     /**

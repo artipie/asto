@@ -26,9 +26,12 @@ package com.artipie.asto;
 import com.artipie.asto.blocking.BlockingStorage;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.Timeout;
@@ -134,10 +137,18 @@ public final class StorageSaveAndLoadTest {
 
     @TestTemplate
     @Timeout(1)
-    void shouldFailToLoadAbsentValue(final Storage storage) throws Exception {
-        final BlockingStorage blocking = new BlockingStorage(storage);
-        final Key key = new Key.From("shouldFailToLoadAbsentValue");
-        Assertions.assertThrows(RuntimeException.class, () -> blocking.value(key));
+    void shouldFailToLoadAbsentValue(final Storage storage) {
+        final CompletableFuture<Content> value = storage.value(
+            new Key.From("shouldFailToLoadAbsentValue")
+        );
+        final Exception exception = Assertions.assertThrows(
+            CompletionException.class,
+            value::join
+        );
+        MatcherAssert.assertThat(
+            exception.getCause(),
+            new IsInstanceOf(ValueNotFoundException.class)
+        );
     }
 
     @TestTemplate
