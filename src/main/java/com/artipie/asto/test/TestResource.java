@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
+import io.vertx.reactivex.core.file.FileSystem;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,11 +49,18 @@ public final class TestResource {
     private final String name;
 
     /**
+     * The Vert.x file system.
+     */
+    private final FileSystem fls;
+
+    /**
      * Ctor.
      * @param name Resource path
+     * @param fls The file system.
      */
-    public TestResource(final String name) {
+    public TestResource(final String name, final FileSystem fls) {
         this.name = name;
+        this.fls = fls;
     }
 
     /**
@@ -79,7 +87,7 @@ public final class TestResource {
      * @param base Base key
      */
     public void addFilesTo(final Storage storage, final Key base) {
-        final Storage resources = new FileStorage(this.asPath());
+        final Storage resources = new FileStorage(this.asPath(), this.fls);
         resources.list(Key.ROOT).thenCompose(
             keys -> CompletableFuture.allOf(
                 keys.stream().map(Key::string).map(
