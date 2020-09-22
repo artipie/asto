@@ -26,12 +26,9 @@ package com.artipie.asto.blocking;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
 
 /**
  * More primitive and easy to use wrapper to use {@code Storage}.
@@ -59,14 +56,9 @@ public class BlockingStorage {
      *
      * @param key The key (file name)
      * @return TRUE if exists, FALSE otherwise
-     * @throws InterruptedException If thread was interrupted
      */
-    public boolean exists(final Key key) throws InterruptedException {
-        try {
-            return this.storage.exists(key).get();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public boolean exists(final Key key) {
+        return this.storage.exists(key).join();
     }
 
     /**
@@ -75,14 +67,9 @@ public class BlockingStorage {
      *
      * @param prefix The prefix.
      * @return Collection of relative keys.
-     * @throws InterruptedException If thread was interrupted
      */
-    public Collection<Key> list(final Key prefix) throws InterruptedException {
-        try {
-            return this.storage.list(prefix).get();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public Collection<Key> list(final Key prefix) {
+        return this.storage.list(prefix).join();
     }
 
     /**
@@ -90,17 +77,9 @@ public class BlockingStorage {
      *
      * @param key The key
      * @param content The content
-     * @throws InterruptedException If thread was interrupted
      */
-    public void save(final Key key, final byte[] content) throws InterruptedException {
-        try {
-            this.storage.save(
-                key,
-                new Content.OneTime(new Content.From(content))
-            ).get();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public void save(final Key key, final byte[] content) {
+        this.storage.save(key, new Content.From(content)).join();
     }
 
     /**
@@ -108,14 +87,9 @@ public class BlockingStorage {
      *
      * @param source Source key.
      * @param destination Destination key.
-     * @throws InterruptedException If thread was interrupted
      */
-    public void move(final Key source, final Key destination) throws InterruptedException {
-        try {
-            this.storage.move(source, destination).get();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public void move(final Key source, final Key destination) {
+        this.storage.move(source, destination).join();
     }
 
     /**
@@ -123,14 +97,9 @@ public class BlockingStorage {
      *
      * @param key The key of value.
      * @return Size of value in bytes.
-     * @throws InterruptedException If thread was interrupted
      */
-    public long size(final Key key) throws InterruptedException {
-        try {
-            return this.storage.size(key).get();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public long size(final Key key) {
+        return this.storage.size(key).join();
     }
 
     /**
@@ -138,32 +107,22 @@ public class BlockingStorage {
      *
      * @param key The key
      * @return Value associated with the key
-     * @throws InterruptedException If thread was interrupted
      */
-    public byte[] value(final Key key) throws InterruptedException {
-        try {
-            return new Remaining(
-                this.storage.value(key).thenApplyAsync(
-                    pub -> new Concatenation(new OneTimePublisher<>(pub)).single().blockingGet()
-                ).get(),
-                true
-            ).bytes();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public byte[] value(final Key key) {
+        return new Remaining(
+            this.storage.value(key).thenApplyAsync(
+                pub -> new Concatenation(pub).single().blockingGet()
+            ).join(),
+            true
+        ).bytes();
     }
 
     /**
      * Removes value from storage. Fails if value does not exist.
      *
      * @param key Key for value to be deleted.
-     * @throws InterruptedException If thread was interrupted
      */
-    public void delete(final Key key) throws InterruptedException {
-        try {
-            this.storage.delete(key).get();
-        } catch (final ExecutionException err) {
-            throw new UncheckedExecutionException(err);
-        }
+    public void delete(final Key key) {
+        this.storage.delete(key).join();
     }
 }
