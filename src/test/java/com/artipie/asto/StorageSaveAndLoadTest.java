@@ -40,8 +40,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 /**
  * Tests for {@link Storage#save(Key, Content)} and {@link Storage#value(Key)}.
  *
+ * @checkstyle IllegalCatchCheck (500 lines)
  * @since 0.14
  */
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 @ExtendWith(StorageExtension.class)
 public final class StorageSaveAndLoadTest {
 
@@ -77,6 +79,39 @@ public final class StorageSaveAndLoadTest {
         MatcherAssert.assertThat(
             new BlockingStorage(storage).value(key),
             Matchers.equalTo("12345".getBytes())
+        );
+    }
+
+    @SuppressWarnings("PMD.EmptyCatchBlock")
+    @TestTemplate
+    @Timeout(1)
+    void shouldNotOverwriteWithPartial(final Storage storage) {
+        final Key key = new Key.From("saveIsAtomic");
+        final String initial = "initial";
+        storage.save(
+            key,
+            new Content.OneTime(
+                new Content.From(Flowable.fromArray(ByteBuffer.wrap(initial.getBytes())))
+            )
+        ).join();
+        try {
+            storage.save(
+                key,
+                new Content.OneTime(
+                    new Content.From(
+                        Flowable.concat(
+                            Flowable.just(ByteBuffer.wrap(new byte[]{1})),
+                            Flowable.error(new IllegalStateException())
+                        )
+                    )
+                )
+            ).join();
+        } catch (final Exception exc) {
+        }
+        MatcherAssert.assertThat(
+            "save should be atomic",
+            new String(new BlockingStorage(storage).value(key)),
+            Matchers.equalTo(initial)
         );
     }
 
