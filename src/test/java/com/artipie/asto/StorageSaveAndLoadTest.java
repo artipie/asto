@@ -28,7 +28,6 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -86,7 +85,7 @@ public final class StorageSaveAndLoadTest {
     @SuppressWarnings("PMD.EmptyCatchBlock")
     @TestTemplate
     @Timeout(1)
-    void saveIsAtomic(final Storage storage) throws ExecutionException, InterruptedException {
+    void shouldNotOverwriteWithPartial(final Storage storage) {
         final Key key = new Key.From("saveIsAtomic");
         final String initial = "initial";
         storage.save(
@@ -106,7 +105,7 @@ public final class StorageSaveAndLoadTest {
                         )
                     )
                 )
-            ).get();
+            ).join();
         } catch (final Exception exc) {
         }
         MatcherAssert.assertThat(
