@@ -41,8 +41,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 /**
  * Tests for {@link Storage#save(Key, Content)} and {@link Storage#value(Key)}.
  *
+ * @checkstyle IllegalCatchCheck (500 lines)
  * @since 0.14
  */
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 @ExtendWith(StorageExtension.class)
 public final class StorageSaveAndLoadTest {
 
@@ -105,7 +107,7 @@ public final class StorageSaveAndLoadTest {
                     )
                 )
             ).get();
-        } catch (final IllegalStateException exc) {
+        } catch (final Exception exc) {
         }
         MatcherAssert.assertThat(
             "save should be atomic",
