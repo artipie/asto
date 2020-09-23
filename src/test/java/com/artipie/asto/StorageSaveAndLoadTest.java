@@ -28,6 +28,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -77,6 +78,39 @@ public final class StorageSaveAndLoadTest {
         MatcherAssert.assertThat(
             new BlockingStorage(storage).value(key),
             Matchers.equalTo("12345".getBytes())
+        );
+    }
+
+    @SuppressWarnings("PMD.EmptyCatchBlock")
+    @TestTemplate
+    @Timeout(1)
+    void saveIsAtomic(final Storage storage) throws ExecutionException, InterruptedException {
+        final Key key = new Key.From("saveIsAtomic");
+        final String initial = "initial";
+        storage.save(
+            key,
+            new Content.OneTime(
+                new Content.From(Flowable.fromArray(ByteBuffer.wrap(initial.getBytes())))
+            )
+        ).join();
+        try {
+            storage.save(
+                key,
+                new Content.OneTime(
+                    new Content.From(
+                        Flowable.concat(
+                            Flowable.just(ByteBuffer.wrap(new byte[]{1})),
+                            Flowable.error(new IllegalStateException())
+                        )
+                    )
+                )
+            ).get();
+        } catch (final IllegalStateException exc) {
+        }
+        MatcherAssert.assertThat(
+            "save should be atomic",
+            new String(new BlockingStorage(storage).value(key)),
+            Matchers.equalTo(initial)
         );
     }
 
