@@ -27,13 +27,10 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
-import io.vertx.reactivex.core.Vertx;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -43,25 +40,10 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class TestResourceTest {
 
-    /**
-     * The Vert.x.
-     */
-    private Vertx vertx;
-
-    @BeforeEach
-    void before() {
-        this.vertx = Vertx.vertx();
-    }
-
-    @AfterEach
-    void after() {
-        this.vertx.close();
-    }
-
     @Test
     void readsResourceBytes() {
         MatcherAssert.assertThat(
-            new TestResource("test.txt", this.vertx.fileSystem()).asBytes(),
+            new TestResource("test.txt").asBytes(),
             new IsEqual<>("hello world".getBytes())
         );
     }
@@ -69,7 +51,7 @@ class TestResourceTest {
     @Test
     void readsResourceAsStream() {
         MatcherAssert.assertThat(
-            new TestResource("test.txt", this.vertx.fileSystem()).asInputStream(),
+            new TestResource("test.txt").asInputStream(),
             new IsNot<>(new IsNull<>())
         );
     }
@@ -78,7 +60,7 @@ class TestResourceTest {
     void addsToStorage() {
         final Storage storage = new InMemoryStorage();
         final String path = "test.txt";
-        new TestResource(path, this.vertx.fileSystem()).saveTo(storage);
+        new TestResource(path).saveTo(storage);
         MatcherAssert.assertThat(
             new PublisherAs(storage.value(new Key.From(path)).join())
                 .bytes().toCompletableFuture().join(),
@@ -90,7 +72,7 @@ class TestResourceTest {
     void addsToStorageBySpecifiedKey() {
         final Storage storage = new InMemoryStorage();
         final Key key = new Key.From("one");
-        new TestResource("test.txt", this.vertx.fileSystem()).saveTo(storage, key);
+        new TestResource("test.txt").saveTo(storage, key);
         MatcherAssert.assertThat(
             new PublisherAs(storage.value(key).join()).bytes().toCompletableFuture().join(),
             new IsEqual<>("hello world".getBytes())
@@ -101,7 +83,7 @@ class TestResourceTest {
     void addsFilesToStorage() {
         final Storage storage = new InMemoryStorage();
         final Key base = new Key.From("base");
-        new TestResource("folder", this.vertx.fileSystem()).addFilesTo(storage, base);
+        new TestResource("folder").addFilesTo(storage, base);
         MatcherAssert.assertThat(
             "Adds one.txt",
             new PublisherAs(storage.value(new Key.From(base, "one.txt")).join())
