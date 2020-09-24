@@ -89,7 +89,8 @@ public final class VertxFileStorage implements Storage {
                 final Path path = this.path(key);
                 return Files.exists(path) && !Files.isDirectory(path);
             }
-        ).to(SingleInterop.get()).toCompletableFuture();
+        ).subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
+            .to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
@@ -130,7 +131,9 @@ public final class VertxFileStorage implements Storage {
                     keys.size(), prefix.string(), this.dir, path, keys
                 );
                 return keys;
-            }).to(SingleInterop.get()).toCompletableFuture();
+            })
+            .subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
+            .to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
@@ -177,6 +180,7 @@ public final class VertxFileStorage implements Storage {
                 dest.getParent().toFile().mkdirs();
                 return dest;
             })
+            .subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
             .flatMapCompletable(
                 dest -> new VertxRxFile(this.path(source), this.vertx).move(dest)
             )
