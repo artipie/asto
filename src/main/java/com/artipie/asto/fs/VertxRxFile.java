@@ -120,6 +120,11 @@ public class VertxRxFile {
                 asyncFile -> Completable.create(
                     emitter -> {
                         flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
+                            .onErrorResumeNext(
+                                thr -> {
+                                    return asyncFile.rxClose().andThen(Flowable.error(thr));
+                                }
+                            )
                             .subscribe(asyncFile.toSubscriber()
                                 .onWriteStreamEnd(emitter::onComplete)
                                 .onWriteStreamError(emitter::onError)
