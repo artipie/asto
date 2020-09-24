@@ -149,7 +149,7 @@ public final class VertxFileStorage implements Storage {
                     this.vertx.fileSystem()
                 ).save(Flowable.fromPublisher(content))
                     .andThen(
-                            this.vertx.fileSystem()
+                        this.vertx.fileSystem()
                             .rxMove(
                                 tmp.toString(),
                                 this.path(key).toString(),
