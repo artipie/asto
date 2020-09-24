@@ -25,12 +25,18 @@ package com.artipie.asto.fs;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
+import hu.akarnokd.rxjava2.interop.CompletableInterop;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.file.FileSystem;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystems;
@@ -38,29 +44,20 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.cqfn.rio.file.File;
 
 /**
  * Simple storage, in files.
- *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-public final class FileStorage implements Storage {
+public final class VertxFileStorage implements Storage {
 
     /**
      * Where we keep the data.
@@ -68,54 +65,34 @@ public final class FileStorage implements Storage {
     private final Path dir;
 
     /**
-     * IO executor service.
+     * The Vert.x.
      */
-    private final ExecutorService exec;
+    private final Vertx vertx;
 
     /**
      * Ctor.
+     *
      * @param path The path to the dir
-     * @param nothing Just for compatibility
-     * @deprecated Use {@link FileStorage#FileStorage(Path)} ctor instead.
+     * @param vertx The Vert.x instance.
      */
-    @Deprecated
-    @SuppressWarnings("PMD.UnusedFormalParameter")
-    public FileStorage(final Path path, final Object nothing) {
-        this(path);
-    }
-
-    /**
-     * Ctor.
-     * @param path File path
-     */
-    public FileStorage(final Path path) {
-        this(path, ThreadPool.EXEC);
-    }
-
-    /**
-     * Ctor.
-     * @param path The path to the dir
-     * @param exec IO Executor service
-     */
-    public FileStorage(final Path path, final ExecutorService exec) {
+    public VertxFileStorage(final Path path, final Vertx vertx) {
         this.dir = path;
-        this.exec = exec;
+        this.vertx = vertx;
     }
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        return CompletableFuture.supplyAsync(
+        return Single.fromCallable(
             () -> {
                 final Path path = this.path(key);
                 return Files.exists(path) && !Files.isDirectory(path);
-            },
-            this.exec
-        );
+            }
+        ).to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        return CompletableFuture.supplyAsync(
+        return Single.fromCallable(
             () -> {
                 final Path path = this.path(prefix);
                 final Collection<Key> keys;
@@ -151,65 +128,55 @@ public final class FileStorage implements Storage {
                     keys.size(), prefix.string(), this.dir, path, keys
                 );
                 return keys;
-            },
-            this.exec
-        );
+            }).to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return CompletableFuture.supplyAsync(
+        return Single.fromCallable(
             () -> {
-                final Path tmp = Paths.get(
-                    this.dir.toString(),
-                    String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
-                );
-                tmp.getParent().toFile().mkdirs();
-                return tmp;
-            },
-            this.exec
-        ).thenCompose(
-            tmp -> new File(tmp).write(
-                new OneTimePublisher<>(content),
-                this.exec,
-                StandardOpenOption.WRITE,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING
-            ).thenCompose(
-                nothing -> this.move(tmp, this.path(key))
-            ).handleAsync(
-                (nothing, throwable) -> {
-                    tmp.toFile().delete();
-                    final CompletableFuture<Void> result = new CompletableFuture<>();
-                    if (throwable == null) {
-                        result.complete(null);
-                    } else {
-                        result.completeExceptionally(throwable);
-                    }
-                    return result;
-                },
-                this.exec
-            ).thenCompose(Function.identity())
-        );
+                final Path file = this.path(key);
+                Files.createDirectories(file.getParent());
+                return file;
+            })
+            .flatMapCompletable(
+                file -> new VertxRxFile(
+                    file,
+                    this.vertx.fileSystem()).save(Flowable.fromPublisher(content)
+                )
+            ).onErrorResumeNext(
+                throwable -> new VertxRxFile(this.path(key), this.vertx.fileSystem())
+                    .delete()
+                    .andThen(Completable.error(throwable))
+            )
+            .to(CompletableInterop.await())
+            .<Void>thenApply(o -> null)
+            .toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return this.move(this.path(source), this.path(destination));
+        return Single.fromCallable(
+            () -> {
+                final Path dest = this.path(destination);
+                dest.getParent().toFile().mkdirs();
+                return dest;
+            })
+            .flatMapCompletable(
+                dest -> new VertxRxFile(this.path(source), this.vertx.fileSystem()).move(dest)
+            )
+            .to(CompletableInterop.await())
+            .<Void>thenApply(file -> null)
+            .toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Void> delete(final Key key) {
-        return CompletableFuture.runAsync(
-            () -> {
-                try {
-                    Files.delete(this.path(key));
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
-                }
-            },
-            this.exec
-        );
+        return new VertxRxFile(this.path(key), this.vertx.fileSystem())
+            .delete()
+            .to(CompletableInterop.await())
+            .toCompletableFuture()
+            .thenCompose(ignored -> CompletableFuture.allOf());
     }
 
     @Override
@@ -223,17 +190,20 @@ public final class FileStorage implements Storage {
                 } catch (final IOException iex) {
                     throw new UncheckedIOException(iex);
                 }
-            },
-            this.exec
+            }
         );
     }
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
         return this.size(key).thenApply(
-            size -> new Content.OneTime(
-                new Content.From(size, new File(this.path(key)).content(this.exec))
-            )
+            size ->
+                new Content.OneTime(
+                    new Content.From(
+                        size,
+                        new VertxRxFile(this.path(key), this.vertx.fileSystem()).flow()
+                    )
+                )
         );
     }
 
@@ -246,32 +216,6 @@ public final class FileStorage implements Storage {
     }
 
     /**
-     * Moves file from source path to destination.
-     *
-     * @param source Source path.
-     * @param dest Destination path.
-     * @return Completion of moving file.
-     */
-    private CompletableFuture<Void> move(final Path source, final Path dest) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                dest.getParent().toFile().mkdirs();
-                return dest;
-            },
-            this.exec
-        ).thenAcceptAsync(
-            dst -> {
-                try {
-                    Files.move(source, dst, StandardCopyOption.REPLACE_EXISTING);
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
-                }
-            },
-            this.exec
-        );
-    }
-
-    /**
      * Resolves key to file system path.
      *
      * @param key Key to be resolved to path.
@@ -279,51 +223,5 @@ public final class FileStorage implements Storage {
      */
     private Path path(final Key key) {
         return Paths.get(this.dir.toString(), key.string());
-    }
-
-    /**
-     * Thread factory and lazy executor holder.
-     * @since 0.19
-     */
-    private static final class ThreadPool implements ThreadFactory {
-
-        /**
-         * Lazy instance of thread pool.
-         */
-        static final ExecutorService EXEC = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
-            new ThreadPool()
-        );
-
-        /**
-         * Counter.
-         */
-        private final AtomicInteger cnt;
-
-        /**
-         * Default ctor.
-         */
-        private ThreadPool() {
-            this(new AtomicInteger());
-        }
-
-        /**
-         * Primary ctor.
-         * @param cnt Thread counter
-         */
-        private ThreadPool(final AtomicInteger cnt) {
-            this.cnt = cnt;
-        }
-
-        @Override
-        public Thread newThread(final Runnable runnable) {
-            return new Thread(
-                runnable,
-                String.format(
-                    "%s-%d",
-                    FileStorage.class.getSimpleName(), this.cnt.incrementAndGet()
-                )
-            );
-        }
     }
 }

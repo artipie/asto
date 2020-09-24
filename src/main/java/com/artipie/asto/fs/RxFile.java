@@ -23,24 +23,28 @@
  */
 package com.artipie.asto.fs;
 
-import com.artipie.asto.Remaining;
+import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.vertx.core.file.CopyOptions;
-import io.vertx.core.file.OpenOptions;
-import io.vertx.reactivex.core.Promise;
-import io.vertx.reactivex.core.buffer.Buffer;
-import io.vertx.reactivex.core.file.FileSystem;
+import io.reactivex.subjects.CompletableSubject;
+import io.reactivex.subjects.SingleSubject;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.cqfn.rio.file.File;
 
 /**
  * The reactive file allows you to perform read and write operations via {@link RxFile#flow()}
  * and {@link RxFile#save(Flowable)} methods respectively.
  * <p>
- * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
+ * The implementation is based on {@link org.cqfn.rio.file.File} from
+ * <a href="https://github.com/cqfn/rio">cqfn/rio</a>.
  *
  * @since 0.12
  */
@@ -52,18 +56,26 @@ public class RxFile {
     private final Path file;
 
     /**
-     * The file system.
+     * IO executor.
      */
-    private final FileSystem fls;
+    private final ExecutorService exec;
 
     /**
      * Ctor.
-     * @param file The wrapped file.
-     * @param fls The file system.
+     * @param file File path
      */
-    public RxFile(final Path file, final FileSystem fls) {
+    public RxFile(final Path file) {
+        this(file, Executors.newCachedThreadPool());
+    }
+
+    /**
+     * Ctor.
+     * @param file The wrapped file
+     * @param exec IO executor
+     */
+    public RxFile(final Path file, final ExecutorService exec) {
         this.file = file;
-        this.fls = fls;
+        this.exec = exec;
     }
 
     /**
@@ -71,34 +83,7 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(
-            this.file.toString(),
-            new OpenOptions()
-                .setRead(true)
-                .setWrite(false)
-                .setCreate(false)
-        )
-            .flatMapPublisher(
-                asyncFile -> {
-                    final Promise<Void> promise = Promise.promise();
-                    final Completable completable = Completable.create(
-                        emitter ->
-                            promise.future().onComplete(
-                                event -> {
-                                    if (event.succeeded()) {
-                                        emitter.onComplete();
-                                    } else {
-                                        emitter.onError(event.cause());
-                                    }
-                                }
-                            )
-                    );
-                    return asyncFile.toFlowable().map(
-                        buffer -> ByteBuffer.wrap(buffer.getBytes())
-                    ).doOnTerminate(() -> asyncFile.rxClose().subscribe(promise::complete))
-                        .mergeWith(completable);
-                }
-            );
+        return Flowable.fromPublisher(new File(this.file).content(this.exec));
     }
 
     /**
@@ -108,27 +93,16 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return this.fls.rxOpen(
-            this.file.toString(),
-            new OpenOptions()
-                .setRead(false)
-                .setCreate(true)
-                .setWrite(true)
-                .setTruncateExisting(true)
-        )
-            .flatMapCompletable(
-                asyncFile -> Completable.create(
-                    emitter -> {
-                        flow.map(buf -> Buffer.buffer(new Remaining(buf).bytes()))
-                            .subscribe(asyncFile.toSubscriber()
-                                .onWriteStreamEnd(emitter::onComplete)
-                                .onWriteStreamError(emitter::onError)
-                                .onWriteStreamEndError(emitter::onError)
-                                .onError(emitter::onError)
-                            );
-                    }
+        return Completable.defer(
+            () -> CompletableInterop.fromFuture(
+                new File(this.file).write(
+                    flow,
+                    this.exec,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING
                 )
-            );
+            )
+        );
     }
 
     /**
@@ -138,10 +112,21 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable move(final Path target) {
-        return this.fls.rxMove(
-            this.file.toString(),
-            target.toString(),
-            new CopyOptions().setReplaceExisting(true)
+        return Completable.defer(
+            () -> {
+                final CompletableSubject res = CompletableSubject.create();
+                this.exec.submit(
+                    () -> {
+                        try {
+                            Files.move(this.file, target, StandardCopyOption.REPLACE_EXISTING);
+                            res.onComplete();
+                        } catch (final IOException iex) {
+                            res.onError(iex);
+                        }
+                    }
+                );
+                return res;
+            }
         );
     }
 
@@ -151,7 +136,22 @@ public class RxFile {
      * @return Completion or error signal
      */
     public Completable delete() {
-        return this.fls.rxDelete(this.file.toString());
+        return Completable.defer(
+            () -> {
+                final CompletableSubject res = CompletableSubject.create();
+                this.exec.submit(
+                    () -> {
+                        try {
+                            Files.delete(this.file);
+                            res.onComplete();
+                        } catch (final IOException iex) {
+                            res.onError(iex);
+                        }
+                    }
+                );
+                return res;
+            }
+        );
     }
 
     /**
@@ -160,6 +160,20 @@ public class RxFile {
      * @return File size in bytes.
      */
     public Single<Long> size() {
-        return Single.fromCallable(() -> Files.size(this.file));
+        return Single.defer(
+            () -> {
+                final SingleSubject<Long> res = SingleSubject.create();
+                this.exec.submit(
+                    () -> {
+                        try {
+                            res.onSuccess(Files.size(this.file));
+                        } catch (final IOException iex) {
+                            res.onError(iex);
+                        }
+                    }
+                );
+                return res;
+            }
+        );
     }
 }
