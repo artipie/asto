@@ -29,9 +29,10 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.reactivex.RxHelper;
 import io.vertx.reactivex.core.Promise;
+import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
-import io.vertx.reactivex.core.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,16 +55,16 @@ public class VertxRxFile {
     /**
      * The file system.
      */
-    private final FileSystem fls;
+    private final Vertx vertx;
 
     /**
      * Ctor.
      * @param file The wrapped file.
-     * @param fls The file system.
+     * @param vertx The file system.
      */
-    public VertxRxFile(final Path file, final FileSystem fls) {
+    public VertxRxFile(final Path file, final Vertx vertx) {
         this.file = file;
-        this.fls = fls;
+        this.vertx = vertx;
     }
 
     /**
@@ -71,7 +72,7 @@ public class VertxRxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return this.fls.rxOpen(
+        return this.vertx.fileSystem().rxOpen(
             this.file.toString(),
             new OpenOptions()
                 .setRead(true)
@@ -108,7 +109,7 @@ public class VertxRxFile {
      * @return Completion or error signal
      */
     public Completable save(final Flowable<ByteBuffer> flow) {
-        return this.fls.rxOpen(
+        return this.vertx.fileSystem().rxOpen(
             this.file.toString(),
             new OpenOptions()
                 .setRead(false)
@@ -143,7 +144,7 @@ public class VertxRxFile {
      * @return Completion or error signal
      */
     public Completable move(final Path target) {
-        return this.fls.rxMove(
+        return this.vertx.fileSystem().rxMove(
             this.file.toString(),
             target.toString(),
             new CopyOptions().setReplaceExisting(true)
@@ -156,7 +157,7 @@ public class VertxRxFile {
      * @return Completion or error signal
      */
     public Completable delete() {
-        return this.fls.rxDelete(this.file.toString());
+        return this.vertx.fileSystem().rxDelete(this.file.toString());
     }
 
     /**
@@ -165,6 +166,8 @@ public class VertxRxFile {
      * @return File size in bytes.
      */
     public Single<Long> size() {
-        return Single.fromCallable(() -> Files.size(this.file));
+        return Single.fromCallable(
+            () -> Files.size(this.file)
+        ).subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()));
     }
 }

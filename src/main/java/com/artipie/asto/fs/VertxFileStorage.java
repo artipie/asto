@@ -36,6 +36,7 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.core.file.CopyOptions;
+import io.vertx.reactivex.RxHelper;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -143,10 +144,11 @@ public final class VertxFileStorage implements Storage {
                 tmp.getParent().toFile().mkdirs();
                 return tmp;
             })
+            .subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
             .flatMapCompletable(
                 tmp -> new VertxRxFile(
                     tmp,
-                    this.vertx.fileSystem()
+                    this.vertx
                 ).save(Flowable.fromPublisher(content))
                     .andThen(
                         this.vertx.fileSystem()
@@ -157,7 +159,7 @@ public final class VertxFileStorage implements Storage {
                             )
                     )
                     .onErrorResumeNext(
-                        throwable -> new VertxRxFile(tmp, this.vertx.fileSystem())
+                        throwable -> new VertxRxFile(tmp, this.vertx)
                             .delete()
                             .andThen(Completable.error(throwable))
                     )
@@ -176,7 +178,7 @@ public final class VertxFileStorage implements Storage {
                 return dest;
             })
             .flatMapCompletable(
-                dest -> new VertxRxFile(this.path(source), this.vertx.fileSystem()).move(dest)
+                dest -> new VertxRxFile(this.path(source), this.vertx).move(dest)
             )
             .to(CompletableInterop.await())
             .<Void>thenApply(file -> null)
@@ -185,7 +187,7 @@ public final class VertxFileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> delete(final Key key) {
-        return new VertxRxFile(this.path(key), this.vertx.fileSystem())
+        return new VertxRxFile(this.path(key), this.vertx)
             .delete()
             .to(CompletableInterop.await())
             .toCompletableFuture()
@@ -194,7 +196,7 @@ public final class VertxFileStorage implements Storage {
 
     @Override
     public CompletableFuture<Long> size(final Key key) {
-        return CompletableFuture.supplyAsync(
+        return Single.fromCallable(
             () -> {
                 try {
                     return Files.size(this.path(key));
@@ -204,7 +206,8 @@ public final class VertxFileStorage implements Storage {
                     throw new UncheckedIOException(iex);
                 }
             }
-        );
+        ).subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
+            .to(SingleInterop.get()).toCompletableFuture();
     }
 
     @Override
@@ -214,7 +217,7 @@ public final class VertxFileStorage implements Storage {
                 new Content.OneTime(
                     new Content.From(
                         size,
-                        new VertxRxFile(this.path(key), this.vertx.fileSystem()).flow()
+                        new VertxRxFile(this.path(key), this.vertx).flow()
                     )
                 )
         );
