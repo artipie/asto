@@ -28,7 +28,6 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
-import io.vertx.reactivex.core.Vertx;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,7 +38,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -59,20 +57,9 @@ final class FileStorageTest {
      */
     private FileStorage storage;
 
-    /**
-     * The Vert.x.
-     */
-    private Vertx vertx;
-
     @BeforeEach
-    void before(@TempDir final Path tmp) {
-        this.vertx = Vertx.vertx();
-        this.storage = new FileStorage(tmp, this.vertx.fileSystem());
-    }
-
-    @AfterEach
-    void after(@TempDir final Path tmp) {
-        this.vertx.close();
+    void setUp(@TempDir final Path tmp) {
+        this.storage = new FileStorage(tmp);
     }
 
     @Test
@@ -164,7 +151,7 @@ final class FileStorageTest {
     @Timeout(1L)
     void saveAndLoadHugeFiles(@TempDir final Path tmp) throws Exception {
         final String name = "huge";
-        new FileStorage(tmp, this.vertx.fileSystem()).save(
+        new FileStorage(tmp).save(
             new Key.From(name),
             new Content.OneTime(
                 new Content.From(
