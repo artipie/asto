@@ -35,8 +35,8 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.vertx.core.file.CopyOptions;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.file.FileSystem;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystems;
@@ -47,6 +47,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -135,19 +136,31 @@ public final class VertxFileStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Content content) {
         return Single.fromCallable(
             () -> {
-                final Path file = this.path(key);
-                Files.createDirectories(file.getParent());
-                return file;
+                final Path tmp = Paths.get(
+                    this.dir.toString(),
+                    String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
+                );
+                tmp.getParent().toFile().mkdirs();
+                return tmp;
             })
             .flatMapCompletable(
-                file -> new VertxRxFile(
-                    file,
-                    this.vertx.fileSystem()).save(Flowable.fromPublisher(content)
-                )
-            ).onErrorResumeNext(
-                throwable -> new VertxRxFile(this.path(key), this.vertx.fileSystem())
-                    .delete()
-                    .andThen(Completable.error(throwable))
+                tmp -> new VertxRxFile(
+                    tmp,
+                    this.vertx.fileSystem()
+                ).save(Flowable.fromPublisher(content))
+                    .andThen(
+                            this.vertx.fileSystem()
+                            .rxMove(
+                                tmp.toString(),
+                                this.path(key).toString(),
+                                new CopyOptions().setReplaceExisting(true)
+                            )
+                    )
+                    .onErrorResumeNext(
+                        throwable -> new VertxRxFile(tmp, this.vertx.fileSystem())
+                            .delete()
+                            .andThen(Completable.error(throwable))
+                    )
             )
             .to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
