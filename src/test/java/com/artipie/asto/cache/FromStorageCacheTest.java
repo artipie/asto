@@ -44,7 +44,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link StorageCache}.
+ * Test case for {@link FromStorageCache}.
  *
  * @since 0.24
  * @checkstyle MagicNumberCheck (500 lines)
@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Test;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-final class StorageCacheTest {
+final class FromStorageCacheTest {
 
     /**
      * Storage for tests.
@@ -65,7 +65,7 @@ final class StorageCacheTest {
         final byte[] data = "hello1".getBytes();
         new BlockingStorage(this.storage).save(key, data);
         MatcherAssert.assertThat(
-            new StorageCache(this.storage).load(
+            new FromStorageCache(this.storage).load(
                 key,
                 () -> CompletableFuture.supplyAsync(
                     () -> {
@@ -82,7 +82,7 @@ final class StorageCacheTest {
     void savesToCacheFromRemote() throws Exception {
         final Key key = new Key.From("key2");
         final byte[] data = "hello2".getBytes();
-        final StorageCache cache = new StorageCache(this.storage);
+        final FromStorageCache cache = new FromStorageCache(this.storage);
         final Content load = cache.load(
             key,
             () -> CompletableFuture.supplyAsync(() -> new Content.From(data)),
@@ -111,7 +111,7 @@ final class StorageCacheTest {
     void dontCacheFailedRemote() throws Exception {
         final Key key = new Key.From("key3");
         final AtomicInteger cnt = new AtomicInteger();
-        new StorageCache(this.storage).load(
+        new FromStorageCache(this.storage).load(
             key,
             () -> CompletableFuture.supplyAsync(
                 () -> new Content.From(
@@ -140,7 +140,7 @@ final class StorageCacheTest {
 
     @Test
     void processMultipleRequestsSimultaneously() throws Exception {
-        final StorageCache cache = new StorageCache(this.storage);
+        final FromStorageCache cache = new FromStorageCache(this.storage);
         final Key key = new Key.From("key4");
         final int count = 100;
         final CountDownLatch latch = new CountDownLatch(10);

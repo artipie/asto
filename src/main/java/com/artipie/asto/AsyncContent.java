@@ -43,4 +43,31 @@ public interface AsyncContent extends Supplier<CompletionStage<? extends Content
 
     @Override
     CompletionStage<? extends Content> get();
+
+    /**
+     * Failed async content.
+     * @since 0.3
+     */
+    final class Failed implements AsyncContent {
+
+        /**
+         * Failure cause.
+         */
+        private final Throwable reason;
+
+        /**
+         * Ctor.
+         * @param reason Failure cause
+         */
+        public Failed(final Throwable reason) {
+            this.reason = reason;
+        }
+
+        @Override
+        public CompletionStage<? extends Content> get() {
+            final CompletableFuture<? extends Content> res = new CompletableFuture<>();
+            res.completeExceptionally(this.reason);
+            return res;
+        }
+    }
 }
