@@ -33,10 +33,12 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Storage cache implementation.
+ * Cache implementation that tries to obtain items from storage cache,
+ * validates it and returns if valid. If item is not present in storage or is not valid,
+ * it is loaded from remote.
  * @since 0.24
  */
-public final class StorageCache implements Cache {
+public final class FromStorageCache implements Cache {
 
     /**
      * Back-end storage.
@@ -47,7 +49,7 @@ public final class StorageCache implements Cache {
      * New storage cache.
      * @param storage Back-end storage for cache
      */
-    public StorageCache(final Storage storage) {
+    public FromStorageCache(final Storage storage) {
         this.storage = storage;
     }
 
