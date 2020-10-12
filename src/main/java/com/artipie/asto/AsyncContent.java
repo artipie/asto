@@ -46,7 +46,7 @@ public interface AsyncContent extends Supplier<CompletionStage<? extends Content
 
     /**
      * Failed async content.
-     * @since 0.3
+     * @since 0.30
      */
     final class Failed implements AsyncContent {
 

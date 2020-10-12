@@ -33,7 +33,7 @@ import java.util.function.Function;
 /**
  * This cache implementation loads all the items from remote and caches it to storage. Content
  * is loaded from cache only if remote failed to return requested item.
- * @since 0.3
+ * @since 0.30
  */
 public final class FromRemoteCache implements Cache {
 

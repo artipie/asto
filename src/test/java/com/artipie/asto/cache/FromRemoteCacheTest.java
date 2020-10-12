@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Test for {@link FromRemoteCache}.
- * @since 0.3
+ * @since 0.30
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class FromRemoteCacheTest {
