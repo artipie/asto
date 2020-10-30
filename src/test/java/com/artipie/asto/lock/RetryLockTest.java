@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.lock;
 
+import com.artipie.asto.FailedCompletionStage;
 import com.google.common.base.Stopwatch;
 import java.util.ArrayList;
 import java.util.List;
@@ -200,10 +201,9 @@ final class RetryLockTest {
         CompletionStage<Void> invoke() {
             synchronized (this.invocations) {
                 this.invocations.add(this.stopwatch.elapsed(TimeUnit.MILLISECONDS));
-                final CompletableFuture<Void> result;
+                final CompletionStage<Void> result;
                 if (this.invocations.size() < this.failures) {
-                    result = new CompletableFuture<>();
-                    result.completeExceptionally(new RuntimeException());
+                    result = new FailedCompletionStage<>(new RuntimeException());
                 } else {
                     result = CompletableFuture.allOf();
                 }
