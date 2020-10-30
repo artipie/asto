@@ -1,7 +1,7 @@
 /*
- * MIT License
+ * The MIT License (MIT)
  *
- * Copyright (c) 2020 Artipie
+ * Copyright (c) 2020 artipie.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,12 +10,12 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
@@ -34,9 +34,11 @@ import java.util.function.Function;
 /**
  * Completion stage that is failed when created.
  *
+ * @param <T> Stage result type.
  * @since 0.30
  */
-public class FailedCompletionStage<T> implements CompletionStage<T> {
+@SuppressWarnings("PMD.TooManyMethods")
+public final class FailedCompletionStage<T> implements CompletionStage<T> {
 
     /**
      * Delegate completion stage.
@@ -48,6 +50,7 @@ public class FailedCompletionStage<T> implements CompletionStage<T> {
      *
      * @param throwable Failure reason.
      */
+    @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
     public FailedCompletionStage(final Throwable throwable) {
         final CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(throwable);
@@ -55,18 +58,21 @@ public class FailedCompletionStage<T> implements CompletionStage<T> {
     }
 
     @Override
-    public <U> CompletionStage<U> thenApply(final Function<? super T, ? extends U> fn) {
-        return this.delegate.thenApply(fn);
+    public <U> CompletionStage<U> thenApply(final Function<? super T, ? extends U> func) {
+        return this.delegate.thenApply(func);
     }
 
     @Override
-    public <U> CompletionStage<U> thenApplyAsync(final Function<? super T, ? extends U> fn) {
-        return this.delegate.thenApplyAsync(fn);
+    public <U> CompletionStage<U> thenApplyAsync(final Function<? super T, ? extends U> func) {
+        return this.delegate.thenApplyAsync(func);
     }
 
     @Override
-    public <U> CompletionStage<U> thenApplyAsync(final Function<? super T, ? extends U> fn, final Executor executor) {
-        return this.delegate.thenApplyAsync(fn, executor);
+    public <U> CompletionStage<U> thenApplyAsync(
+        final Function<? super T, ? extends U> func,
+        final Executor executor
+    ) {
+        return this.delegate.thenApplyAsync(func, executor);
     }
 
     @Override
@@ -80,7 +86,10 @@ public class FailedCompletionStage<T> implements CompletionStage<T> {
     }
 
     @Override
-    public CompletionStage<Void> thenAcceptAsync(final Consumer<? super T> action, final Executor executor) {
+    public CompletionStage<Void> thenAcceptAsync(
+        final Consumer<? super T> action,
+        final Executor executor
+    ) {
         return this.delegate.thenAcceptAsync(action, executor);
     }
 
@@ -100,123 +109,195 @@ public class FailedCompletionStage<T> implements CompletionStage<T> {
     }
 
     @Override
-    public <U, V> CompletionStage<V> thenCombine(final CompletionStage<? extends U> other, final BiFunction<? super T, ? super U, ? extends V> fn) {
-        return this.delegate.thenCombine(other, fn);
+    public <U, V> CompletionStage<V> thenCombine(
+        final CompletionStage<? extends U> other,
+        final BiFunction<? super T, ? super U, ? extends V> func
+    ) {
+        return this.delegate.thenCombine(other, func);
     }
 
     @Override
-    public <U, V> CompletionStage<V> thenCombineAsync(final CompletionStage<? extends U> other, final BiFunction<? super T, ? super U, ? extends V> fn) {
-        return this.delegate.thenCombineAsync(other, fn);
+    public <U, V> CompletionStage<V> thenCombineAsync(
+        final CompletionStage<? extends U> other,
+        final BiFunction<? super T, ? super U, ? extends V> func
+    ) {
+        return this.delegate.thenCombineAsync(other, func);
     }
 
     @Override
-    public <U, V> CompletionStage<V> thenCombineAsync(final CompletionStage<? extends U> other, final BiFunction<? super T, ? super U, ? extends V> fn, final Executor executor) {
-        return this.delegate.thenCombineAsync(other, fn, executor);
+    public <U, V> CompletionStage<V> thenCombineAsync(
+        final CompletionStage<? extends U> other,
+        final BiFunction<? super T, ? super U, ? extends V> func,
+        final Executor executor
+    ) {
+        return this.delegate.thenCombineAsync(other, func, executor);
     }
 
     @Override
-    public <U> CompletionStage<Void> thenAcceptBoth(final CompletionStage<? extends U> other, final BiConsumer<? super T, ? super U> action) {
+    public <U> CompletionStage<Void> thenAcceptBoth(
+        final CompletionStage<? extends U> other,
+        final BiConsumer<? super T, ? super U> action
+    ) {
         return this.delegate.thenAcceptBoth(other, action);
     }
 
     @Override
-    public <U> CompletionStage<Void> thenAcceptBothAsync(final CompletionStage<? extends U> other, final BiConsumer<? super T, ? super U> action) {
+    public <U> CompletionStage<Void> thenAcceptBothAsync(
+        final CompletionStage<? extends U> other,
+        final BiConsumer<? super T, ? super U> action
+    ) {
         return this.delegate.thenAcceptBothAsync(other, action);
     }
 
     @Override
-    public <U> CompletionStage<Void> thenAcceptBothAsync(final CompletionStage<? extends U> other, final BiConsumer<? super T, ? super U> action, final Executor executor) {
+    public <U> CompletionStage<Void> thenAcceptBothAsync(
+        final CompletionStage<? extends U> other,
+        final BiConsumer<? super T, ? super U> action,
+        final Executor executor
+    ) {
         return this.delegate.thenAcceptBothAsync(other, action, executor);
     }
 
     @Override
-    public CompletionStage<Void> runAfterBoth(final CompletionStage<?> other, final Runnable action) {
+    public CompletionStage<Void> runAfterBoth(
+        final CompletionStage<?> other,
+        final Runnable action
+    ) {
         return this.delegate.runAfterBoth(other, action);
     }
 
     @Override
-    public CompletionStage<Void> runAfterBothAsync(final CompletionStage<?> other, final Runnable action) {
+    public CompletionStage<Void> runAfterBothAsync(
+        final CompletionStage<?> other,
+        final Runnable action
+    ) {
         return this.delegate.runAfterBothAsync(other, action);
     }
 
     @Override
-    public CompletionStage<Void> runAfterBothAsync(final CompletionStage<?> other, final Runnable action, final Executor executor) {
+    public CompletionStage<Void> runAfterBothAsync(
+        final CompletionStage<?> other,
+        final Runnable action,
+        final Executor executor
+    ) {
         return this.delegate.runAfterBothAsync(other, action, executor);
     }
 
     @Override
-    public <U> CompletionStage<U> applyToEither(final CompletionStage<? extends T> other, final Function<? super T, U> fn) {
-        return this.delegate.applyToEither(other, fn);
+    public <U> CompletionStage<U> applyToEither(
+        final CompletionStage<? extends T> other,
+        final Function<? super T, U> func
+    ) {
+        return this.delegate.applyToEither(other, func);
     }
 
     @Override
-    public <U> CompletionStage<U> applyToEitherAsync(final CompletionStage<? extends T> other, final Function<? super T, U> fn) {
-        return this.delegate.applyToEitherAsync(other, fn);
+    public <U> CompletionStage<U> applyToEitherAsync(
+        final CompletionStage<? extends T> other,
+        final Function<? super T, U> func
+    ) {
+        return this.delegate.applyToEitherAsync(other, func);
     }
 
     @Override
-    public <U> CompletionStage<U> applyToEitherAsync(final CompletionStage<? extends T> other, final Function<? super T, U> fn, final Executor executor) {
-        return this.delegate.applyToEitherAsync(other, fn, executor);
+    public <U> CompletionStage<U> applyToEitherAsync(
+        final CompletionStage<? extends T> other,
+        final Function<? super T, U> func,
+        final Executor executor
+    ) {
+        return this.delegate.applyToEitherAsync(other, func, executor);
     }
 
     @Override
-    public CompletionStage<Void> acceptEither(final CompletionStage<? extends T> other, final Consumer<? super T> action) {
+    public CompletionStage<Void> acceptEither(
+        final CompletionStage<? extends T> other,
+        final Consumer<? super T> action
+    ) {
         return this.delegate.acceptEither(other, action);
     }
 
     @Override
-    public CompletionStage<Void> acceptEitherAsync(final CompletionStage<? extends T> other, final Consumer<? super T> action) {
+    public CompletionStage<Void> acceptEitherAsync(
+        final CompletionStage<? extends T> other,
+        final Consumer<? super T> action
+    ) {
         return this.delegate.acceptEitherAsync(other, action);
     }
 
     @Override
-    public CompletionStage<Void> acceptEitherAsync(final CompletionStage<? extends T> other, final Consumer<? super T> action, final Executor executor) {
+    public CompletionStage<Void> acceptEitherAsync(
+        final CompletionStage<? extends T> other,
+        final Consumer<? super T> action,
+        final Executor executor
+    ) {
         return this.delegate.acceptEitherAsync(other, action, executor);
     }
 
     @Override
-    public CompletionStage<Void> runAfterEither(final CompletionStage<?> other, final Runnable action) {
+    public CompletionStage<Void> runAfterEither(
+        final CompletionStage<?> other,
+        final Runnable action
+    ) {
         return this.delegate.runAfterEither(other, action);
     }
 
     @Override
-    public CompletionStage<Void> runAfterEitherAsync(final CompletionStage<?> other, final Runnable action) {
+    public CompletionStage<Void> runAfterEitherAsync(
+        final CompletionStage<?> other,
+        final Runnable action
+    ) {
         return this.delegate.runAfterEitherAsync(other, action);
     }
 
     @Override
-    public CompletionStage<Void> runAfterEitherAsync(final CompletionStage<?> other, final Runnable action, final Executor executor) {
+    public CompletionStage<Void> runAfterEitherAsync(
+        final CompletionStage<?> other,
+        final Runnable action,
+        final Executor executor
+    ) {
         return this.delegate.runAfterEitherAsync(other, action, executor);
     }
 
     @Override
-    public <U> CompletionStage<U> thenCompose(final Function<? super T, ? extends CompletionStage<U>> fn) {
-        return this.delegate.thenCompose(fn);
+    public <U> CompletionStage<U> thenCompose(
+        final Function<? super T, ? extends CompletionStage<U>> func
+    ) {
+        return this.delegate.thenCompose(func);
     }
 
     @Override
-    public <U> CompletionStage<U> thenComposeAsync(final Function<? super T, ? extends CompletionStage<U>> fn) {
-        return this.delegate.thenComposeAsync(fn);
+    public <U> CompletionStage<U> thenComposeAsync(
+        final Function<? super T, ? extends CompletionStage<U>> func
+    ) {
+        return this.delegate.thenComposeAsync(func);
     }
 
     @Override
-    public <U> CompletionStage<U> thenComposeAsync(final Function<? super T, ? extends CompletionStage<U>> fn, final Executor executor) {
-        return this.delegate.thenComposeAsync(fn, executor);
+    public <U> CompletionStage<U> thenComposeAsync(
+        final Function<? super T, ? extends CompletionStage<U>> func,
+        final Executor executor
+    ) {
+        return this.delegate.thenComposeAsync(func, executor);
     }
 
     @Override
-    public <U> CompletionStage<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn) {
-        return this.delegate.handle(fn);
+    public <U> CompletionStage<U> handle(final BiFunction<? super T, Throwable, ? extends U> func) {
+        return this.delegate.handle(func);
     }
 
     @Override
-    public <U> CompletionStage<U> handleAsync(final BiFunction<? super T, Throwable, ? extends U> fn) {
-        return this.delegate.handleAsync(fn);
+    public <U> CompletionStage<U> handleAsync(
+        final BiFunction<? super T, Throwable, ? extends U> func
+    ) {
+        return this.delegate.handleAsync(func);
     }
 
     @Override
-    public <U> CompletionStage<U> handleAsync(final BiFunction<? super T, Throwable, ? extends U> fn, final Executor executor) {
-        return this.delegate.handleAsync(fn, executor);
+    public <U> CompletionStage<U> handleAsync(
+        final BiFunction<? super T, Throwable, ? extends U> func,
+        final Executor executor
+    ) {
+        return this.delegate.handleAsync(func, executor);
     }
 
     @Override
@@ -225,18 +306,23 @@ public class FailedCompletionStage<T> implements CompletionStage<T> {
     }
 
     @Override
-    public CompletionStage<T> whenCompleteAsync(final BiConsumer<? super T, ? super Throwable> action) {
+    public CompletionStage<T> whenCompleteAsync(
+        final BiConsumer<? super T, ? super Throwable> action
+    ) {
         return this.delegate.whenCompleteAsync(action);
     }
 
     @Override
-    public CompletionStage<T> whenCompleteAsync(final BiConsumer<? super T, ? super Throwable> action, final Executor executor) {
+    public CompletionStage<T> whenCompleteAsync(
+        final BiConsumer<? super T, ? super Throwable> action,
+        final Executor executor
+    ) {
         return this.delegate.whenCompleteAsync(action, executor);
     }
 
     @Override
-    public CompletionStage<T> exceptionally(final Function<Throwable, ? extends T> fn) {
-        return this.delegate.exceptionally(fn);
+    public CompletionStage<T> exceptionally(final Function<Throwable, ? extends T> func) {
+        return this.delegate.exceptionally(func);
     }
 
     @Override
