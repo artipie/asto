@@ -23,6 +23,7 @@
  */
 package com.artipie.asto.lock.storage;
 
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.lock.Lock;
@@ -108,11 +109,7 @@ public final class StorageLock implements Lock {
                     result = CompletableFuture.allOf();
                 } else {
                     result = this.release().thenCompose(
-                        released -> {
-                            final CompletableFuture<Void> failed = new CompletableFuture<>();
-                            failed.completeExceptionally(throwable);
-                            return failed;
-                        }
+                        released -> new FailedCompletionStage<>(throwable)
                     );
                 }
                 return result;

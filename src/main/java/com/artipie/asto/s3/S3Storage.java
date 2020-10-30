@@ -24,6 +24,7 @@
 package com.artipie.asto.s3;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
@@ -242,7 +243,7 @@ public final class S3Storage implements Storage {
     public CompletableFuture<Void> delete(final Key key) {
         return this.exists(key).thenCompose(
             exists -> {
-                final CompletableFuture<Void> deleted;
+                final CompletionStage<Void> deleted;
                 if (exists) {
                     deleted = this.client.deleteObject(
                         DeleteObjectRequest.builder()
@@ -253,8 +254,7 @@ public final class S3Storage implements Storage {
                         response -> CompletableFuture.allOf()
                     );
                 } else {
-                    deleted = new CompletableFuture<>();
-                    deleted.completeExceptionally(
+                    deleted = new FailedCompletionStage<>(
                         new IllegalArgumentException(String.format("Key does not exist: %s", key))
                     );
                 }
@@ -437,12 +437,13 @@ public final class S3Storage implements Storage {
     ) {
         return future.handle(
             (content, throwable) -> {
-                CompletableFuture<T> result = future;
+                CompletionStage<T> result = future;
                 if (throwable instanceof CompletionException) {
                     final Throwable cause = throwable.getCause();
                     if (cause instanceof NoSuchKeyException) {
-                        result = new CompletableFuture<>();
-                        result.completeExceptionally(new ValueNotFoundException(key, cause));
+                        result = new FailedCompletionStage<>(
+                            new ValueNotFoundException(key, cause)
+                        );
                     }
                 }
                 return result;

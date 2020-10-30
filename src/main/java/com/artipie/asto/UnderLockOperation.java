@@ -75,9 +75,7 @@ public final class UnderLockOperation<T> {
                 try {
                     result = this.operation.apply(storage);
                 } catch (final Throwable throwable) {
-                    final CompletableFuture<T> future = new CompletableFuture<>();
-                    future.completeExceptionally(throwable);
-                    result = future;
+                    result = new FailedCompletionStage<>(throwable);
                 }
                 return result.handle(
                     (value, throwable) -> this.lock.release().thenCompose(
