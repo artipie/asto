@@ -27,6 +27,7 @@ import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -51,15 +52,16 @@ public final class FromRemoteCache implements Cache {
     }
 
     @Override
-    public CompletionStage<? extends Content> load(
+    public CompletionStage<Optional<? extends Content>> load(
         final Key key, final AsyncContent remote, final CacheControl control
     ) {
         return remote.get().handle(
             (content, throwable) -> {
-                final CompletionStage<? extends Content> res;
+                final CompletionStage<Optional<? extends Content>> res;
                 if (throwable == null) {
                     res = this.storage.save(key,  new Content.From(content.size(), content))
-                        .thenCompose(nothing -> this.storage.value(key));
+                        .thenCompose(nothing -> this.storage.value(key))
+                        .thenApply(Optional::of);
                 } else {
                     res = new FromStorageCache(this.storage)
                         .load(key, new AsyncContent.Failed(throwable), control);

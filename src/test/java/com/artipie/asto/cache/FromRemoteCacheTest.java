@@ -32,11 +32,8 @@ import com.artipie.asto.memory.InMemoryStorage;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.hamcrest.core.IsInstanceOf;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -74,7 +71,7 @@ final class FromRemoteCacheTest {
                     key,
                     () -> CompletableFuture.completedFuture(new Content.From(content)),
                     CacheControl.Standard.ALWAYS
-                ).toCompletableFuture().join()
+                ).toCompletableFuture().join().get()
             ).bytes().toCompletableFuture().join(),
             new IsEqual<>(content)
         );
@@ -97,26 +94,23 @@ final class FromRemoteCacheTest {
                     key,
                     new AsyncContent.Failed(new IOException("IO error")),
                     CacheControl.Standard.ALWAYS
-                ).toCompletableFuture().join()
+                ).toCompletableFuture().join().get()
             ).bytes().toCompletableFuture().join(),
             new IsEqual<>(content)
         );
     }
 
     @Test
-    void failsIfRemoteNotAvailableAndItemIsNotValid() {
+    void returnsEmptyIfFailedToGetFromRemote() {
         final Key key = new Key.From("any");
         this.storage.save(key, Content.EMPTY).join();
         MatcherAssert.assertThat(
-            Assertions.assertThrows(
-                CompletionException.class,
-                () -> this.cache.load(
-                    key,
-                    new AsyncContent.Failed(new ConnectException("Not available")),
-                    CacheControl.Standard.NO_CACHE
-                ).toCompletableFuture().join()
-            ).getCause(),
-            new IsInstanceOf(ConnectException.class)
+            this.cache.load(
+                key,
+                new AsyncContent.Failed(new ConnectException("Not available")),
+                CacheControl.Standard.NO_CACHE
+            ).toCompletableFuture().join().isPresent(),
+            new IsEqual<>(false)
         );
     }
 

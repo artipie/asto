@@ -26,6 +26,7 @@ package com.artipie.asto.cache;
 import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -39,7 +40,17 @@ public interface Cache {
     /**
      * No cache, just load remote resource.
      */
-    Cache NOP = (key, remote, ctl) -> remote.get();
+    Cache NOP = (key, remote, ctl) -> remote.get().handle(
+        (content, throwable) -> {
+            final Optional<? extends Content> res;
+            if (throwable == null) {
+                res = Optional.of(content);
+            } else {
+                res = Optional.empty();
+            }
+            return res;
+        }
+    );
 
     /**
      * Try to load content from cache or fallback to remote publisher if cached key doesn't exist.
@@ -49,7 +60,7 @@ public interface Cache {
      * @param control Cache control
      * @return Content for key
      */
-    CompletionStage<? extends Content> load(
+    CompletionStage<Optional<? extends Content>> load(
         Key key, AsyncContent remote, CacheControl control
     );
 }
