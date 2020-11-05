@@ -30,8 +30,6 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorageWrapper;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Single;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -56,8 +54,8 @@ public final class FromStorageCache implements Cache {
     }
 
     @Override
-    public CompletionStage<Optional<? extends Content>> load(final Key key,
-        final AsyncContent remote, final CacheControl control) {
+    public CompletionStage<? extends Content> load(final Key key, final AsyncContent remote,
+        final CacheControl control) {
         final RxStorageWrapper rxsto = new RxStorageWrapper(this.storage);
         return rxsto.exists(key)
             .filter(exists -> exists)
@@ -67,30 +65,15 @@ public final class FromStorageCache implements Cache {
                 )
             )
             .filter(valid -> valid)
-            .<Optional<? extends Content>>flatMapSingleElement(
-                ignore -> rxsto.value(key).map(Optional::of)
-            ).doOnError(err -> Logger.warn(this, "Failed to read cached item: %[exception]s", err))
+            .flatMapSingleElement(ignore -> rxsto.value(key))
+            .doOnError(err -> Logger.warn(this, "Failed to read cached item: %[exception]s", err))
             .onErrorComplete()
             .switchIfEmpty(
-                SingleInterop.fromFuture(
-                    remote.get().handle(
-                        (content, throwable) -> {
-                            final Optional<? extends Content> res;
-                            if (throwable == null) {
-                                res = Optional.of(content);
-                            } else {
-                                res = Optional.empty();
-                            }
-                            return res;
-                        }
+                SingleInterop.fromFuture(remote.get()).flatMapCompletable(
+                    content -> rxsto.save(
+                        key, new Content.From(content.size(), content)
                     )
-                ).<Optional<? extends Content>>flatMap(
-                    content -> content.map(
-                        val -> rxsto.save(key, new Content.From(val.size(), val))
-                            .andThen(rxsto.value(key).map(Optional::of))
-                    ).orElse(Single.just(Optional.empty()))
-                )
-            )
-            .to(SingleInterop.get());
+                ).andThen(rxsto.value(key))
+            ).to(SingleInterop.get());
     }
 }
