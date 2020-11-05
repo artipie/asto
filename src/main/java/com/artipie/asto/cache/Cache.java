@@ -23,9 +23,9 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -49,7 +49,7 @@ public interface Cache {
      * @param control Cache control
      * @return Content for key
      */
-    CompletionStage<? extends Content> load(
-        Key key, AsyncContent remote, CacheControl control
+    CompletionStage<Optional<? extends Content>> load(
+        Key key, Remote remote, CacheControl control
     );
 }

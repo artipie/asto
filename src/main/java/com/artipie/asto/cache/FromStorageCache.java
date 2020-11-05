@@ -23,13 +23,14 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.rx.RxStorageWrapper;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Single;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -54,7 +55,7 @@ public final class FromStorageCache implements Cache {
     }
 
     @Override
-    public CompletionStage<? extends Content> load(final Key key, final AsyncContent remote,
+    public CompletionStage<Optional<? extends Content>> load(final Key key, final Remote remote,
         final CacheControl control) {
         final RxStorageWrapper rxsto = new RxStorageWrapper(this.storage);
         return rxsto.exists(key)
@@ -65,15 +66,25 @@ public final class FromStorageCache implements Cache {
                 )
             )
             .filter(valid -> valid)
-            .flatMapSingleElement(ignore -> rxsto.value(key))
+            .<Optional<? extends Content>>flatMapSingleElement(
+                ignore -> rxsto.value(key).map(Optional::of)
+            )
             .doOnError(err -> Logger.warn(this, "Failed to read cached item: %[exception]s", err))
             .onErrorComplete()
             .switchIfEmpty(
-                SingleInterop.fromFuture(remote.get()).flatMapCompletable(
-                    content -> rxsto.save(
-                        key, new Content.From(content.size(), content)
-                    )
-                ).andThen(rxsto.value(key))
+                SingleInterop.fromFuture(remote.get()).flatMap(
+                    content -> {
+                        final Single<Optional<? extends Content>> res;
+                        if (content.isPresent()) {
+                            res = rxsto.save(
+                                key, new Content.From(content.get().size(), content.get())
+                            ).andThen(rxsto.value(key)).map(Optional::of);
+                        } else {
+                            res = Single.fromCallable(Optional::empty);
+                        }
+                        return res;
+                    }
+                )
             ).to(SingleInterop.get());
     }
 }

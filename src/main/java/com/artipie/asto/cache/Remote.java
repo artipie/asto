@@ -26,6 +26,7 @@ package com.artipie.asto.cache;
 import com.artipie.asto.Content;
 import com.jcabi.log.Logger;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
@@ -33,7 +34,7 @@ import java.util.function.Supplier;
  * Async {@link java.util.function.Supplier} of {@link java.util.concurrent.CompletionStage}
  * with {@link Optional} of {@link Content}. It's a {@link FunctionalInterface}.
  *
- * @since 0.4
+ * @since 0.40
  */
 @FunctionalInterface
 public interface Remote extends Supplier<CompletionStage<Optional<? extends Content>>> {
@@ -44,7 +45,7 @@ public interface Remote extends Supplier<CompletionStage<Optional<? extends Cont
     /**
      * Implementation of {@link Remote} that handle all possible errors and returns
      * empty {@link Optional} if any exception happened.
-     * @since 0.4
+     * @since 0.40
      */
     class WithErrorHandling implements Remote {
 
@@ -75,6 +76,33 @@ public interface Remote extends Supplier<CompletionStage<Optional<? extends Cont
                     return res;
                 }
             );
+        }
+    }
+
+    /**
+     * Failed remote.
+     * @since 0.40
+     */
+    final class Failed implements Remote {
+
+        /**
+         * Failure cause.
+         */
+        private final Throwable reason;
+
+        /**
+         * Ctor.
+         * @param reason Failure cause
+         */
+        public Failed(final Throwable reason) {
+            this.reason = reason;
+        }
+
+        @Override
+        public CompletionStage<Optional<? extends Content>> get() {
+            final CompletableFuture<Optional<? extends Content>> res = new CompletableFuture<>();
+            res.completeExceptionally(this.reason);
+            return res;
         }
     }
 }
