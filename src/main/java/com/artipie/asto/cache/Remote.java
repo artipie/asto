@@ -39,6 +39,11 @@ import java.util.function.Supplier;
 @FunctionalInterface
 public interface Remote extends Supplier<CompletionStage<Optional<? extends Content>>> {
 
+    /**
+     * Empty remote.
+     */
+    Remote EMPTY = () -> CompletableFuture.completedFuture(Optional.empty());
+
     @Override
     CompletionStage<Optional<? extends Content>> get();
 

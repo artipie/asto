@@ -23,7 +23,6 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Key;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -52,7 +51,7 @@ final class CacheControlTest {
         final boolean expects) throws Exception {
         MatcherAssert.assertThat(
             new CacheControl.All(first, second)
-                .validate(Key.ROOT, AsyncContent.EMPTY)
+                .validate(Key.ROOT, Remote.EMPTY)
                 .toCompletableFuture().get(),
             Matchers.is(expects)
         );

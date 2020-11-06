@@ -23,7 +23,6 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Key;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Observable;
@@ -45,7 +44,7 @@ public interface CacheControl {
      * @param content Content supplier
      * @return True if cached item can be used, false if needs to be updated
      */
-    CompletionStage<Boolean> validate(Key item, AsyncContent content);
+    CompletionStage<Boolean> validate(Key item, Remote content);
 
     /**
      * Standard cache controls.
@@ -75,7 +74,7 @@ public interface CacheControl {
         }
 
         @Override
-        public CompletionStage<Boolean> validate(final Key item, final AsyncContent supplier) {
+        public CompletionStage<Boolean> validate(final Key item, final Remote supplier) {
             return this.origin.validate(item, supplier);
         }
     }
@@ -108,7 +107,7 @@ public interface CacheControl {
         }
 
         @Override
-        public CompletionStage<Boolean> validate(final Key key, final AsyncContent content) {
+        public CompletionStage<Boolean> validate(final Key key, final Remote content) {
             return Observable.fromIterable(this.items)
                 .flatMapSingle(item -> SingleInterop.fromFuture(item.validate(key, content)))
                 .all(item -> item)

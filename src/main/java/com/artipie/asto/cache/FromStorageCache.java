@@ -62,7 +62,7 @@ public final class FromStorageCache implements Cache {
             .filter(exists -> exists)
             .flatMapSingleElement(
                 exists -> SingleInterop.fromFuture(
-                    control.validate(key, () -> this.storage.value(key))
+                    control.validate(key, () -> this.storage.value(key).thenApply(Optional::of))
                 )
             )
             .filter(valid -> valid)
