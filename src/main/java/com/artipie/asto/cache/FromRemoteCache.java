@@ -59,12 +59,18 @@ public final class FromRemoteCache implements Cache {
                 final CompletionStage<Optional<? extends Content>> res;
                 if (throwable == null && content.isPresent()) {
                     res = this.storage.save(
-                        key,  new Content.From(content.get().size(), content.get())
+                        key, new Content.From(content.get().size(), content.get())
                     ).thenCompose(nothing -> this.storage.value(key))
                         .thenApply(Optional::of);
                 } else {
+                    final Throwable error;
+                    if (throwable == null) {
+                        error = new IllegalStateException("Failed to load content from remote");
+                    } else {
+                        error = throwable;
+                    }
                     res = new FromStorageCache(this.storage)
-                        .load(key, new Remote.Failed(throwable), control);
+                        .load(key, new Remote.Failed(error), control);
                 }
                 return res;
             }

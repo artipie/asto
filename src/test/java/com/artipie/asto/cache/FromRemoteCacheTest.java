@@ -86,6 +86,24 @@ final class FromRemoteCacheTest {
     }
 
     @Test
+    void obtainsItemFromCacheIfRemoteValueIsAbsent() {
+        final byte[] content = "765".getBytes();
+        final Key key = new Key.From("key");
+        this.storage.save(key, new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            "Returns content from cache",
+            new PublisherAs(
+                this.cache.load(
+                    key,
+                    () -> CompletableFuture.completedFuture(Optional.empty()),
+                    CacheControl.Standard.ALWAYS
+                ).toCompletableFuture().join().get()
+            ).bytes().toCompletableFuture().join(),
+            new IsEqual<>(content)
+        );
+    }
+
+    @Test
     void loadsFromCacheWhenObtainFromRemoteFailed() {
         final byte[] content = "098".getBytes();
         final Key key = new Key.From("some");
