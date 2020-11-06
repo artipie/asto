@@ -23,11 +23,11 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Key;
 import com.artipie.asto.ext.ContentDigest;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
@@ -59,8 +59,10 @@ public final class DigestVerification implements CacheControl {
     }
 
     @Override
-    public CompletionStage<Boolean> validate(final Key item, final AsyncContent content) {
-        return content.get().thenCompose(pub -> new ContentDigest(pub, this.digest).bytes())
-            .thenApply(actual -> Arrays.equals(this.expected, actual));
+    public CompletionStage<Boolean> validate(final Key item, final Remote content) {
+        return content.get().thenCompose(
+            val -> val.map(pub -> new ContentDigest(pub, this.digest).bytes())
+                .orElse(CompletableFuture.completedFuture(new byte[]{}))
+        ).thenApply(actual -> Arrays.equals(this.expected, actual));
     }
 }
