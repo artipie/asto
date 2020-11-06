@@ -23,7 +23,6 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -31,6 +30,7 @@ import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
@@ -72,15 +72,33 @@ final class FromRemoteCacheTest {
             new PublisherAs(
                 this.cache.load(
                     key,
-                    () -> CompletableFuture.completedFuture(new Content.From(content)),
+                    () -> CompletableFuture.completedFuture(Optional.of(new Content.From(content))),
                     CacheControl.Standard.ALWAYS
-                ).toCompletableFuture().join()
+                ).toCompletableFuture().join().get()
             ).bytes().toCompletableFuture().join(),
             new IsEqual<>(content)
         );
         MatcherAssert.assertThat(
             "Saves to storage",
             new PublisherAs(this.storage.value(key).join()).bytes().toCompletableFuture().join(),
+            new IsEqual<>(content)
+        );
+    }
+
+    @Test
+    void obtainsItemFromCacheIfRemoteValueIsAbsent() {
+        final byte[] content = "765".getBytes();
+        final Key key = new Key.From("key");
+        this.storage.save(key, new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            "Returns content from cache",
+            new PublisherAs(
+                this.cache.load(
+                    key,
+                    () -> CompletableFuture.completedFuture(Optional.empty()),
+                    CacheControl.Standard.ALWAYS
+                ).toCompletableFuture().join().get()
+            ).bytes().toCompletableFuture().join(),
             new IsEqual<>(content)
         );
     }
@@ -95,9 +113,9 @@ final class FromRemoteCacheTest {
             new PublisherAs(
                 this.cache.load(
                     key,
-                    new AsyncContent.Failed(new IOException("IO error")),
+                    new Remote.Failed(new IOException("IO error")),
                     CacheControl.Standard.ALWAYS
-                ).toCompletableFuture().join()
+                ).toCompletableFuture().join().get()
             ).bytes().toCompletableFuture().join(),
             new IsEqual<>(content)
         );
@@ -112,7 +130,7 @@ final class FromRemoteCacheTest {
                 CompletionException.class,
                 () -> this.cache.load(
                     key,
-                    new AsyncContent.Failed(new ConnectException("Not available")),
+                    new Remote.Failed(new ConnectException("Not available")),
                     CacheControl.Standard.NO_CACHE
                 ).toCompletableFuture().join()
             ).getCause(),

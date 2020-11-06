@@ -23,7 +23,6 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -36,6 +35,7 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,13 +67,9 @@ final class FromStorageCacheTest {
         MatcherAssert.assertThat(
             new FromStorageCache(this.storage).load(
                 key,
-                () -> CompletableFuture.supplyAsync(
-                    () -> {
-                        throw new IllegalStateException("Failing remote 1");
-                    }
-                ),
+                new Remote.Failed(new IllegalStateException("Failing remote 1")),
                 CacheControl.Standard.ALWAYS
-            ).toCompletableFuture().get(),
+            ).toCompletableFuture().get().get(),
             new ContentIs(data)
         );
     }
@@ -85,9 +81,9 @@ final class FromStorageCacheTest {
         final FromStorageCache cache = new FromStorageCache(this.storage);
         final Content load = cache.load(
             key,
-            () -> CompletableFuture.supplyAsync(() -> new Content.From(data)),
+            () -> CompletableFuture.supplyAsync(() -> Optional.of(new Content.From(data))),
             CacheControl.Standard.ALWAYS
-        ).toCompletableFuture().get();
+        ).toCompletableFuture().get().get();
         MatcherAssert.assertThat(
             "Cache returned broken remote content",
             load, new ContentIs(data)
@@ -96,13 +92,9 @@ final class FromStorageCacheTest {
             "Cache didn't save remote content locally",
             cache.load(
                 key,
-                () -> CompletableFuture.supplyAsync(
-                    () -> {
-                        throw new IllegalStateException("Failing remote 1");
-                    }
-                ),
+                new Remote.Failed(new IllegalStateException("Failing remote 1")),
                 CacheControl.Standard.ALWAYS
-            ).toCompletableFuture().get(),
+            ).toCompletableFuture().get().get(),
             new ContentIs(data)
         );
     }
@@ -114,15 +106,17 @@ final class FromStorageCacheTest {
         new FromStorageCache(this.storage).load(
             key,
             () -> CompletableFuture.supplyAsync(
-                () -> new Content.From(
-                    Flowable.generate(
-                        emitter -> {
-                            if (cnt.incrementAndGet() < 3) {
-                                emitter.onNext(ByteBuffer.allocate(4));
-                            } else {
-                                emitter.onError(new Exception("Error!"));
+                () -> Optional.of(
+                    new Content.From(
+                        Flowable.generate(
+                            emitter -> {
+                                if (cnt.incrementAndGet() < 3) {
+                                    emitter.onNext(ByteBuffer.allocate(4));
+                                } else {
+                                    emitter.onError(new Exception("Error!"));
+                                }
                             }
-                        }
+                        )
                     )
                 )
             ),
@@ -145,7 +139,7 @@ final class FromStorageCacheTest {
         final int count = 100;
         final CountDownLatch latch = new CountDownLatch(10);
         final byte[] data = "data".getBytes();
-        final AsyncContent remote =
+        final Remote remote =
             () -> CompletableFuture.supplyAsync(
                 // @checkstyle ReturnCountCheck (10 lines)
                 () -> {
@@ -156,14 +150,14 @@ final class FromStorageCacheTest {
                         Thread.currentThread().interrupt();
                         return null;
                     }
-                    return new Content.From(Flowable.just(ByteBuffer.wrap(data)));
+                    return Optional.of(new Content.From(Flowable.just(ByteBuffer.wrap(data))));
                 }
             );
         Observable.range(0, count).flatMapCompletable(
             num -> SingleInterop.fromFuture(cache.load(key, remote, CacheControl.Standard.ALWAYS))
                 .flatMapCompletable(
                     pub -> CompletableInterop.fromFuture(
-                        this.storage.save(new Key.From("out", num.toString()), pub)
+                        this.storage.save(new Key.From("out", num.toString()), pub.get())
                     )
                 )
         ).blockingAwait();

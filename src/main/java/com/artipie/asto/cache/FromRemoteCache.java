@@ -23,10 +23,10 @@
  */
 package com.artipie.asto.cache;
 
-import com.artipie.asto.AsyncContent;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -51,18 +51,26 @@ public final class FromRemoteCache implements Cache {
     }
 
     @Override
-    public CompletionStage<? extends Content> load(
-        final Key key, final AsyncContent remote, final CacheControl control
+    public CompletionStage<Optional<? extends Content>> load(
+        final Key key, final Remote remote, final CacheControl control
     ) {
         return remote.get().handle(
             (content, throwable) -> {
-                final CompletionStage<? extends Content> res;
-                if (throwable == null) {
-                    res = this.storage.save(key,  new Content.From(content.size(), content))
-                        .thenCompose(nothing -> this.storage.value(key));
+                final CompletionStage<Optional<? extends Content>> res;
+                if (throwable == null && content.isPresent()) {
+                    res = this.storage.save(
+                        key, new Content.From(content.get().size(), content.get())
+                    ).thenCompose(nothing -> this.storage.value(key))
+                        .thenApply(Optional::of);
                 } else {
+                    final Throwable error;
+                    if (throwable == null) {
+                        error = new IllegalStateException("Failed to load content from remote");
+                    } else {
+                        error = throwable;
+                    }
                     res = new FromStorageCache(this.storage)
-                        .load(key, new AsyncContent.Failed(throwable), control);
+                        .load(key, new Remote.Failed(error), control);
                 }
                 return res;
             }
