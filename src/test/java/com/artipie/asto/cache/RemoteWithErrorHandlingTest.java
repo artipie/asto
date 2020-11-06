@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Test for {@link Remote.WithErrorHandling}.
- * @since 0.4
+ * @since 0.32
  */
 class RemoteWithErrorHandlingTest {
 

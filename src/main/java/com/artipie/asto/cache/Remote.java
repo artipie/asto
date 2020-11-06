@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  * Async {@link java.util.function.Supplier} of {@link java.util.concurrent.CompletionStage}
  * with {@link Optional} of {@link Content}. It's a {@link FunctionalInterface}.
  *
- * @since 0.40
+ * @since 0.32
  */
 @FunctionalInterface
 public interface Remote extends Supplier<CompletionStage<Optional<? extends Content>>> {
@@ -45,7 +45,7 @@ public interface Remote extends Supplier<CompletionStage<Optional<? extends Cont
     /**
      * Implementation of {@link Remote} that handle all possible errors and returns
      * empty {@link Optional} if any exception happened.
-     * @since 0.40
+     * @since 0.32
      */
     class WithErrorHandling implements Remote {
 
@@ -81,7 +81,7 @@ public interface Remote extends Supplier<CompletionStage<Optional<? extends Cont
 
     /**
      * Failed remote.
-     * @since 0.40
+     * @since 0.32
      */
     final class Failed implements Remote {
 
