@@ -23,8 +23,6 @@
  */
 package com.artipie.asto.ext;
 
-import com.artipie.asto.Concatenation;
-import com.artipie.asto.Remaining;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 import java.nio.ByteBuffer;
@@ -34,7 +32,7 @@ import org.reactivestreams.Publisher;
 /**
  * Rx publisher transformer to single.
  * @param <T> Single type
- * @since 0.8
+ * @since 0.33
  */
 public final class ContentAs<T>
     implements Function<Single<? extends Publisher<ByteBuffer>>, Single<? extends T>> {
@@ -75,9 +73,8 @@ public final class ContentAs<T>
     public Single<? extends T> apply(
         final Single<? extends Publisher<ByteBuffer>> content
     ) {
-        return content.flatMap(pub -> new Concatenation(pub).single())
-            .map(Remaining::new)
-            .map(Remaining::bytes)
-            .map(this.transform);
+        return content.flatMap(
+            pub -> Single.fromFuture(new PublisherAs(pub).bytes().toCompletableFuture())
+        ).map(this.transform);
     }
 }
