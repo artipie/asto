@@ -65,7 +65,7 @@ public final class ContentAs<T>
      * Ctor.
      * @param transform Transform function
      */
-    private ContentAs(final Function<byte[], T> transform) {
+    public ContentAs(final Function<byte[], T> transform) {
         this.transform = transform;
     }
 
