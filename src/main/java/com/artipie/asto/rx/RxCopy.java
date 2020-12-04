@@ -27,7 +27,8 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import java.util.List;
+import java.util.Collection;
+import java.util.Optional;
 
 /**
  * A reactive version of {@link com.artipie.asto.Copy}.
@@ -53,7 +54,7 @@ public class RxCopy {
     /**
      * The keys to transfer.
      */
-    private final List<Key> keys;
+    private final Optional<Collection<Key>> keys;
 
     /**
      * Amount of parallel copy operations.
@@ -63,10 +64,18 @@ public class RxCopy {
     /**
      * Ctor.
      * @param from The storage to copy from.
+     */
+    public RxCopy(final RxStorage from) {
+        this(from, Optional.empty(), RxCopy.DEFLT_PARALLELISM);
+    }
+
+    /**
+     * Ctor.
+     * @param from The storage to copy from.
      * @param keys The keys to copy.
      */
-    public RxCopy(final RxStorage from, final List<Key> keys) {
-        this(from, keys, RxCopy.DEFLT_PARALLELISM);
+    public RxCopy(final RxStorage from, final Collection<Key> keys) {
+        this(from, Optional.of(keys), RxCopy.DEFLT_PARALLELISM);
     }
 
     /**
@@ -75,7 +84,21 @@ public class RxCopy {
      * @param keys The keys to copy.
      * @param parallelism The parallelism level.
      */
-    public RxCopy(final RxStorage from, final List<Key> keys, final Integer parallelism) {
+    public RxCopy(final RxStorage from, final Collection<Key> keys, final Integer parallelism) {
+        this(from, Optional.of(keys), parallelism);
+    }
+
+    /**
+     * Ctor.
+     * @param from The storage to copy from.
+     * @param keys The keys to copy, all keys are copied if collection is not specified.
+     * @param parallelism The parallelism level.
+     */
+    private RxCopy(
+        final RxStorage from,
+        final Optional<Collection<Key>> keys,
+        final Integer parallelism
+    ) {
         this.from = from;
         this.keys = keys;
         this.parallelism = parallelism;
@@ -87,15 +110,17 @@ public class RxCopy {
      * @return The completion signal.
      */
     public Completable copy(final RxStorage to) {
-        return Completable.concat(Flowable.fromIterable(this.keys)
-            .map(
-                key -> Completable.defer(
-                    () -> to.save(
-                        key,
-                        new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
+        return Completable.concat(
+            this.keys.map(Flowable::fromIterable)
+                .orElseGet(() -> this.from.list(Key.ROOT).flattenAsFlowable(ks -> ks))
+                .map(
+                    key -> Completable.defer(
+                        () -> to.save(
+                            key,
+                            new Content.From(this.from.value(key).flatMapPublisher(cnt -> cnt))
+                        )
                     )
-                )
-            ).buffer(this.parallelism).map(Completable::merge)
+                ).buffer(this.parallelism).map(Completable::merge)
         );
     }
 }
