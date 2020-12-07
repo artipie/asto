@@ -26,7 +26,8 @@ package com.artipie.asto;
 import com.artipie.asto.rx.RxCopy;
 import com.artipie.asto.rx.RxStorageWrapper;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
-import java.util.List;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -44,14 +45,33 @@ public class Copy {
     /**
      * The keys to transfer.
      */
-    private final List<Key> keys;
+    private final Optional<Collection<Key>> keys;
+
+    /**
+     * Ctor.
+     *
+     * @param from The storage to copy to.
+     */
+    public Copy(final Storage from) {
+        this(from, Optional.empty());
+    }
 
     /**
      * Ctor.
      * @param from The storage to copy to.
      * @param keys The keys to copy.
      */
-    public Copy(final Storage from, final List<Key> keys) {
+    public Copy(final Storage from, final Collection<Key> keys) {
+        this(from, Optional.of(keys));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param from The storage to copy to.
+     * @param keys The keys to copy.
+     */
+    private Copy(final Storage from, final Optional<Collection<Key>> keys) {
         this.from = from;
         this.keys = keys;
     }
@@ -62,7 +82,10 @@ public class Copy {
      * @return When copy operation completes
      */
     public CompletableFuture<Void> copy(final Storage to) {
-        return new RxCopy(new RxStorageWrapper(this.from), this.keys).copy(new RxStorageWrapper(to))
+        return this.keys
+            .map(ks -> new RxCopy(new RxStorageWrapper(this.from), ks))
+            .orElse(new RxCopy(new RxStorageWrapper(this.from)))
+            .copy(new RxStorageWrapper(to))
             .to(CompletableInterop.await())
             .<Void>thenApply(o -> null)
             .toCompletableFuture();
