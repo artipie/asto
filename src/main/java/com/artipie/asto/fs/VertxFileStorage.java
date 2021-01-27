@@ -216,15 +216,23 @@ public final class VertxFileStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return this.size(key).thenApply(
-            size ->
-                new Content.OneTime(
-                    new Content.From(
-                        size,
-                        new VertxRxFile(this.path(key), this.vertx).flow()
+        final CompletableFuture<Content> res;
+        if (Key.ROOT.equals(key)) {
+            res = CompletableFuture.<Content>failedStage(
+                new IOException("Unable to load from root")
+            ).toCompletableFuture();
+        } else {
+            res = this.size(key).thenApply(
+                size ->
+                    new Content.OneTime(
+                        new Content.From(
+                            size,
+                            new VertxRxFile(this.path(key), this.vertx).flow()
+                        )
                     )
-                )
-        );
+            );
+        }
+        return res;
     }
 
     @Override

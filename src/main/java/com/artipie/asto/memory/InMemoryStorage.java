@@ -33,6 +33,7 @@ import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.NavigableMap;
@@ -95,17 +96,24 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return new Concatenation(new OneTimePublisher<>(content)).single().to(SingleInterop.get())
-            .thenApply(Remaining::new)
-            .thenApply(Remaining::bytes)
-            .thenAccept(
-                bytes -> {
-                    synchronized (this.data) {
-                        this.data.put(key.string(), bytes);
+        final CompletableFuture<Void> res;
+        if (Key.ROOT.equals(key)) {
+            res = CompletableFuture.<Void>failedStage(new IOException("Unable to save to root"))
+                .toCompletableFuture();
+        } else {
+            res = new Concatenation(new OneTimePublisher<>(content)).single()
+                .to(SingleInterop.get())
+                .thenApply(Remaining::new)
+                .thenApply(Remaining::bytes)
+                .thenAccept(
+                    bytes -> {
+                        synchronized (this.data) {
+                            this.data.put(key.string(), bytes);
+                        }
                     }
-                }
-            )
-            .toCompletableFuture();
+                ).toCompletableFuture();
+        }
+        return res;
     }
 
     @Override
@@ -143,17 +151,25 @@ public final class InMemoryStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                synchronized (this.data) {
-                    final byte[] content = this.data.get(key.string());
-                    if (content == null) {
-                        throw new ValueNotFoundException(key);
+        final CompletableFuture<Content> res;
+        if (Key.ROOT.equals(key)) {
+            res = CompletableFuture.<Content>failedStage(
+                new IOException("Unable to load from root")
+            ).toCompletableFuture();
+        } else {
+            res = CompletableFuture.supplyAsync(
+                () -> {
+                    synchronized (this.data) {
+                        final byte[] content = this.data.get(key.string());
+                        if (content == null) {
+                            throw new ValueNotFoundException(key);
+                        }
+                        return new Content.OneTime(new Content.From(content));
                     }
-                    return new Content.OneTime(new Content.From(content));
                 }
-            }
-        );
+            );
+        }
+        return res;
     }
 
     @Override
