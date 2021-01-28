@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
+import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
@@ -216,15 +217,23 @@ public final class VertxFileStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return this.size(key).thenApply(
-            size ->
-                new Content.OneTime(
-                    new Content.From(
-                        size,
-                        new VertxRxFile(this.path(key), this.vertx).flow()
+        final CompletableFuture<Content> res;
+        if (Key.ROOT.equals(key)) {
+            res = new CompletableFutureSupport.Failed<Content>(
+                new IOException("Unable to load from root")
+            ).get();
+        } else {
+            res = this.size(key).thenApply(
+                size ->
+                    new Content.OneTime(
+                        new Content.From(
+                            size,
+                            new VertxRxFile(this.path(key), this.vertx).flow()
+                        )
                     )
-                )
-        );
+            );
+        }
+        return res;
     }
 
     @Override

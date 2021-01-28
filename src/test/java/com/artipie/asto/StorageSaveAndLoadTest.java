@@ -28,6 +28,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -43,7 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @checkstyle IllegalCatchCheck (500 lines)
  * @since 0.14
  */
-@SuppressWarnings("PMD.AvoidCatchingGenericException")
+@SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.TooManyMethods"})
 @ExtendWith(StorageExtension.class)
 public final class StorageSaveAndLoadTest {
 
@@ -216,6 +217,28 @@ public final class StorageSaveAndLoadTest {
         MatcherAssert.assertThat(
             storage.value(key).get().size().get(),
             new IsEqual<>((long) content.length)
+        );
+    }
+
+    @TestTemplate
+    void saveDoesNotSupportRootKey(final Storage storage) throws Exception {
+        Assertions.assertThrows(
+            ExecutionException.class, () -> storage.save(Key.ROOT, Content.EMPTY).get(),
+            String.format(
+                "`%s` storage didn't fail on root saving",
+                storage.getClass().getSimpleName()
+            )
+        );
+    }
+
+    @TestTemplate
+    void loadDoesnNotSupportRootKey(final Storage storage) throws Exception {
+        Assertions.assertThrows(
+            ExecutionException.class, () -> storage.value(Key.ROOT).get(),
+            String.format(
+                "`%s` storage didn't fail on root loading",
+                storage.getClass().getSimpleName()
+            )
         );
     }
 }
