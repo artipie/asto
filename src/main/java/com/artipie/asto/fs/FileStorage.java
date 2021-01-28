@@ -29,6 +29,7 @@ import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
+import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
 import java.io.IOException;
@@ -232,9 +233,9 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         final CompletableFuture<Content> res;
         if (Key.ROOT.equals(key)) {
-            res = CompletableFuture.<Content>failedStage(
+            res = new CompletableFutureSupport.Failed<Content>(
                 new IOException("Unable to load from root")
-            ).toCompletableFuture();
+            ).get();
         } else {
             res = this.size(key).thenApply(
                 size -> new Content.OneTime(

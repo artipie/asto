@@ -31,6 +31,7 @@ import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
+import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.io.IOException;
@@ -98,8 +99,9 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final CompletableFuture<Void> res;
         if (Key.ROOT.equals(key)) {
-            res = CompletableFuture.<Void>failedStage(new IOException("Unable to save to root"))
-                .toCompletableFuture();
+            res = new CompletableFutureSupport.Failed<Void>(
+                new IOException("Unable to save to root")
+            ).get();
         } else {
             res = new Concatenation(new OneTimePublisher<>(content)).single()
                 .to(SingleInterop.get())
@@ -153,9 +155,9 @@ public final class InMemoryStorage implements Storage {
     public CompletableFuture<Content> value(final Key key) {
         final CompletableFuture<Content> res;
         if (Key.ROOT.equals(key)) {
-            res = CompletableFuture.<Content>failedStage(
+            res = new CompletableFutureSupport.Failed<Content>(
                 new IOException("Unable to load from root")
-            ).toCompletableFuture();
+            ).get();
         } else {
             res = CompletableFuture.supplyAsync(
                 () -> {
