@@ -37,7 +37,7 @@ import io.reactivex.Observable;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -137,22 +137,21 @@ final class FromStorageCacheTest {
         final FromStorageCache cache = new FromStorageCache(this.storage);
         final Key key = new Key.From("key4");
         final int count = 100;
-        final CountDownLatch latch = new CountDownLatch(10);
+        final Semaphore semaphore = new Semaphore(10);
         final byte[] data = "data".getBytes();
         final Remote remote =
-            () -> CompletableFuture.supplyAsync(
-                // @checkstyle ReturnCountCheck (10 lines)
-                () -> {
-                    latch.countDown();
-                    try {
-                        latch.await();
-                    } catch (final InterruptedException ignore) {
-                        Thread.currentThread().interrupt();
-                        return null;
+            () -> CompletableFuture
+                .runAsync(semaphore::acquireUninterruptibly)
+                .thenApply(nothing -> ByteBuffer.wrap(data))
+                .thenApply(Flowable::just)
+                .thenApply(Content.From::new)
+                .thenApply(Optional::of)
+                .thenApply(
+                    res -> {
+                        semaphore.release();
+                        return res;
                     }
-                    return Optional.of(new Content.From(Flowable.just(ByteBuffer.wrap(data))));
-                }
-            );
+                );
         Observable.range(0, count).flatMapCompletable(
             num -> SingleInterop.fromFuture(cache.load(key, remote, CacheControl.Standard.ALWAYS))
                 .flatMapCompletable(
