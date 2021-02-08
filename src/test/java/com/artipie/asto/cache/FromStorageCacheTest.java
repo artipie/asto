@@ -137,19 +137,22 @@ final class FromStorageCacheTest {
         final FromStorageCache cache = new FromStorageCache(this.storage);
         final Key key = new Key.From("key4");
         final int count = 100;
-        final CountDownLatch latch = new CountDownLatch(Runtime.getRuntime().availableProcessors() - 1);
+        final CountDownLatch latch = new CountDownLatch(
+            Runtime.getRuntime().availableProcessors() - 1
+        );
         final byte[] data = "data".getBytes();
         final Remote remote =
             () -> CompletableFuture
-                .runAsync(() -> {
-                    latch.countDown();
-                    try {
-                        latch.await();
-                    } catch (final InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException(ex);
-                    }
-                })
+                .runAsync(
+                    () -> {
+                        latch.countDown();
+                        try {
+                            latch.await();
+                        } catch (final InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(ex);
+                        }
+                    })
                 .thenApply(nothing -> ByteBuffer.wrap(data))
                 .thenApply(Flowable::just)
                 .thenApply(Content.From::new)
