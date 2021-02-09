@@ -63,11 +63,6 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  * Also whole operation does not complete until abort() is complete.
  * It would be better to finish save() operation right away and do abort() in background,
  * but it makes testing the method difficult.
- * @todo #193:30min Too many methods in `S3Storage` class.
- * `S3Storage` has too many methods.
- * It could be refactored to move some of it's logic to other classes.
- * In particular there three methods related to saving bytes
- * (multipart or not, selecting proper method). This could be moved out of this class.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @since 0.15
  */
