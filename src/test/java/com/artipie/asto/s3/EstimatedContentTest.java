@@ -31,7 +31,9 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link EstimatedContent}
+ * Test for {@link EstimatedContent}.
+ *
+ * @since 1.0
  */
 final class EstimatedContentTest {
     @Test
@@ -62,5 +64,4 @@ final class EstimatedContentTest {
             content.size(), new IsEqual<>(Optional.of((long) data.length))
         );
     }
-
 }

@@ -68,11 +68,11 @@ final class ContentOfFuture implements Content {
     private Content complete() {
         try {
             return this.original.toCompletableFuture().get();
-        } catch (final InterruptedException e) {
+        } catch (final InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(e);
-        } catch (final ExecutionException e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException(ex);
+        } catch (final ExecutionException ex) {
+            throw new IllegalStateException(ex);
         }
     }
 }
