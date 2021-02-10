@@ -37,10 +37,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 0.14
  */
 @ExtendWith(StorageExtension.class)
+@Timeout(2)
 public final class StorageMoveTest {
 
     @TestTemplate
-    @Timeout(1)
     void shouldMove(final Storage storage) throws Exception {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "source".getBytes();
@@ -52,7 +52,6 @@ public final class StorageMoveTest {
     }
 
     @TestTemplate
-    @Timeout(1)
     void shouldMoveWhenDestinationExists(final Storage storage) throws Exception {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final byte[] data = "source data".getBytes();
@@ -68,7 +67,6 @@ public final class StorageMoveTest {
     }
 
     @TestTemplate
-    @Timeout(1)
     void shouldFailToMoveAbsentValue(final Storage storage) throws Exception {
         final BlockingStorage blocking = new BlockingStorage(storage);
         final Key source = new Key.From("shouldFailToMoveAbsentValue-source");
