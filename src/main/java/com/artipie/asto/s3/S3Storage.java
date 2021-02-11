@@ -283,7 +283,7 @@ public final class S3Storage implements Storage {
      * Save multipart.
      *
      * @param updated The estimated content.
-     * @param key The key.
+     * @param key The key of value to be saved.
      * @return The future.
      */
     private CompletableFuture<Void> putMultipart(final Content updated, final Key key) {
