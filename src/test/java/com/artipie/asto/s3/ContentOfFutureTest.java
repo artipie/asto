@@ -24,15 +24,14 @@
 package com.artipie.asto.s3;
 
 import com.artipie.asto.Content;
-import hu.akarnokd.rxjava2.interop.MaybeInterop;
-import io.reactivex.Flowable;
+import com.artipie.asto.ext.PublisherAs;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -43,7 +42,7 @@ import org.junit.jupiter.api.Test;
 final class ContentOfFutureTest {
 
     @Test
-    void getsCompletedContent() {
+    void getsCompletedContent() throws ExecutionException, InterruptedException {
         final AtomicInteger count = new AtomicInteger();
         final byte[] data = "xxx".getBytes(StandardCharsets.UTF_8);
         final Content content = new ContentOfFuture(
@@ -53,20 +52,22 @@ final class ContentOfFutureTest {
                 (ignore, throwable) -> count.incrementAndGet()
             )
         );
-        Assertions.assertArrayEquals(
-            Flowable.fromPublisher(content)
-                .singleElement()
-                .to(MaybeInterop.get())
+        MatcherAssert.assertThat(
+            new PublisherAs(content)
+                .bytes()
                 .toCompletableFuture()
-                .join()
-                .array(),
-            data
+                .get(),
+            new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
-            content.size(), new IsEqual<>(Optional.of((long) data.length))
+            "Must have the size of data",
+            content.size(),
+            new IsEqual<>(Optional.of((long) data.length))
         );
         MatcherAssert.assertThat(
-            count.get(), new IsEqual<>(1)
+            "Must be loaded only once",
+            count.get(),
+            new IsEqual<>(1)
         );
     }
 }
