@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link ContentOfFuture}.
  *
- * @since 1.0
+ * @since 0.34
  */
 final class ContentOfFutureTest {
 

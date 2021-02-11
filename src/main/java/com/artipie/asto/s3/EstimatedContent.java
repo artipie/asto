@@ -45,7 +45,7 @@ import org.reactivestreams.Subscriber;
  * If end of content has not been reached by reading `limit` of bytes
  * then original content is returned.
  *
- * @since 1.0
+ * @since 0.34
  */
 public final class EstimatedContent implements Content {
     /**

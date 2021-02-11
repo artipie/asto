@@ -34,7 +34,7 @@ import java.util.function.Function;
  * Translate an exception happened inside future.
  *
  * @param <T> Future result type.
- * @since 1.0
+ * @since 0.34
  */
 final class InternalExceptionHandle<T> implements BiFunction<T, Throwable, CompletionStage<T>> {
 

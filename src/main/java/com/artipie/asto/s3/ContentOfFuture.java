@@ -33,7 +33,7 @@ import org.reactivestreams.Subscriber;
 /**
  * Content of a future.
  *
- * @since 1.0
+ * @since 0.34
  */
 final class ContentOfFuture implements Content {
     /**
