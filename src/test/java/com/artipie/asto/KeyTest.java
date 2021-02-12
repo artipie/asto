@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test case for {@link Key}.
  *
- * @since 1.0
+ * @since 0.32
  */
 final class KeyTest {
 

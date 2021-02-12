@@ -31,10 +31,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link Remaining}.
- * @since 1.0
- * @todo #196:30m This since tag is incorrect.
- *  Replace version here and in @{link KeyTest} with
- *  correct number.
+ * @since 0.32
  */
 public final class RemainingTest {
 
