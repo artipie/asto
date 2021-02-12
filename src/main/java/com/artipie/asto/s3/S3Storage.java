@@ -57,6 +57,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 /**
  * Storage that holds data in S3 storage.
  *
+ * @since 0.15
  * @todo #87:60min Do not await abort to complete if save() failed.
  *  In case uploading content fails inside {@link S3Storage#save(Key, Content)} method
  *  we are doing abort() for multipart upload.
@@ -64,9 +65,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  It would be better to finish save() operation right away and do abort() in background,
  *  but it makes testing the method difficult.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @since 0.15
  */
-@SuppressWarnings("PMD.TooManyMethods")
 public final class S3Storage implements Storage {
 
     /**
