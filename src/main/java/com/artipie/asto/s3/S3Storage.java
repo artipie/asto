@@ -158,12 +158,15 @@ public final class S3Storage implements Storage {
         final CompletableFuture<Void> result;
         final Content onetime = new Content.OneTime(content);
         if (this.multipart) {
-            result = CompletableFuture
-                .completedFuture(new EstimatedContent(onetime, S3Storage.MIN_MULTIPART))
-                .thenCompose(estimated -> this.putMultipart(estimated, key));
+            result =
+                new EstimatedContentCompliment(onetime, S3Storage.MIN_MULTIPART)
+                    .estimate()
+                    .toCompletableFuture()
+                    .thenCompose(estimated -> this.putMultipart(estimated, key));
         } else {
-            result = CompletableFuture
-                .completedFuture(new EstimatedContent(onetime))
+            result = new EstimatedContentCompliment(onetime)
+                .estimate()
+                .toCompletableFuture()
                 .thenCompose(updated -> this.put(key, updated));
         }
         return result;

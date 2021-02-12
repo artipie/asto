@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.cqfn.rio.file.File;
-import org.reactivestreams.Subscriber;
 
 /**
  * Complements {@link Content} with size if size is unknown.
@@ -47,11 +46,16 @@ import org.reactivestreams.Subscriber;
  *
  * @since 0.34
  */
-public final class EstimatedContent implements Content {
+final class EstimatedContentCompliment {
     /**
      * The original content.
      */
-    private final Content content;
+    private final Content original;
+
+    /**
+     * The limit.
+     */
+    private final long limit;
 
     /**
      * Ctor.
@@ -59,10 +63,9 @@ public final class EstimatedContent implements Content {
      * @param original Original content.
      * @param limit Content reading limit.
      */
-    public EstimatedContent(final Content original, final long limit) {
-        this.content = new ContentOfFuture(
-            EstimatedContent.initialize(original, limit)
-        );
+    EstimatedContentCompliment(final Content original, final long limit) {
+        this.original = original;
+        this.limit = limit;
     }
 
     /**
@@ -70,36 +73,21 @@ public final class EstimatedContent implements Content {
      *
      * @param original Original content.
      */
-    public EstimatedContent(final Content original) {
+    EstimatedContentCompliment(final Content original) {
         this(original, Long.MAX_VALUE);
-    }
-
-    @Override
-    public Optional<Long> size() {
-        return this.content.size();
-    }
-
-    @Override
-    public void subscribe(final Subscriber<? super ByteBuffer> subscriber) {
-        this.content.subscribe(subscriber);
     }
 
     /**
      * Initialize future of Content.
      *
-     * @param original The original content.
-     * @param limit The read limit.
      * @return The future.
      */
-    private static CompletionStage<Content> initialize(
-        final Content original,
-        final long limit
-    ) {
+    public CompletionStage<Content> estimate() {
         final CompletableFuture<Content> res;
-        if (original.size().isPresent()) {
-            res = CompletableFuture.completedFuture(original);
+        if (this.original.size().isPresent()) {
+            res = CompletableFuture.completedFuture(this.original);
         } else {
-            res = EstimatedContent.readUntilLimit(original, limit);
+            res = this.readUntilLimit();
         }
         return res;
     }
@@ -107,14 +95,9 @@ public final class EstimatedContent implements Content {
     /**
      * Read until limit.
      *
-     * @param original The original content of unknown size.
-     * @param limit The limit.
      * @return The future.
      */
-    private static CompletableFuture<Content> readUntilLimit(
-        final Content original,
-        final long limit
-    ) {
+    private CompletableFuture<Content> readUntilLimit() {
         final Path temp;
         try {
             temp = Files.createTempFile(
@@ -125,7 +108,7 @@ public final class EstimatedContent implements Content {
             throw new UncheckedIOException(ex);
         }
         return new File(temp)
-            .write(original)
+            .write(this.original)
             .thenCompose(
                 nothing ->
                     Flowable.fromPublisher(
@@ -133,7 +116,7 @@ public final class EstimatedContent implements Content {
                     )
                         .map(Buffer::remaining)
                         .scanWith(() -> 0L, Long::sum)
-                        .takeUntil(total -> total >= limit)
+                        .takeUntil(total -> total >= this.limit)
                         .lastOrError()
                         .to(SingleInterop.get())
                         .toCompletableFuture()
@@ -141,7 +124,7 @@ public final class EstimatedContent implements Content {
             .thenApply(
                 last -> {
                     final Optional<Long> size;
-                    if (last >= limit) {
+                    if (last >= this.limit) {
                         size = Optional.empty();
                     } else {
                         size = Optional.of(last);
@@ -156,8 +139,8 @@ public final class EstimatedContent implements Content {
                         () -> Files.delete(temp)
                     );
                     return sizeOpt
-                        .<Content>map(size -> new From(size, data))
-                        .orElse(new From(data));
+                        .<Content>map(size -> new Content.From(size, data))
+                        .orElse(new Content.From(data));
                 }
             )
             .handle(
