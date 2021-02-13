@@ -296,42 +296,35 @@ public final class S3Storage implements Storage {
      * @return The future.
      */
     private CompletableFuture<Void> putMultipart(final Key key, final Content updated) {
-        final CompletableFuture<Void> future;
-        final Optional<Long> size = updated.size();
-        if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
-            future = this.put(key, updated);
-        } else {
-            future = this.client.createMultipartUpload(
-                CreateMultipartUploadRequest.builder()
-                    .bucket(this.bucket)
-                    .key(key.string())
-                    .build()
-            ).thenApply(
-                created -> new MultipartUpload(
-                    new Bucket(this.client, this.bucket),
-                    key,
-                    created.uploadId()
-                )
-            ).thenCompose(
-                upload -> upload.upload(updated).handle(
-                    (ignored, throwable) -> {
-                        final CompletionStage<Void> finished;
-                        if (throwable == null) {
-                            finished = upload.complete();
-                        } else {
-                            final CompletableFuture<Void> promise =
-                                new CompletableFuture<>();
-                            finished = promise;
-                            upload.abort().whenComplete(
-                                (ignore, ex) -> promise.completeExceptionally(throwable)
-                            );
-                        }
-                        return finished;
+        return this.client.createMultipartUpload(
+            CreateMultipartUploadRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build()
+        ).thenApply(
+            created -> new MultipartUpload(
+                new Bucket(this.client, this.bucket),
+                key,
+                created.uploadId()
+            )
+        ).thenCompose(
+            upload -> upload.upload(updated).handle(
+                (ignored, throwable) -> {
+                    final CompletionStage<Void> finished;
+                    if (throwable == null) {
+                        finished = upload.complete();
+                    } else {
+                        final CompletableFuture<Void> promise =
+                            new CompletableFuture<>();
+                        finished = promise;
+                        upload.abort().whenComplete(
+                            (ignore, ex) -> promise.completeExceptionally(throwable)
+                        );
                     }
-                ).thenCompose(Function.identity())
-            );
-        }
-        return future;
+                    return finished;
+                }
+            ).thenCompose(Function.identity())
+        );
     }
 
     /**
