@@ -212,7 +212,6 @@ public final class S3Storage implements Storage {
         return future
             .handle(
                 new InternalExceptionHandle<>(
-                    future,
                     NoSuchKeyException.class,
                     cause -> new ValueNotFoundException(key, cause)
                 )
@@ -233,7 +232,6 @@ public final class S3Storage implements Storage {
         return promise
             .handle(
                 new InternalExceptionHandle<>(
-                    promise,
                     NoSuchKeyException.class,
                     cause -> new ValueNotFoundException(key, cause)
                 )

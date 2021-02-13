@@ -39,11 +39,6 @@ import java.util.function.Function;
 final class InternalExceptionHandle<T> implements BiFunction<T, Throwable, CompletionStage<T>> {
 
     /**
-     * The original future.
-     */
-    private final CompletableFuture<T> future;
-
-    /**
      * Type of exception to handle.
      */
     private final Class<? extends Throwable> from;
@@ -56,32 +51,34 @@ final class InternalExceptionHandle<T> implements BiFunction<T, Throwable, Compl
     /**
      * Ctor.
      *
-     * @param future Original future.
      * @param from Internal type of exception.
      * @param convert Converter to a external type.
      */
     InternalExceptionHandle(
-        final CompletableFuture<T> future,
         final Class<? extends Throwable> from,
         final Function<? super Throwable, ? extends Throwable> convert
     ) {
-        this.future = future;
         this.from = from;
         this.convert = convert;
     }
 
     @Override
     public CompletionStage<T> apply(final T content, final Throwable throwable) {
-        CompletionStage<T> result = this.future;
-        if (
-            throwable instanceof CompletionException
-                && this.from.isInstance(throwable.getCause())
-        ) {
-            result = new FailedCompletionStage<>(
-                this.convert.apply(throwable.getCause())
-            );
+        final CompletionStage<T> result;
+        if (throwable == null) {
+            result = CompletableFuture.completedFuture(content);
+        } else {
+            if (
+                throwable instanceof CompletionException
+                    && this.from.isInstance(throwable.getCause())
+            ) {
+                result = new FailedCompletionStage<>(
+                    this.convert.apply(throwable.getCause())
+                );
+            } else {
+                result = new FailedCompletionStage<>(throwable);
+            }
         }
         return result;
     }
-
 }
