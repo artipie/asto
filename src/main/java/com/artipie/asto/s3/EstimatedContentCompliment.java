@@ -107,13 +107,14 @@ final class EstimatedContentCompliment {
         } catch (final IOException ex) {
             throw new UncheckedIOException(ex);
         }
+        final Flowable<ByteBuffer> data = Flowable.fromPublisher(
+            new File(temp).content()
+        ).doOnError(error -> Files.deleteIfExists(temp));
         return new File(temp)
             .write(this.original)
             .thenCompose(
                 nothing ->
-                    Flowable.fromPublisher(
-                        new File(temp).content()
-                    )
+                    data
                         .map(Buffer::remaining)
                         .scanWith(() -> 0L, Long::sum)
                         .takeUntil(total -> total >= this.limit)
@@ -121,7 +122,7 @@ final class EstimatedContentCompliment {
                         .to(SingleInterop.get())
                         .toCompletableFuture()
             )
-            .thenApply(
+            .<Content>thenApply(
                 last -> {
                     final Optional<Long> size;
                     if (last >= this.limit) {
@@ -129,36 +130,13 @@ final class EstimatedContentCompliment {
                     } else {
                         size = Optional.of(last);
                     }
-                    return size;
-                }
-            ).thenApply(
-                sizeOpt -> {
-                    final Flowable<ByteBuffer> data = Flowable.fromPublisher(
-                        new File(temp).content()
-                    ).doAfterTerminate(
-                        () -> Files.delete(temp)
+                    return new Content.From(
+                        size,
+                        data.doAfterTerminate(
+                            () -> Files.deleteIfExists(temp)
+                        )
                     );
-                    return sizeOpt
-                        .<Content>map(size -> new Content.From(size, data))
-                        .orElse(new Content.From(data));
                 }
-            )
-            .handle(
-                (value, throwable) -> {
-                    final Content result;
-                    if (throwable == null) {
-                        result = value;
-                    } else {
-                        try {
-                            Files.delete(temp);
-                        } catch (final IOException ex) {
-                            throw new UncheckedIOException(ex);
-                        }
-                        result = null;
-                    }
-                    return result;
-                }
-            )
-            .toCompletableFuture();
+            ).toCompletableFuture();
     }
 }
