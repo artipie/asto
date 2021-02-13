@@ -203,13 +203,12 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Long> size(final Key key) {
-        final CompletableFuture<Long> future = this.client.headObject(
+        return this.client.headObject(
             HeadObjectRequest.builder()
                 .bucket(this.bucket)
                 .key(key.string())
                 .build()
-        ).thenApply(HeadObjectResponse::contentLength);
-        return future
+        ).thenApply(HeadObjectResponse::contentLength)
             .handle(
                 new InternalExceptionHandle<>(
                     NoSuchKeyException.class,
