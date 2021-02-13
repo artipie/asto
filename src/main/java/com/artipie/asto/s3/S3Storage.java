@@ -154,21 +154,31 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        final CompletableFuture<Void> result;
+        final CompletionStage<Content> result;
         final Content onetime = new Content.OneTime(content);
         if (this.multipart) {
-            result =
-                new EstimatedContentCompliment(onetime, S3Storage.MIN_MULTIPART)
-                    .estimate()
-                    .toCompletableFuture()
-                    .thenCompose(estimated -> this.putMultipart(estimated, key));
+            result = new EstimatedContentCompliment(onetime, S3Storage.MIN_MULTIPART)
+                .estimate();
         } else {
-            result = new EstimatedContentCompliment(onetime)
-                .estimate()
-                .toCompletableFuture()
-                .thenCompose(updated -> this.put(key, updated));
+            result = new EstimatedContentCompliment(onetime).estimate();
         }
-        return result;
+        return result.thenCompose(
+            estimated -> {
+                final CompletionStage<Void> res;
+                if (
+                    this.multipart
+                        && estimated
+                        .size()
+                        .filter(x -> x > S3Storage.MIN_MULTIPART)
+                        .isPresent()
+                ) {
+                    res = this.putMultipart(key, estimated);
+                } else {
+                    res = this.put(key, estimated);
+                }
+                return res;
+            }
+        ).toCompletableFuture();
     }
 
     @Override
@@ -284,11 +294,11 @@ public final class S3Storage implements Storage {
     /**
      * Save multipart.
      *
-     * @param updated The estimated content.
      * @param key The key of value to be saved.
+     * @param updated The estimated content.
      * @return The future.
      */
-    private CompletableFuture<Void> putMultipart(final Content updated, final Key key) {
+    private CompletableFuture<Void> putMultipart(final Key key, final Content updated) {
         final CompletableFuture<Void> future;
         final Optional<Long> size = updated.size();
         if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
