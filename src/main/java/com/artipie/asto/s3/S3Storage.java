@@ -30,23 +30,13 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.lock.storage.StorageLock;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Flowable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.cqfn.rio.file.File;
-import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -74,14 +64,8 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  Also whole operation does not complete until abort() is complete.
  *  It would be better to finish save() operation right away and do abort() in background,
  *  but it makes testing the method difficult.
- * @todo #193:30min Too many methods in `S3Storage` class.
- *  `S3Storage` has too many methods.
- *  It could be refactored to move some of it's logic to other classes.
- *  In particular there three methods related to saving bytes
- *  (multipart or not, selecting proper method). This could be moved out of this class.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.TooManyMethods")
 public final class S3Storage implements Storage {
 
     /**
@@ -170,27 +154,31 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        final CompletableFuture<Void> result;
+        final CompletionStage<Content> result;
         final Content onetime = new Content.OneTime(content);
         if (this.multipart) {
-            result = complementWithSize(onetime, S3Storage.MIN_MULTIPART).thenCompose(
-                updated -> {
-                    final CompletableFuture<Void> future;
-                    final Optional<Long> size = updated.size();
-                    if (size.isPresent() && size.get() < S3Storage.MIN_MULTIPART) {
-                        future = this.put(key, updated);
-                    } else {
-                        future = this.uploadMultipart(key, updated);
-                    }
-                    return future;
-                }
-            );
+            result = new EstimatedContentCompliment(onetime, S3Storage.MIN_MULTIPART)
+                .estimate();
         } else {
-            result = complementWithSize(onetime).thenCompose(
-                updated -> this.put(key, updated)
-            );
+            result = new EstimatedContentCompliment(onetime).estimate();
         }
-        return result;
+        return result.thenCompose(
+            estimated -> {
+                final CompletionStage<Void> res;
+                if (
+                    this.multipart
+                        && estimated
+                        .size()
+                        .filter(x -> x > S3Storage.MIN_MULTIPART)
+                        .isPresent()
+                ) {
+                    res = this.putMultipart(key, estimated);
+                } else {
+                    res = this.put(key, estimated);
+                }
+                return res;
+            }
+        ).toCompletableFuture();
     }
 
     @Override
@@ -215,15 +203,19 @@ public final class S3Storage implements Storage {
 
     @Override
     public CompletableFuture<Long> size(final Key key) {
-        return handleNoSuchKey(
-            key,
-            this.client.headObject(
-                HeadObjectRequest.builder()
-                    .bucket(this.bucket)
-                    .key(key.string())
-                    .build()
-            ).thenApply(HeadObjectResponse::contentLength)
-        );
+        return this.client.headObject(
+            HeadObjectRequest.builder()
+                .bucket(this.bucket)
+                .key(key.string())
+                .build()
+        ).thenApply(HeadObjectResponse::contentLength)
+            .handle(
+                new InternalExceptionHandle<>(
+                    NoSuchKeyException.class,
+                    cause -> new ValueNotFoundException(key, cause)
+                )
+            )
+            .thenCompose(Function.identity());
     }
 
     @Override
@@ -236,7 +228,15 @@ public final class S3Storage implements Storage {
                 .build(),
             new ResponseAdapter(promise)
         );
-        return handleNoSuchKey(key, promise).thenApply(Content.OneTime::new);
+        return promise
+            .handle(
+                new InternalExceptionHandle<>(
+                    NoSuchKeyException.class,
+                    cause -> new ValueNotFoundException(key, cause)
+                )
+            )
+            .thenCompose(Function.identity())
+            .thenApply(Content.OneTime::new);
     }
 
     @Override
@@ -272,103 +272,6 @@ public final class S3Storage implements Storage {
     }
 
     /**
-     * Complements {@link Content} with size if size is unknown.
-     * Size calculated by reading all content bytes.
-     *
-     * @param content Original content.
-     * @return Updated content with size.
-     */
-    private static CompletableFuture<Content> complementWithSize(final Content content) {
-        return complementWithSize(content, Long.MAX_VALUE);
-    }
-
-    /**
-     * Complements {@link Content} with size if size is unknown.
-     * Size calculated by reading up to `limit` content bytes.
-     * If end of content has not been reached by reading `limit` of bytes
-     * then original content is returned.
-     *
-     * @param content Original content.
-     * @param limit Content reading limit.
-     * @return Updated content with size.
-     */
-    private static CompletableFuture<Content> complementWithSize(
-        final Content content,
-        final long limit
-    ) {
-        return content.size()
-            .map(ignored -> CompletableFuture.completedFuture(content))
-            .orElseGet(
-                () -> cacheInTmpFile(content).thenCompose(
-                    tmp -> {
-                        final Flowable<ByteBuffer> cache = Flowable.fromPublisher(
-                            new File(tmp).content()
-                        );
-                        return cache
-                            .map(Buffer::remaining)
-                            .scanWith(() -> 0L, (sum, item) -> sum + item)
-                            .takeUntil(total -> total >= limit)
-                            .lastOrError()
-                            .to(SingleInterop.get())
-                            .toCompletableFuture()
-                            .<Optional<Long>>thenApply(
-                                last -> {
-                                    final Optional<Long> size;
-                                    if (last >= limit) {
-                                        size = Optional.empty();
-                                    } else {
-                                        size = Optional.of(last);
-                                    }
-                                    return size;
-                                }
-                            ).thenApply(
-                                sizeOpt -> {
-                                    final Flowable<ByteBuffer> data = cache.doAfterTerminate(
-                                        () -> Files.delete(tmp)
-                                    );
-                                    return sizeOpt
-                                        .<Content>map(size -> new Content.From(size, data))
-                                        .orElse(new Content.From(data));
-                                }
-                            ).handle(
-                                (value, throwable) -> {
-                                    final CompletableFuture<Content> result;
-                                    result = new CompletableFuture<>();
-                                    if (throwable == null) {
-                                        result.complete(value);
-                                    } else {
-                                        try {
-                                            Files.delete(tmp);
-                                        } catch (final IOException ex) {
-                                            throw new UncheckedIOException(ex);
-                                        }
-                                        result.completeExceptionally(throwable);
-                                    }
-                                    return result;
-                                }
-                            ).thenCompose(Function.identity());
-                    }
-                ).toCompletableFuture()
-            );
-    }
-
-    /**
-     * Creates temporary file and writes all data into it.
-     *
-     * @param publisher Data to store in tmp file.
-     * @return Path to temporary file.
-     */
-    private static CompletionStage<Path> cacheInTmpFile(final Publisher<ByteBuffer> publisher) {
-        final Path tmp;
-        try {
-            tmp = Files.createTempFile(S3Storage.class.getSimpleName(), ".upload.tmp");
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-        return new File(tmp).write(publisher).thenApply(nothing -> tmp);
-    }
-
-    /**
      * Uploads content using put request.
      *
      * @param key Object key.
@@ -386,13 +289,13 @@ public final class S3Storage implements Storage {
     }
 
     /**
-     * Uploads content using multipart upload.
+     * Save multipart.
      *
-     * @param key Object key.
-     * @param content Object content to be uploaded.
-     * @return Completion stage which is completed when upload is completed or aborted.
+     * @param key The key of value to be saved.
+     * @param updated The estimated content.
+     * @return The future.
      */
-    private CompletableFuture<Void> uploadMultipart(final Key key, final Content content) {
+    private CompletableFuture<Void> putMultipart(final Key key, final Content updated) {
         return this.client.createMultipartUpload(
             CreateMultipartUploadRequest.builder()
                 .bucket(this.bucket)
@@ -405,50 +308,23 @@ public final class S3Storage implements Storage {
                 created.uploadId()
             )
         ).thenCompose(
-            upload -> upload.upload(content).handle(
+            upload -> upload.upload(updated).handle(
                 (ignored, throwable) -> {
                     final CompletionStage<Void> finished;
                     if (throwable == null) {
                         finished = upload.complete();
                     } else {
-                        final CompletableFuture<Void> promise = new CompletableFuture<>();
+                        final CompletableFuture<Void> promise =
+                            new CompletableFuture<>();
                         finished = promise;
                         upload.abort().whenComplete(
-                            (result, ex) -> promise.completeExceptionally(throwable)
+                            (ignore, ex) -> promise.completeExceptionally(throwable)
                         );
                     }
                     return finished;
                 }
-            ).thenCompose(self -> self)
+            ).thenCompose(Function.identity())
         );
-    }
-
-    /**
-     * Translate {@link NoSuchKeyException} to {@link ValueNotFoundException} in future.
-     *
-     * @param key Key that was accessed by the future.
-     * @param future Future to translate excpetion in.
-     * @param <T> Future result type.
-     * @return Translated future.
-     */
-    private static <T> CompletableFuture<T> handleNoSuchKey(
-        final Key key,
-        final CompletableFuture<T> future
-    ) {
-        return future.handle(
-            (content, throwable) -> {
-                CompletionStage<T> result = future;
-                if (throwable instanceof CompletionException) {
-                    final Throwable cause = throwable.getCause();
-                    if (cause instanceof NoSuchKeyException) {
-                        result = new FailedCompletionStage<>(
-                            new ValueNotFoundException(key, cause)
-                        );
-                    }
-                }
-                return result;
-            }
-        ).thenCompose(Function.identity());
     }
 
     /**
@@ -530,4 +406,5 @@ public final class S3Storage implements Storage {
             this.promise.completeExceptionally(throwable);
         }
     }
+
 }

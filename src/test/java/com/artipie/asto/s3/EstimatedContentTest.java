@@ -21,31 +21,48 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.asto.s3;
 
-package com.artipie.asto;
-
-import java.nio.ByteBuffer;
+import com.artipie.asto.Content;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link Remaining}.
- * @since 0.32
+ * Test for {@link EstimatedContentCompliment}.
+ *
+ * @since 0.34
  */
-public final class RemainingTest {
+final class EstimatedContentTest {
+    @Test
+    void shouldReadUntilLimit() throws ExecutionException, InterruptedException {
+        final byte[] data = "xxx".getBytes(StandardCharsets.UTF_8);
+        final Content content = new EstimatedContentCompliment(
+            new Content.From(
+                Optional.empty(),
+                new Content.From(data)
+            ),
+            1
+        ).estimate().toCompletableFuture().get();
+        MatcherAssert.assertThat(
+            content.size(), new IsEqual<>(Optional.empty())
+        );
+    }
 
     @Test
-    public void readTwiceWithRestoreStrategy() throws Exception {
-        final ByteBuffer buf = ByteBuffer.allocate(32);
-        final byte[] array = new byte[]{1, 2, 3, 4};
-        buf.put(array);
-        buf.flip();
+    void shouldEvaluateSize() throws ExecutionException, InterruptedException {
+        final byte[] data = "yyy".getBytes(StandardCharsets.UTF_8);
+        final Content content = new EstimatedContentCompliment(
+            new Content.From(
+                Optional.empty(),
+                new Content.From(data)
+            )
+        ).estimate().toCompletableFuture().get();
         MatcherAssert.assertThat(
-            new Remaining(buf, true).bytes(), new IsEqual<>(array)
-        );
-        MatcherAssert.assertThat(
-            new Remaining(buf, true).bytes(), new IsEqual<>(array)
+            content.size(), new IsEqual<>(Optional.of((long) data.length))
         );
     }
 }
