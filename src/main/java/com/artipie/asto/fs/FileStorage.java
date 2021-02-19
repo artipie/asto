@@ -44,6 +44,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -61,6 +62,7 @@ import org.cqfn.rio.file.File;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class FileStorage implements Storage {
 
     /**
@@ -205,6 +207,7 @@ public final class FileStorage implements Storage {
             () -> {
                 try {
                     Files.delete(this.path(key));
+                    this.deleteEmptyDirs(key.parent());
                 } catch (final IOException iex) {
                     throw new UncheckedIOException(iex);
                 }
@@ -288,6 +291,23 @@ public final class FileStorage implements Storage {
      */
     private Path path(final Key key) {
         return Paths.get(this.dir.toString(), key.string());
+    }
+
+    /**
+     * Removes empty directories.
+     * @param key Key
+     */
+    private void deleteEmptyDirs(final Optional<Key> key) {
+        try {
+            if (key.isPresent() && !key.get().string().isEmpty()
+                && this.path(key.get()).toFile().isDirectory()
+                && !Files.list(this.path(key.get())).findFirst().isPresent()) {
+                Files.delete(this.path(key.get()));
+                this.deleteEmptyDirs(key.get().parent());
+            }
+        } catch (final IOException err) {
+            throw new UncheckedIOException(err);
+        }
     }
 
     /**

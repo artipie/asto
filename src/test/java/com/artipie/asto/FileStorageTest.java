@@ -28,6 +28,7 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -50,7 +51,15 @@ import org.junit.jupiter.api.io.TempDir;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class FileStorageTest {
+
+    /**
+     * Test temp directory.
+     * @checkstyle VisibilityModifierCheck (10 lines)
+     */
+    @TempDir
+    Path tmp;
 
     /**
      * File storage used in tests.
@@ -58,8 +67,8 @@ final class FileStorageTest {
     private FileStorage storage;
 
     @BeforeEach
-    void setUp(@TempDir final Path tmp) {
-        this.storage = new FileStorage(tmp);
+    void setUp() {
+        this.storage = new FileStorage(this.tmp);
     }
 
     @Test
@@ -149,9 +158,9 @@ final class FileStorageTest {
     @Test
     @EnabledIfSystemProperty(named = "test.storage.file.huge", matches = "true|on")
     @Timeout(1L)
-    void saveAndLoadHugeFiles(@TempDir final Path tmp) throws Exception {
+    void saveAndLoadHugeFiles() throws Exception {
         final String name = "huge";
-        new FileStorage(tmp).save(
+        new FileStorage(this.tmp).save(
             new Key.From(name),
             new Content.OneTime(
                 new Content.From(
@@ -161,9 +170,55 @@ final class FileStorageTest {
             )
         ).get();
         MatcherAssert.assertThat(
-            Files.size(tmp.resolve(name)),
+            Files.size(this.tmp.resolve(name)),
             // @checkstyle MagicNumberCheck (1 line)
             Matchers.equalTo(1024L * 1024 * 1024)
+        );
+    }
+
+    @Test
+    void deletesFileDoesNotTouchEmptyStorageRoot() {
+        final Key.From file = new Key.From("file.txt");
+        this.storage.save(file, Content.EMPTY).join();
+        this.storage.delete(file).join();
+        MatcherAssert.assertThat(
+            Files.exists(this.tmp),
+            new IsEqual<>(true)
+        );
+    }
+
+    @Test
+    void deletesFileAndEmptyDirs() throws IOException {
+        final Key.From file = new Key.From("one/two/file.txt");
+        this.storage.save(file, Content.EMPTY).join();
+        this.storage.delete(file).join();
+        MatcherAssert.assertThat(
+            "Storage root dir exists",
+            Files.exists(this.tmp),
+            new IsEqual<>(true)
+        );
+        MatcherAssert.assertThat(
+            "All empty dirs removed",
+            Files.list(this.tmp).findFirst().isPresent(),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void deletesFileAndDoesNotTouchNotEmptyDirs() throws IOException {
+        final Key.From file = new Key.From("one/two/file.txt");
+        this.storage.save(file, Content.EMPTY).join();
+        this.storage.save(new Key.From("one/file.txt"), Content.EMPTY).join();
+        this.storage.delete(file).join();
+        MatcherAssert.assertThat(
+            "Storage root dir exists",
+            Files.exists(this.tmp),
+            new IsEqual<>(true)
+        );
+        MatcherAssert.assertThat(
+            "Another item exists",
+            Files.exists(this.tmp.resolve("one/file.txt")),
+            new IsEqual<>(true)
         );
     }
 
