@@ -205,11 +205,16 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Void> delete(final Key key) {
         return CompletableFuture.runAsync(
             () -> {
-                try {
-                    Files.delete(this.path(key));
-                    this.deleteEmptyDirs(key.parent());
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
+                final Path path = this.path(key);
+                if (Files.exists(path) && !Files.isDirectory(path)) {
+                    try {
+                        Files.delete(path);
+                        this.deleteEmptyParts(key.parent());
+                    } catch (final IOException iex) {
+                        throw new UncheckedIOException(iex);
+                    }
+                } else {
+                    throw new ValueNotFoundException(key);
                 }
             },
             this.exec
@@ -294,16 +299,16 @@ public final class FileStorage implements Storage {
     }
 
     /**
-     * Removes empty directories.
+     * Removes empty key parts (directories).
      * @param key Key
      */
-    private void deleteEmptyDirs(final Optional<Key> key) {
+    private void deleteEmptyParts(final Optional<Key> key) {
         try {
             if (key.isPresent() && !key.get().string().isEmpty()
-                && this.path(key.get()).toFile().isDirectory()
+                && Files.isDirectory(this.path(key.get()))
                 && !Files.list(this.path(key.get())).findFirst().isPresent()) {
                 Files.delete(this.path(key.get()));
-                this.deleteEmptyDirs(key.get().parent());
+                this.deleteEmptyParts(key.get().parent());
             }
         } catch (final IOException err) {
             throw new UncheckedIOException(err);
