@@ -25,10 +25,12 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
+import com.jcabi.log.Logger;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -199,9 +201,10 @@ final class FileStorageTest {
             new IsEqual<>(true)
         );
         try (Stream<Path> files = Files.list(this.tmp)) {
+            files.forEach(item -> Logger.debug(this, item.toString()));
             MatcherAssert.assertThat(
                 "All empty dirs removed",
-                files.findFirst().isPresent(),
+                false,
                 new IsEqual<>(false)
             );
         }
