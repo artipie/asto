@@ -54,6 +54,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.cqfn.rio.file.File;
 
 /**
@@ -305,10 +306,13 @@ public final class FileStorage implements Storage {
     private void deleteEmptyParts(final Optional<Key> key) {
         try {
             if (key.isPresent() && !key.get().string().isEmpty()
-                && Files.isDirectory(this.path(key.get()))
-                && !Files.list(this.path(key.get())).findFirst().isPresent()) {
-                Files.delete(this.path(key.get()));
-                this.deleteEmptyParts(key.get().parent());
+                && Files.isDirectory(this.path(key.get()))) {
+                try (Stream<Path> files = Files.list(this.path(key.get()))) {
+                    if (!files.findFirst().isPresent()) {
+                        Files.delete(this.path(key.get()));
+                        this.deleteEmptyParts(key.get().parent());
+                    }
+                }
             }
         } catch (final IOException err) {
             throw new UncheckedIOException(err);

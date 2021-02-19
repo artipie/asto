@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -197,11 +198,13 @@ final class FileStorageTest {
             Files.exists(this.tmp),
             new IsEqual<>(true)
         );
-        MatcherAssert.assertThat(
-            "All empty dirs removed",
-            Files.list(this.tmp).findFirst().isPresent(),
-            new IsEqual<>(false)
-        );
+        try (Stream<Path> files = Files.list(this.tmp)) {
+            MatcherAssert.assertThat(
+                "All empty dirs removed",
+                files.findFirst().isPresent(),
+                new IsEqual<>(false)
+            );
+        }
     }
 
     @Test
