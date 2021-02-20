@@ -302,24 +302,27 @@ public final class FileStorage implements Storage {
     /**
      * Removes empty key parts (directories).
      * @param key Key
+     * @checkstyle NestedIfDepthCheck (20 lines)
      */
     private void deleteEmptyParts(final Optional<Key> key) {
-        try {
-            if (key.isPresent() && !key.get().string().isEmpty()
-                && Files.isDirectory(this.path(key.get()))) {
+        if (key.isPresent() && !key.get().string().isEmpty()) {
+            final Path path = this.path(key.get());
+            if (Files.isDirectory(path)) {
                 boolean again = false;
-                try (Stream<Path> files = Files.list(this.path(key.get()))) {
-                    if (!files.findFirst().isPresent()) {
-                        Files.delete(this.path(key.get()));
-                        again = true;
+                try {
+                    try (Stream<Path> files = Files.list(path)) {
+                        if (!files.findFirst().isPresent()) {
+                            Files.delete(path);
+                            again = true;
+                        }
                     }
-                }
-                if (again) {
-                    this.deleteEmptyParts(key.get().parent());
+                    if (again) {
+                        this.deleteEmptyParts(key.get().parent());
+                    }
+                } catch (final IOException err) {
+                    throw new UncheckedIOException(err);
                 }
             }
-        } catch (final IOException err) {
-            throw new UncheckedIOException(err);
         }
     }
 
