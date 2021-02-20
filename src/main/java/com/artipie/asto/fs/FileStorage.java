@@ -44,6 +44,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -53,6 +54,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.cqfn.rio.file.File;
 
 /**
@@ -61,6 +63,7 @@ import org.cqfn.rio.file.File;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class FileStorage implements Storage {
 
     /**
@@ -203,10 +206,16 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Void> delete(final Key key) {
         return CompletableFuture.runAsync(
             () -> {
-                try {
-                    Files.delete(this.path(key));
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
+                final Path path = this.path(key);
+                if (Files.exists(path) && !Files.isDirectory(path)) {
+                    try {
+                        Files.delete(path);
+                        this.deleteEmptyParts(key.parent());
+                    } catch (final IOException iex) {
+                        throw new UncheckedIOException(iex);
+                    }
+                } else {
+                    throw new ValueNotFoundException(key);
                 }
             },
             this.exec
@@ -288,6 +297,33 @@ public final class FileStorage implements Storage {
      */
     private Path path(final Key key) {
         return Paths.get(this.dir.toString(), key.string());
+    }
+
+    /**
+     * Removes empty key parts (directories).
+     * @param key Key
+     * @checkstyle NestedIfDepthCheck (20 lines)
+     */
+    private void deleteEmptyParts(final Optional<Key> key) {
+        if (key.isPresent() && !key.get().string().isEmpty()) {
+            final Path path = this.path(key.get());
+            if (Files.isDirectory(path)) {
+                boolean again = false;
+                try {
+                    try (Stream<Path> files = Files.list(path)) {
+                        if (!files.findFirst().isPresent()) {
+                            Files.delete(path);
+                            again = true;
+                        }
+                    }
+                    if (again) {
+                        this.deleteEmptyParts(key.get().parent());
+                    }
+                } catch (final IOException err) {
+                    throw new UncheckedIOException(err);
+                }
+            }
+        }
     }
 
     /**
