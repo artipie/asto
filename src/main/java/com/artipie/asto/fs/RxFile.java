@@ -56,26 +56,17 @@ public class RxFile {
     private final Path file;
 
     /**
-     * IO executor.
+     * Thread pool.
      */
     private final ExecutorService exec;
 
     /**
      * Ctor.
-     * @param file File path
+     * @param file The wrapped file
      */
     public RxFile(final Path file) {
-        this(file, Executors.newCachedThreadPool());
-    }
-
-    /**
-     * Ctor.
-     * @param file The wrapped file
-     * @param exec IO executor
-     */
-    public RxFile(final Path file, final ExecutorService exec) {
         this.file = file;
-        this.exec = exec;
+        this.exec = Executors.newCachedThreadPool();
     }
 
     /**
@@ -83,7 +74,7 @@ public class RxFile {
      * @return A flow of bytes
      */
     public Flowable<ByteBuffer> flow() {
-        return Flowable.fromPublisher(new File(this.file).content(this.exec));
+        return Flowable.fromPublisher(new File(this.file).content());
     }
 
     /**
@@ -97,7 +88,6 @@ public class RxFile {
             () -> CompletableInterop.fromFuture(
                 new File(this.file).write(
                     flow,
-                    this.exec,
                     StandardOpenOption.CREATE, StandardOpenOption.WRITE,
                     StandardOpenOption.TRUNCATE_EXISTING
                 )
