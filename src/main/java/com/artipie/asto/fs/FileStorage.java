@@ -48,10 +48,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,11 +68,6 @@ public final class FileStorage implements Storage {
     private final Path dir;
 
     /**
-     * IO executor service.
-     */
-    private final ExecutorService exec;
-
-    /**
      * Ctor.
      * @param path The path to the dir
      * @param nothing Just for compatibility
@@ -90,20 +81,10 @@ public final class FileStorage implements Storage {
 
     /**
      * Ctor.
-     * @param path File path
+     * @param path The path to the dir
      */
     public FileStorage(final Path path) {
-        this(path, ThreadPool.EXEC);
-    }
-
-    /**
-     * Ctor.
-     * @param path The path to the dir
-     * @param exec IO Executor service
-     */
-    public FileStorage(final Path path, final ExecutorService exec) {
         this.dir = path;
-        this.exec = exec;
     }
 
     @Override
@@ -112,8 +93,7 @@ public final class FileStorage implements Storage {
             () -> {
                 final Path path = this.path(key);
                 return Files.exists(path) && !Files.isDirectory(path);
-            },
-            this.exec
+            }
         );
     }
 
@@ -155,8 +135,7 @@ public final class FileStorage implements Storage {
                     keys.size(), prefix.string(), this.dir, path, keys
                 );
                 return keys;
-            },
-            this.exec
+            }
         );
     }
 
@@ -170,17 +149,15 @@ public final class FileStorage implements Storage {
                 );
                 tmp.getParent().toFile().mkdirs();
                 return tmp;
-            },
-            this.exec
+            }
         ).thenCompose(
             tmp -> new File(tmp).write(
                 new OneTimePublisher<>(content),
-                this.exec,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
             ).thenCompose(
-                nothing -> this.move(tmp, this.path(key))
+                nothing -> FileStorage.move(tmp, this.path(key))
             ).handleAsync(
                 (nothing, throwable) -> {
                     tmp.toFile().delete();
@@ -191,15 +168,14 @@ public final class FileStorage implements Storage {
                         result.completeExceptionally(throwable);
                     }
                     return result;
-                },
-                this.exec
+                }
             ).thenCompose(Function.identity())
         );
     }
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return this.move(this.path(source), this.path(destination));
+        return FileStorage.move(this.path(source), this.path(destination));
     }
 
     @Override
@@ -217,8 +193,7 @@ public final class FileStorage implements Storage {
                 } else {
                     throw new ValueNotFoundException(key);
                 }
-            },
-            this.exec
+            }
         );
     }
 
@@ -233,8 +208,7 @@ public final class FileStorage implements Storage {
                 } catch (final IOException iex) {
                     throw new UncheckedIOException(iex);
                 }
-            },
-            this.exec
+            }
         );
     }
 
@@ -248,7 +222,7 @@ public final class FileStorage implements Storage {
         } else {
             res = this.size(key).thenApply(
                 size -> new Content.OneTime(
-                    new Content.From(size, new File(this.path(key)).content(this.exec))
+                    new Content.From(size, new File(this.path(key)).content())
                 )
             );
         }
@@ -261,32 +235,6 @@ public final class FileStorage implements Storage {
         final Function<Storage, CompletionStage<T>> operation
     ) {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
-    }
-
-    /**
-     * Moves file from source path to destination.
-     *
-     * @param source Source path.
-     * @param dest Destination path.
-     * @return Completion of moving file.
-     */
-    private CompletableFuture<Void> move(final Path source, final Path dest) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                dest.getParent().toFile().mkdirs();
-                return dest;
-            },
-            this.exec
-        ).thenAcceptAsync(
-            dst -> {
-                try {
-                    Files.move(source, dst, StandardCopyOption.REPLACE_EXISTING);
-                } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
-                }
-            },
-            this.exec
-        );
     }
 
     /**
@@ -327,48 +275,26 @@ public final class FileStorage implements Storage {
     }
 
     /**
-     * Thread factory and lazy executor holder.
-     * @since 0.19
+     * Moves file from source path to destination.
+     *
+     * @param source Source path.
+     * @param dest Destination path.
+     * @return Completion of moving file.
      */
-    private static final class ThreadPool implements ThreadFactory {
-
-        /**
-         * Lazy instance of thread pool.
-         */
-        static final ExecutorService EXEC = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
-            new ThreadPool()
+    private static CompletableFuture<Void> move(final Path source, final Path dest) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                dest.getParent().toFile().mkdirs();
+                return dest;
+            }
+        ).thenAcceptAsync(
+            dst -> {
+                try {
+                    Files.move(source, dst, StandardCopyOption.REPLACE_EXISTING);
+                } catch (final IOException iex) {
+                    throw new UncheckedIOException(iex);
+                }
+            }
         );
-
-        /**
-         * Counter.
-         */
-        private final AtomicInteger cnt;
-
-        /**
-         * Default ctor.
-         */
-        private ThreadPool() {
-            this(new AtomicInteger());
-        }
-
-        /**
-         * Primary ctor.
-         * @param cnt Thread counter
-         */
-        private ThreadPool(final AtomicInteger cnt) {
-            this.cnt = cnt;
-        }
-
-        @Override
-        public Thread newThread(final Runnable runnable) {
-            return new Thread(
-                runnable,
-                String.format(
-                    "%s-%d",
-                    FileStorage.class.getSimpleName(), this.cnt.incrementAndGet()
-                )
-            );
-        }
     }
 }

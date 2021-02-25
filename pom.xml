@@ -122,7 +122,7 @@ SOFTWARE.
     <dependency>
       <groupId>org.cqfn</groupId>
       <artifactId>rio</artifactId>
-      <version>0.2.1</version>
+      <version>0.3</version>
     </dependency>
     <dependency>
       <groupId>io.github.resilience4j</groupId>
