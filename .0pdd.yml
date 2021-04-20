@@ -1,0 +1,5 @@
+format:
+  - short-title
+  - title-length=100
+tags:
+  - tech-debt

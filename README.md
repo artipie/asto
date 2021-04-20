@@ -21,10 +21,18 @@ which requires to implement the following functionalities:
 * list files in a directory
 * check if a file/directory exists
 
-Supported abstractions:
+Dictionary used for ASTO:
+ - `Storage` - key-value based storage
+ - `Key` - storage keys, could be converted to strings
+ - `Content` - storage data, reactive publisher with optional size attribute
+ - `SubStorage` - isolated storage based on origin storage
 
-- [x] [File system](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/fs/FileStorage.html) 
-- [X] S3
+
+The list of back-ends supported:
+ - FileStorage - file-system based storage, uses paths as keys, stores content in files
+ - S3Storage - uses S3 compatible HTTP web-server as storage, uses keys as names and blobs for content
+ - EtcdStorage - uses ETCD cluster as storage back-end
+ - InMemoryStorage - storage uses `HashMap` to store data
 
 
 This is the dependency you need:
