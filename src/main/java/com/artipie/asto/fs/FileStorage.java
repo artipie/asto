@@ -260,7 +260,7 @@ public final class FileStorage implements Storage {
                 try {
                     try (Stream<Path> files = Files.list(path)) {
                         if (!files.findFirst().isPresent()) {
-                            Files.delete(path);
+                            Files.deleteIfExists(path);
                             again = true;
                         }
                     }
