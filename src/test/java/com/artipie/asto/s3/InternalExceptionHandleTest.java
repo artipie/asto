@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.s3;
 
+import com.artipie.asto.ArtipieIOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -41,7 +42,7 @@ final class InternalExceptionHandleTest {
     }
 
     @Test
-    void failsAsIsWhenExceptionIsUnmatched() {
+    void wrapsWithArtipieExceptionIfUnmatched() {
         final CompletableFuture<Void> future = CompletableFuture.runAsync(Assertions::fail);
         MatcherAssert.assertThat(
             Assertions.assertThrows(
@@ -56,7 +57,7 @@ final class InternalExceptionHandleTest {
                     .toCompletableFuture()
                     ::get
             ),
-            Matchers.hasProperty("cause", Matchers.isA(AssertionError.class))
+            Matchers.hasProperty("cause", Matchers.isA(ArtipieIOException.class))
         );
     }
 

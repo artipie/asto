@@ -147,7 +147,7 @@ public final class StorageSaveAndLoadTest {
         final Content value = storage.value(key).join();
         Flowable.fromPublisher(value).toList().blockingGet();
         Assertions.assertThrows(
-            IllegalStateException.class,
+            ArtipieIOException.class,
             () -> Flowable.fromPublisher(value).toList().blockingGet()
         );
     }

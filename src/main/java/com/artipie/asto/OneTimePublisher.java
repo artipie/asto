@@ -55,7 +55,7 @@ public final class OneTimePublisher<T> implements Publisher<T> {
                     }
                 }
             );
-            sub.onError(new IllegalStateException(String.format(msg, subs)));
+            sub.onError(new ArtipieIOException(String.format(msg, subs)));
         }
     }
 }

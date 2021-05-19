@@ -25,7 +25,7 @@ public final class OneTimePublisherTest {
         final Integer last = pub.lastOrError().blockingGet();
         MatcherAssert.assertThat(last, new IsEqual<>(one));
         Assertions.assertThrows(
-            IllegalStateException.class,
+            ArtipieIOException.class,
             () -> pub.firstOrError().blockingGet()
         );
     }

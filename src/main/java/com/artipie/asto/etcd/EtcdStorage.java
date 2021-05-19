@@ -5,9 +5,11 @@
 
 package com.artipie.asto.etcd;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.ext.PublisherAs;
 import io.etcd.jetcd.ByteSequence;
@@ -85,7 +87,7 @@ public final class EtcdStorage implements Storage {
         final long size = content.size().orElse(0L);
         if (size <= 0 || size > EtcdStorage.MAX_SIZE) {
             return new CompletableFutureSupport.Failed<Void>(
-                new IllegalStateException(
+                new ArtipieIOException(
                     String.format("Content size must be in range (1;%d)", EtcdStorage.MAX_SIZE)
                 )
             ).get();
@@ -111,7 +113,7 @@ public final class EtcdStorage implements Storage {
             )
         ).thenApply(
             kv -> kv.orElseThrow(
-                () -> new KeyNotFoundException(key)
+                () -> new ValueNotFoundException(key)
             ).getValue().getBytes()
         ).thenApply(bytes -> Long.valueOf(bytes.length));
     }
@@ -124,7 +126,7 @@ public final class EtcdStorage implements Storage {
             )
         ).thenApply(
             kv -> kv.orElseThrow(
-                () -> new KeyNotFoundException(key)
+                () -> new ValueNotFoundException(key)
             ).getValue().getBytes()
         ).thenApply(bytes -> new Content.From(bytes));
     }
@@ -134,7 +136,7 @@ public final class EtcdStorage implements Storage {
         return this.client.getKVClient().delete(keyToSeq(key)).thenAccept(
             rsp -> {
                 if (rsp.getDeleted() == 0) {
-                    throw new KeyNotFoundException(key);
+                    throw new ValueNotFoundException(key);
                 }
             }
         );
@@ -153,22 +155,5 @@ public final class EtcdStorage implements Storage {
      */
     private static ByteSequence keyToSeq(final Key key) {
         return ByteSequence.from(key.string(), StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Error thrown if key was not found.
-     * @since 1.0
-     */
-    private static final class KeyNotFoundException extends IllegalStateException {
-
-        private static final long serialVersionUID = -1;
-
-        /**
-         * New exception.
-         * @param key Key
-         */
-        KeyNotFoundException(final Key key) {
-            super(String.format("Key `%s` was not found", key.string()));
-        }
     }
 }

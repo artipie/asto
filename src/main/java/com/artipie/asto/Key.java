@@ -4,6 +4,7 @@
  */
 package com.artipie.asto;
 
+import com.artipie.ArtipieException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -150,10 +151,10 @@ public interface Key {
         public String string() {
             for (final String part : this.parts) {
                 if (part.isEmpty()) {
-                    throw new IllegalStateException("Empty parts are not allowed");
+                    throw new ArtipieException("Empty parts are not allowed");
                 }
                 if (part.contains(From.DELIMITER)) {
-                    throw new IllegalStateException(String.format("Invalid part: '%s'", part));
+                    throw new ArtipieException(String.format("Invalid part: '%s'", part));
                 }
             }
             return String.join(From.DELIMITER, this.parts);

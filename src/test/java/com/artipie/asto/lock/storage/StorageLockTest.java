@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.lock.storage;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -127,7 +128,7 @@ final class StorageLockTest {
         MatcherAssert.assertThat(
             "Reason for failure is IllegalStateException",
             exception.getCause(),
-            new IsInstanceOf(IllegalStateException.class)
+            new IsInstanceOf(ArtipieIOException.class)
         );
         MatcherAssert.assertThat(
             "Proposals unmodified",

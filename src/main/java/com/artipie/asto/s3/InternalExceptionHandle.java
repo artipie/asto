@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.s3;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.FailedCompletionStage;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -56,8 +57,10 @@ final class InternalExceptionHandle<T> implements BiFunction<T, Throwable, Compl
                 result = new FailedCompletionStage<>(
                     this.convert.apply(throwable.getCause())
                 );
+            } else if (throwable instanceof CompletionException) {
+                result = new FailedCompletionStage<>(new ArtipieIOException(throwable.getCause()));
             } else {
-                result = new FailedCompletionStage<>(throwable);
+                result = new FailedCompletionStage<>(new ArtipieIOException(throwable));
             }
         }
         return result;

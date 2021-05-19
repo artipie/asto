@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.memory;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
@@ -15,7 +16,6 @@ import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.NavigableMap;
@@ -81,7 +81,7 @@ public final class InMemoryStorage implements Storage {
         final CompletableFuture<Void> res;
         if (Key.ROOT.equals(key)) {
             res = new CompletableFutureSupport.Failed<Void>(
-                new IOException("Unable to save to root")
+                new ArtipieIOException("Unable to save to root")
             ).get();
         } else {
             res = new Concatenation(new OneTimePublisher<>(content)).single()
@@ -106,7 +106,7 @@ public final class InMemoryStorage implements Storage {
                 synchronized (this.data) {
                     final String key = source.string();
                     if (!this.data.containsKey(key)) {
-                        throw new IllegalArgumentException(
+                        throw new ArtipieIOException(
                             String.format("No value for source key: %s", source.string())
                         );
                     }
@@ -137,7 +137,7 @@ public final class InMemoryStorage implements Storage {
         final CompletableFuture<Content> res;
         if (Key.ROOT.equals(key)) {
             res = new CompletableFutureSupport.Failed<Content>(
-                new IOException("Unable to load from root")
+                new ArtipieIOException("Unable to load from root")
             ).get();
         } else {
             res = CompletableFuture.supplyAsync(
@@ -162,7 +162,7 @@ public final class InMemoryStorage implements Storage {
                 synchronized (this.data) {
                     final String str = key.string();
                     if (!this.data.containsKey(str)) {
-                        throw new IllegalArgumentException(
+                        throw new ArtipieIOException(
                             String.format("Key does not exist: %s", str)
                         );
                     }
