@@ -34,7 +34,7 @@ public final class StorageExclusivelyTest {
         );
         MatcherAssert.assertThat(
             completion.getCause(),
-            new IsInstanceOf(IllegalStateException.class)
+            new IsInstanceOf(ArtipieIOException.class)
         );
     }
 

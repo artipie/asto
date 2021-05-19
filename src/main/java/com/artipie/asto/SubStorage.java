@@ -6,7 +6,6 @@ package com.artipie.asto;
 
 import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -67,7 +66,7 @@ public final class SubStorage implements Storage {
         final CompletableFuture<Void> res;
         if (Key.ROOT.equals(key)) {
             res = new CompletableFutureSupport.Failed<Void>(
-                new IOException("Unable to save to root")
+                new ArtipieIOException("Unable to save to root")
             ).get();
         } else {
             res = this.origin.save(new PrefixedKed(this.prefix, key), content);

@@ -4,11 +4,11 @@
  */
 package com.artipie.asto.s3;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -86,7 +86,7 @@ final class EstimatedContentCompliment {
                 ".upload.tmp"
             );
         } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
+            throw new ArtipieIOException(ex);
         }
         final Flowable<ByteBuffer> data = Flowable.fromPublisher(
             new File(temp).content()

@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
@@ -14,7 +15,6 @@ import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -105,7 +105,7 @@ public final class FileStorage implements Storage {
                             .sorted(Comparator.comparing(Key.From::string))
                             .collect(Collectors.toList());
                     } catch (final IOException iex) {
-                        throw new UncheckedIOException(iex);
+                        throw new ArtipieIOException(iex);
                     }
                 } else {
                     keys = Collections.emptyList();
@@ -146,7 +146,7 @@ public final class FileStorage implements Storage {
                     if (throwable == null) {
                         result.complete(null);
                     } else {
-                        result.completeExceptionally(throwable);
+                        result.completeExceptionally(new ArtipieIOException(throwable));
                     }
                     return result;
                 }
@@ -169,7 +169,7 @@ public final class FileStorage implements Storage {
                         Files.delete(path);
                         this.deleteEmptyParts(key.parent());
                     } catch (final IOException iex) {
-                        throw new UncheckedIOException(iex);
+                        throw new ArtipieIOException(iex);
                     }
                 } else {
                     throw new ValueNotFoundException(key);
@@ -187,7 +187,7 @@ public final class FileStorage implements Storage {
                 } catch (final NoSuchFileException nofile) {
                     throw new ValueNotFoundException(key, nofile);
                 } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
+                    throw new ArtipieIOException(iex);
                 }
             }
         );
@@ -198,7 +198,7 @@ public final class FileStorage implements Storage {
         final CompletableFuture<Content> res;
         if (Key.ROOT.equals(key)) {
             res = new CompletableFutureSupport.Failed<Content>(
-                new IOException("Unable to load from root")
+                new ArtipieIOException("Unable to load from root")
             ).get();
         } else {
             res = this.size(key).thenApply(
@@ -249,7 +249,7 @@ public final class FileStorage implements Storage {
                         this.deleteEmptyParts(key.get().parent());
                     }
                 } catch (final IOException err) {
-                    throw new UncheckedIOException(err);
+                    throw new ArtipieIOException(err);
                 }
             }
         }
@@ -273,7 +273,7 @@ public final class FileStorage implements Storage {
                 try {
                     Files.move(source, dst, StandardCopyOption.REPLACE_EXISTING);
                 } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
+                    throw new ArtipieIOException(iex);
                 }
             }
         );

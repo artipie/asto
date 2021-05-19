@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.asto.ArtipieIOException;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -92,7 +93,7 @@ public class RxFile {
                             Files.move(this.file, target, StandardCopyOption.REPLACE_EXISTING);
                             res.onComplete();
                         } catch (final IOException iex) {
-                            res.onError(iex);
+                            res.onError(new ArtipieIOException(iex));
                         }
                     }
                 );
@@ -116,7 +117,7 @@ public class RxFile {
                             Files.delete(this.file);
                             res.onComplete();
                         } catch (final IOException iex) {
-                            res.onError(iex);
+                            res.onError(new ArtipieIOException(iex));
                         }
                     }
                 );
@@ -139,7 +140,7 @@ public class RxFile {
                         try {
                             res.onSuccess(Files.size(this.file));
                         } catch (final IOException iex) {
-                            res.onError(iex);
+                            res.onError(new ArtipieIOException(iex));
                         }
                     }
                 );

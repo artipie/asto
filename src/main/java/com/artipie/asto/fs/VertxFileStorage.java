@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -21,7 +22,6 @@ import io.vertx.core.file.CopyOptions;
 import io.vertx.reactivex.RxHelper;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -102,7 +102,7 @@ public final class VertxFileStorage implements Storage {
                             .sorted(Comparator.comparing(Key.From::string))
                             .collect(Collectors.toList());
                     } catch (final IOException iex) {
-                        throw new UncheckedIOException(iex);
+                        throw new ArtipieIOException(iex);
                     }
                 } else {
                     keys = Collections.emptyList();
@@ -189,7 +189,7 @@ public final class VertxFileStorage implements Storage {
                 } catch (final NoSuchFileException nofile) {
                     throw new ValueNotFoundException(key, nofile);
                 } catch (final IOException iex) {
-                    throw new UncheckedIOException(iex);
+                    throw new ArtipieIOException(iex);
                 }
             }
         ).subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
@@ -201,7 +201,7 @@ public final class VertxFileStorage implements Storage {
         final CompletableFuture<Content> res;
         if (Key.ROOT.equals(key)) {
             res = new CompletableFutureSupport.Failed<Content>(
-                new IOException("Unable to load from root")
+                new ArtipieIOException("Unable to load from root")
             ).get();
         } else {
             res = this.size(key).thenApply(

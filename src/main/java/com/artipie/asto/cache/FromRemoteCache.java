@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.cache;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -46,7 +47,7 @@ public final class FromRemoteCache implements Cache {
                 } else {
                     final Throwable error;
                     if (throwable == null) {
-                        error = new IllegalStateException("Failed to load content from remote");
+                        error = new ArtipieIOException("Failed to load content from remote");
                     } else {
                         error = throwable;
                     }

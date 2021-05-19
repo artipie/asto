@@ -4,6 +4,7 @@
  */
 package com.artipie.asto.s3;
 
+import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
@@ -109,7 +110,7 @@ public final class S3Storage implements Storage {
                 } else if (throwable.getCause() instanceof NoSuchKeyException) {
                     exists.complete(false);
                 } else {
-                    exists.completeExceptionally(throwable);
+                    exists.completeExceptionally(new ArtipieIOException(throwable));
                 }
                 return response;
             }
@@ -236,7 +237,7 @@ public final class S3Storage implements Storage {
                     );
                 } else {
                     deleted = new FailedCompletionStage<>(
-                        new IllegalArgumentException(String.format("Key does not exist: %s", key))
+                        new ArtipieIOException(String.format("Key does not exist: %s", key))
                     );
                 }
                 return deleted;
@@ -299,7 +300,9 @@ public final class S3Storage implements Storage {
                             new CompletableFuture<>();
                         finished = promise;
                         upload.abort().whenComplete(
-                            (ignore, ex) -> promise.completeExceptionally(throwable)
+                            (ignore, ex) -> promise.completeExceptionally(
+                                new ArtipieIOException(throwable)
+                            )
                         );
                     }
                     return finished;
