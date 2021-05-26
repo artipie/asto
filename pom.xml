@@ -30,7 +30,7 @@ SOFTWARE.
     <version>0.5.1</version>
   </parent>
   <artifactId>asto</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
   <name>asto</name>
   <description>A simple Java storage</description>
