@@ -11,6 +11,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import java.util.Map;
 import org.cactoos.map.MapEntry;
 import org.cactoos.map.MapOf;
+import org.cactoos.scalar.Unchecked;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,9 @@ final class BenchmarkStorageTest {
     void obtainsValueFromBackendIfAbsenceInLocal() {
         final Key key = new Key.From("somekey");
         final byte[] data = "some data".getBytes();
-        final Map<String, byte[]> backdata = new MapOf<>(new MapEntry<>(key.string(), data));
+        final Map<String, byte[]> backdata = new Unchecked<>(
+            () -> new MapOf<>(new MapEntry<>(key.string(), data))
+        ).value();
         final InMemoryStorage memory = new InMemoryStorage(backdata);
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
         MatcherAssert.assertThat(
@@ -39,7 +42,9 @@ final class BenchmarkStorageTest {
     void obtainsValueFromLocalWithEmptyBackend() {
         final Key key = new Key.From("somekey");
         final byte[] data = "some data".getBytes();
-        final Map<Key, byte[]> lcldata = new MapOf<>(new MapEntry<>(key, data));
+        final Map<Key, byte[]> lcldata = new Unchecked<>(
+            () -> new MapOf<>(new MapEntry<>(key, data))
+        ).value();
         final BenchmarkStorage bench = new BenchmarkStorage(new InMemoryStorage(), lcldata);
         MatcherAssert.assertThat(
             this.valueFrom(bench, key),
@@ -52,8 +57,12 @@ final class BenchmarkStorageTest {
         final Key key = new Key.From("somekey");
         final byte[] lcl = "some local data".getBytes();
         final byte[] back = "some backend data".getBytes();
-        final Map<Key, byte[]> lcldata = new MapOf<>(new MapEntry<>(key, lcl));
-        final Map<String, byte[]> backdata = new MapOf<>(new MapEntry<>(key.string(), back));
+        final Map<Key, byte[]> lcldata = new Unchecked<>(
+            () -> new MapOf<>(new MapEntry<>(key, lcl))
+        ).value();
+        final Map<String, byte[]> backdata = new Unchecked<>(
+            () -> new MapOf<>(new MapEntry<>(key.string(), back))
+        ).value();
         final BenchmarkStorage bench = new BenchmarkStorage(
             new InMemoryStorage(backdata), lcldata
         );
