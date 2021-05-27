@@ -20,13 +20,13 @@ public final class UncheckedIOFunc<T, R> implements Function<T, R> {
     /**
      * Checked version.
      */
-    private final UncheckedFunc.Checked<T, R, IOException> checked;
+    private final UncheckedFunc.Checked<T, R, ? extends IOException> checked;
 
     /**
      * Ctor.
      * @param checked Checked func
      */
-    public UncheckedIOFunc(final UncheckedFunc.Checked<T, R, IOException> checked) {
+    public UncheckedIOFunc(final UncheckedFunc.Checked<T, R, ? extends IOException> checked) {
         this.checked = checked;
     }
 

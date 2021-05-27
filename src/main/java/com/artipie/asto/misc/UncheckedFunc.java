@@ -14,7 +14,7 @@ import java.util.function.Function;
  * @param <E> Error type
  * @since 1.1
  */
-public final class UncheckedFunc<T, R, E extends Throwable> implements Function<T, R> {
+public final class UncheckedFunc<T, R, E extends Exception> implements Function<T, R> {
 
     /**
      * Checked version.
@@ -30,12 +30,12 @@ public final class UncheckedFunc<T, R, E extends Throwable> implements Function<
     }
 
     @Override
-    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     public R apply(final T val) {
         try {
             return this.checked.apply(val);
             // @checkstyle IllegalCatchCheck (1 line)
-        } catch (final Throwable err) {
+        } catch (final Exception err) {
             throw new ArtipieException(err);
         }
     }
@@ -48,7 +48,7 @@ public final class UncheckedFunc<T, R, E extends Throwable> implements Function<
      * @since 1.1
      */
     @FunctionalInterface
-    public interface Checked<T, R, E extends Throwable> {
+    public interface Checked<T, R, E extends Exception> {
 
         /**
          * Apply value.

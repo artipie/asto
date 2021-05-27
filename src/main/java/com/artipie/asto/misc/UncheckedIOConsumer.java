@@ -19,13 +19,13 @@ public final class UncheckedIOConsumer<T> implements Consumer<T> {
     /**
      * Checked version.
      */
-    private final UncheckedConsumer.Checked<T, IOException> checked;
+    private final UncheckedConsumer.Checked<T, ? extends IOException> checked;
 
     /**
      * Ctor.
      * @param checked Checked func
      */
-    public UncheckedIOConsumer(final UncheckedConsumer.Checked<T, IOException> checked) {
+    public UncheckedIOConsumer(final UncheckedConsumer.Checked<T, ? extends IOException> checked) {
         this.checked = checked;
     }
 

@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * @param <E> Error type
  * @since 1.1
  */
-public final class UncheckedConsumer<T, E extends Throwable> implements Consumer<T> {
+public final class UncheckedConsumer<T, E extends Exception> implements Consumer<T> {
 
     /**
      * Checked version.
@@ -29,12 +29,12 @@ public final class UncheckedConsumer<T, E extends Throwable> implements Consumer
     }
 
     @Override
-    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     public void accept(final T val) {
         try {
             this.checked.accept(val);
             // @checkstyle IllegalCatchCheck (1 line)
-        } catch (final Throwable err) {
+        } catch (final Exception err) {
             throw new ArtipieException(err);
         }
     }
@@ -46,7 +46,7 @@ public final class UncheckedConsumer<T, E extends Throwable> implements Consumer
      * @since 1.1
      */
     @FunctionalInterface
-    public interface Checked<T, E extends Throwable> {
+    public interface Checked<T, E extends Exception> {
 
         /**
          * Accept value.
