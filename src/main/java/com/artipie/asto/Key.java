@@ -5,7 +5,6 @@
 package com.artipie.asto;
 
 import com.artipie.ArtipieException;
-import io.vavr.NotImplementedError;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +18,7 @@ import java.util.stream.Stream;
  *
  * @since 0.6
  */
-public interface Key extends Comparable<Key> {
+public interface Key {
 
     /**
      * Root key.
@@ -37,16 +36,6 @@ public interface Key extends Comparable<Key> {
      * @return Parent key or Optional.empty if the current key is ROOT
      */
     Optional<Key> parent();
-
-    /**
-     * Default implementation of method for comparison different keys to avoid
-     * implementing this one in existing classes.
-     * @param key Key with which it is necessary to compare
-     * @return Comparison result
-     */
-    default int compareTo(final Key key) {
-        throw new NotImplementedError("Not implemented yet");
-    }
 
     /**
      * Default decorator.
@@ -205,11 +194,5 @@ public interface Key extends Comparable<Key> {
         public String toString() {
             return this.string();
         }
-
-        @Override
-        public int compareTo(final Key another) {
-            return this.string().compareTo(another.string());
-        }
-
     }
 }

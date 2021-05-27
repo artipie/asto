@@ -2,22 +2,22 @@
  * The MIT License (MIT) Copyright (c) 2020-2021 artipie.com
  * https://github.com/artipie/asto/LICENSE.txt
  */
-package com.artipie.asto.bench;
+package com.artipie.asto.memory;
 
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
+import com.artipie.asto.KeyComparator;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
-import com.artipie.asto.memory.InMemoryStorage;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.vavr.NotImplementedError;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -53,17 +53,8 @@ public final class BenchmarkStorage implements Storage {
      * @param backend Backend storage
      */
     public BenchmarkStorage(final InMemoryStorage backend) {
-        this(backend, Collections.emptyMap());
-    }
-
-    /**
-     * Ctor.
-     * @param backend Backend storage
-     * @param local Content of local storage
-     */
-    public BenchmarkStorage(final InMemoryStorage backend, final Map<Key, byte[]> local) {
         this.backend = backend;
-        this.local = new ConcurrentSkipListMap<>(local);
+        this.local = new ConcurrentSkipListMap<>(new KeyComparator<>());
         this.deleted = ConcurrentHashMap.newKeySet();
     }
 
@@ -107,26 +98,30 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        return CompletableFuture.runAsync(
-            () -> {
-                if (this.deleted.contains(key)) {
-                    throw new ValueNotFoundException(key);
-                }
-            }
-        ).thenCompose(
-            noth -> {
+        // @checkstyle NestedIfDepthCheck (30 lines)
+        final CompletionStage<Content> res;
+        if (Key.ROOT.equals(key)) {
+            res = new FailedCompletionStage<>(new ArtipieIOException("Unable to load from root"));
+        } else {
+            if (this.deleted.contains(key)) {
+                res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+            } else {
                 final byte[] lcl = this.local.getOrDefault(key, null);
-                final CompletableFuture<Content> res;
                 if (lcl == null) {
-                    res = this.backend.value(key);
+                    synchronized (this.backend.data) {
+                        final byte[] bcknd = this.backend.data.get(key.string());
+                        if (bcknd == null) {
+                            res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                        } else {
+                            res = bytesToContentCompletion(bcknd);
+                        }
+                    }
                 } else {
-                    res = CompletableFuture.completedFuture(
-                        new Content.OneTime(new Content.From(lcl))
-                    );
+                    res = bytesToContentCompletion(lcl);
                 }
-                return res;
             }
-        );
+        }
+        return res.toCompletableFuture();
     }
 
     @Override
@@ -140,5 +135,16 @@ public final class BenchmarkStorage implements Storage {
         final Function<Storage, CompletionStage<T>> operation
     ) {
         throw new NotImplementedError("Not implemented yet");
+    }
+
+    /**
+     * Converts array of bytes to completion stage.
+     * @param bytes Bytes which should be converted
+     * @return Completion stage with content.
+     */
+    private static CompletionStage<Content> bytesToContentCompletion(final byte[] bytes) {
+        return  CompletableFuture.completedFuture(
+            new Content.OneTime(new Content.From(bytes))
+        );
     }
 }

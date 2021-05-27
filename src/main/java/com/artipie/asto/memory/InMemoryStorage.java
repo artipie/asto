@@ -19,9 +19,7 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.NavigableMap;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -37,22 +35,24 @@ public final class InMemoryStorage implements Storage {
 
     /**
      * Values stored by key strings.
+     * It is package private for avoid using sync methods for operations of storage for benchmarks.
+     * @checkstyle VisibilityModifierCheck (2 lines)
      */
-    private final NavigableMap<String, byte[]> data;
+    final NavigableMap<String, byte[]> data;
 
     /**
      * Ctor.
      */
     public InMemoryStorage() {
-        this(Collections.emptyMap());
+        this(Collections.emptyNavigableMap());
     }
 
     /**
      * Ctor.
      * @param data Content of storage
      */
-    public InMemoryStorage(final Map<String, byte[]> data) {
-        this.data = new TreeMap<>(data);
+    InMemoryStorage(final NavigableMap<String, byte[]> data) {
+        this.data = data;
     }
 
     @Override
