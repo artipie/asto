@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /**
  * Storage implementation for benchmarks.
- * @since 0.36
+ * @since 1.1.0
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
@@ -69,9 +69,7 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        // @checkstyle MethodBodyCommentsCheck (1 line)
-        // This line for passing negative test
-        return CompletableFuture.completedFuture(false);
+        throw new NotImplementedError("Not implemented yet");
     }
 
     @Override

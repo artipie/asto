@@ -6,6 +6,6 @@
 /**
  * Test for classes for benchmark.
  *
- * @since 0.36
+ * @since 1.1.0
  */
 package com.artipie.asto.bench;
