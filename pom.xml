@@ -200,12 +200,6 @@ SOFTWARE.
       <version>1.0.3</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.cactoos</groupId>
-      <artifactId>cactoos</artifactId>
-      <version>0.50</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
