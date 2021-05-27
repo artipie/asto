@@ -17,9 +17,9 @@ import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -44,7 +44,7 @@ public final class InMemoryStorage implements Storage {
      * Ctor.
      */
     public InMemoryStorage() {
-        this(Collections.emptyNavigableMap());
+        this(new TreeMap<>());
     }
 
     /**
