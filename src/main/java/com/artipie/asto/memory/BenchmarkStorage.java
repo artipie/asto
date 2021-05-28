@@ -60,6 +60,9 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
+        if (this.deleted.contains(key)) {
+
+        }
         throw new NotImplementedError("Not implemented yet");
     }
 
@@ -103,21 +106,23 @@ public final class BenchmarkStorage implements Storage {
         if (Key.ROOT.equals(key)) {
             res = new FailedCompletionStage<>(new ArtipieIOException("Unable to load from root"));
         } else {
-            if (this.deleted.contains(key)) {
-                res = new FailedCompletionStage<>(new ValueNotFoundException(key));
-            } else {
-                final byte[] lcl = this.local.getOrDefault(key, null);
-                if (lcl == null) {
-                    synchronized (this.backend.data) {
-                        final byte[] bcknd = this.backend.data.get(key.string());
-                        if (bcknd == null) {
-                            res = new FailedCompletionStage<>(new ValueNotFoundException(key));
-                        } else {
-                            res = bytesToContentCompletion(bcknd);
-                        }
-                    }
+            synchronized (this.deleted) {
+                if (this.deleted.contains(key)) {
+                    res = new FailedCompletionStage<>(new ValueNotFoundException(key));
                 } else {
-                    res = bytesToContentCompletion(lcl);
+                    final byte[] lcl = this.local.getOrDefault(key, null);
+                    if (lcl == null) {
+                        synchronized (this.backend.data) {
+                            final byte[] bcknd = this.backend.data.get(key.string());
+                            if (bcknd == null) {
+                                res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                            } else {
+                                res = bytesToContentCompletion(bcknd);
+                            }
+                        }
+                    } else {
+                        res = bytesToContentCompletion(lcl);
+                    }
                 }
             }
         }
