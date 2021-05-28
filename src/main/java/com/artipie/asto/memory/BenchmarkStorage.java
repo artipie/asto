@@ -60,9 +60,6 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        if (this.deleted.contains(key)) {
-
-        }
         throw new NotImplementedError("Not implemented yet");
     }
 
@@ -106,22 +103,24 @@ public final class BenchmarkStorage implements Storage {
         if (Key.ROOT.equals(key)) {
             res = new FailedCompletionStage<>(new ArtipieIOException("Unable to load from root"));
         } else {
-            synchronized (this.deleted) {
-                if (this.deleted.contains(key)) {
+            if (this.deleted.contains(key)) {
+                res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+            } else {
+                final byte[] lcl = this.local.computeIfAbsent(
+                    key, ckey -> this.backend.data.get(ckey.string())
+                );
+                if (lcl == null) {
                     res = new FailedCompletionStage<>(new ValueNotFoundException(key));
                 } else {
-                    final byte[] lcl = this.local.getOrDefault(key, null);
-                    if (lcl == null) {
-                        synchronized (this.backend.data) {
-                            final byte[] bcknd = this.backend.data.get(key.string());
-                            if (bcknd == null) {
-                                res = new FailedCompletionStage<>(new ValueNotFoundException(key));
-                            } else {
-                                res = bytesToContentCompletion(bcknd);
-                            }
+                    final CompletionStage<Content> content = CompletableFuture.completedFuture(
+                        new Content.OneTime(new Content.From(lcl))
+                    );
+                    synchronized (this.deleted) {
+                        if (this.deleted.contains(key)) {
+                            res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                        } else {
+                            res = content;
                         }
-                    } else {
-                        res = bytesToContentCompletion(lcl);
                     }
                 }
             }
@@ -140,16 +139,5 @@ public final class BenchmarkStorage implements Storage {
         final Function<Storage, CompletionStage<T>> operation
     ) {
         throw new NotImplementedError("Not implemented yet");
-    }
-
-    /**
-     * Converts array of bytes to completion stage.
-     * @param bytes Bytes which should be converted
-     * @return Completion stage with content.
-     */
-    private static CompletionStage<Content> bytesToContentCompletion(final byte[] bytes) {
-        return  CompletableFuture.completedFuture(
-            new Content.OneTime(new Content.From(bytes))
-        );
     }
 }
