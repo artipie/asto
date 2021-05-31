@@ -115,7 +115,7 @@ public final class BenchmarkStorage implements Storage {
                     res = notFoundCompletion(key);
                 } else {
                     if (this.deleted.contains(key)) {
-                        res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                        res = notFoundCompletion(key);
                     } else {
                         res = CompletableFuture.completedFuture(
                             new Content.OneTime(new Content.From(lcl))
