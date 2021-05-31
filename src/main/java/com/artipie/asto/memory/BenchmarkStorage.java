@@ -9,7 +9,6 @@ import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
-import com.artipie.asto.KeyComparator;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
@@ -54,7 +53,7 @@ public final class BenchmarkStorage implements Storage {
      */
     public BenchmarkStorage(final InMemoryStorage backend) {
         this.backend = backend;
-        this.local = new ConcurrentSkipListMap<>(new KeyComparator<>());
+        this.local = new ConcurrentSkipListMap<>(Key.CMPRTR_STRING);
         this.deleted = ConcurrentHashMap.newKeySet();
     }
 
