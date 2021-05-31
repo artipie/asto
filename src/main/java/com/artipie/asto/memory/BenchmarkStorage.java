@@ -81,6 +81,7 @@ public final class BenchmarkStorage implements Storage {
                 .thenApply(Remaining::new)
                 .thenApply(Remaining::bytes)
                 .thenAccept(bytes -> this.local.put(key, bytes))
+                .thenAccept(noth -> this.deleted.remove(key))
                 .toCompletableFuture();
         }
         return res;
