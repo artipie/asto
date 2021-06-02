@@ -59,7 +59,9 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Boolean> exists(final Key key) {
-        throw new NotImplementedError("Not implemented yet");
+        return CompletableFuture.completedFuture(
+            this.anyStorageContains(key) && !this.deleted.contains(key)
+        );
     }
 
     @Override
@@ -104,16 +106,16 @@ public final class BenchmarkStorage implements Storage {
             res = new FailedCompletionStage<>(new ArtipieIOException("Unable to load from root"));
         } else {
             if (this.deleted.contains(key)) {
-                res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                res = notFoundCompletion(key);
             } else {
                 final byte[] lcl = this.local.computeIfAbsent(
                     key, ckey -> this.backend.data.get(ckey.string())
                 );
                 if (lcl == null) {
-                    res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                    res = notFoundCompletion(key);
                 } else {
                     if (this.deleted.contains(key)) {
-                        res = new FailedCompletionStage<>(new ValueNotFoundException(key));
+                        res = notFoundCompletion(key);
                     } else {
                         res = CompletableFuture.completedFuture(
                             new Content.OneTime(new Content.From(lcl))
@@ -127,7 +129,18 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> delete(final Key key) {
-        throw new NotImplementedError("Not implemented yet");
+        final CompletionStage<Void> res;
+        synchronized (this.deleted) {
+            if (this.anyStorageContains(key) && !this.deleted.contains(key)) {
+                this.deleted.add(key);
+                res = CompletableFuture.allOf();
+            } else {
+                res = new FailedCompletionStage<>(
+                    new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
+                );
+            }
+        }
+        return res.toCompletableFuture();
     }
 
     @Override
@@ -136,5 +149,24 @@ public final class BenchmarkStorage implements Storage {
         final Function<Storage, CompletionStage<T>> operation
     ) {
         throw new NotImplementedError("Not implemented yet");
+    }
+
+    /**
+     * Verify whether key exists in local or backend storage.
+     * @param key Key for check
+     * @return True if key exists in local or backend storage, false otherwise.
+     */
+    private boolean anyStorageContains(final Key key) {
+        return this.local.containsKey(key) || this.backend.data.containsKey(key.string());
+    }
+
+    /**
+     * Obtains failed completion for not found key.
+     * @param key Not found key
+     * @param <T> Ignore
+     * @return Failed completion for not found key.
+     */
+    private static <T> CompletionStage<T> notFoundCompletion(final Key key) {
+        return new FailedCompletionStage<>(new ValueNotFoundException(key));
     }
 }

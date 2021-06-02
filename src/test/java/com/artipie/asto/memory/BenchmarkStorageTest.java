@@ -6,11 +6,15 @@ package com.artipie.asto.memory;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.PublisherAs;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -78,6 +82,23 @@ final class BenchmarkStorageTest {
             "Value was saved in backend storage",
             memory.exists(key).join(),
             new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void returnsNotFoundIfValueWasDeleted() {
+        final InMemoryStorage memory = new InMemoryStorage();
+        final BenchmarkStorage bench = new BenchmarkStorage(memory);
+        final Key key = new Key.From("somekey");
+        bench.save(key, new Content.From("any data".getBytes())).join();
+        bench.delete(key);
+        final Throwable thr = Assertions.assertThrows(
+            CompletionException.class,
+            () -> bench.value(key).join()
+        );
+        MatcherAssert.assertThat(
+            thr.getCause(),
+            new IsInstanceOf(ValueNotFoundException.class)
         );
     }
 
