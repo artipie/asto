@@ -48,29 +48,18 @@ This is the dependency you need:
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto)
 for more technical details.
 
-# Quick start
+# Usage
 
-Create a `hello.txt` file with `"Hello World!"` content on file-system-based
-storage in blocking way:
-```java
-final BlockingStorage storage = new BlockingStorage(
-    new FileStorage(
-        Files.createTempDirectory("temp-blocking")
-    )
-).save(new Key.From("hello.txt"), "Hello World!".getBytes());
-``` 
+The main types here are:
+ - `Storage` interface provides API for key-value storage
+ - `Key` represents storage key
+ - `Content` represents storage binary value
 
-The same with RxJava2 way:
-```java
-new RxStorageWrapper(
-    new FileStorage(
-        Files.createTempDirectory("temp-rx")
-    )
-).save(
-    new Key.From("hello.txt"),
-    ByteBuffer.wrap("Hello World!".getBytes())
-);
-```
+[Storage](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/Storage.html)
+[Key](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/Key.html) and other types are
+documented in [javadoc](https://www.javadoc.io/doc/com.artipie/asto/latest/index.html).
+
+TODO: add more details
 
 ## How to contribute
 
