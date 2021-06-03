@@ -12,10 +12,11 @@ import com.artipie.asto.Key;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
+import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.vavr.NotImplementedError;
 import java.util.Collection;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -45,8 +46,9 @@ import java.util.function.Function;
  * </p>
  * @since 1.1.0
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle NestedIfDepthCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
 public final class BenchmarkStorage implements Storage {
     /**
      * Backend storage.
@@ -136,7 +138,28 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        throw new NotImplementedError("Not implemented yet");
+        final CompletionStage<Void> res;
+        if (this.deleted.contains(source)) {
+            res = artipieIOcompletion("No value for source key", source);
+        } else {
+            final byte[] lcl = this.local.get(source);
+            if (lcl == null) {
+                final byte[] bcknd = this.backend.data.get(source.string());
+                if (bcknd == null) {
+                    res = artipieIOcompletion("No value for source key", source);
+                } else {
+                    this.local.put(destination, bcknd);
+                    this.deleted.remove(destination);
+                    res = CompletableFuture.allOf();
+                }
+            } else {
+                this.local.put(destination, lcl);
+                this.local.remove(source);
+                this.deleted.remove(destination);
+                res = CompletableFuture.allOf();
+            }
+        }
+        return res.toCompletableFuture();
     }
 
     @Override
@@ -158,7 +181,6 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
-        // @checkstyle NestedIfDepthCheck (30 lines)
         final CompletionStage<Content> res;
         if (Key.ROOT.equals(key)) {
             res = new FailedCompletionStage<>(new ArtipieIOException("Unable to load from root"));
@@ -193,14 +215,10 @@ public final class BenchmarkStorage implements Storage {
             if (added) {
                 res = CompletableFuture.allOf();
             } else {
-                res = new FailedCompletionStage<>(
-                    new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
-                );
+                res = artipieIOcompletion("Key does not exist", key);
             }
         } else {
-            res = new FailedCompletionStage<>(
-                new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
-            );
+            res = artipieIOcompletion("Key does not exist", key);
         }
         return res.toCompletableFuture();
     }
@@ -210,7 +228,7 @@ public final class BenchmarkStorage implements Storage {
         final Key key,
         final Function<Storage, CompletionStage<T>> operation
     ) {
-        throw new NotImplementedError("Not implemented yet");
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**
@@ -230,5 +248,18 @@ public final class BenchmarkStorage implements Storage {
      */
     private static <T> CompletionStage<T> notFoundCompletion(final Key key) {
         return new FailedCompletionStage<>(new ValueNotFoundException(key));
+    }
+
+    /**
+     * Obtains failed completion for absent key.
+     * @param msg Text message for exception
+     * @param key Not found key
+     * @param <T> Ignore
+     * @return Failed completion for absent key.
+     */
+    private static <T> CompletionStage<T> artipieIOcompletion(final String msg, final Key key) {
+        return new FailedCompletionStage<>(
+            new ArtipieIOException(String.format("%s: %s", msg, key.string()))
+        );
     }
 }
