@@ -17,8 +17,11 @@ import com.artipie.asto.ext.CompletableFutureSupport;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.vavr.NotImplementedError;
 import java.util.Collection;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.NavigableMap;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +29,21 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 
 /**
- * Storage implementation for benchmarks.
+ * Storage implementation for benchmarks. It consists of two different storage:
+ * <b>backend</b> which should be {@link InMemoryStorage} and
+ * <b>local</b> storage which represents map collection.
+ * <p>
+ *     Value is obtained from backend storage in case of absence in local.
+ *     And after that this obtained value is stored in local storage.
+ * </p>
+ * <p>
+ *     Backend storage in this implementation should be used only for read
+ *     operations (e.g. readonly).
+ * </p>
+ * <p>
+ *     This class has set with deleted keys. If key exists in this collection,
+ *     this key is considered deleted. It allows to just emulate delete operation.
+ * </p>
  * @since 1.1.0
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
@@ -40,7 +57,7 @@ public final class BenchmarkStorage implements Storage {
     /**
      * Local storage.
      */
-    private final Map<Key, byte[]> local;
+    private final NavigableMap<Key, byte[]> local;
 
     /**
      * Set which contains deleted keys.
@@ -65,8 +82,38 @@ public final class BenchmarkStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        throw new NotImplementedError("Not implemented yet");
+    public CompletableFuture<Collection<Key>> list(final Key root) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                final String prefix = root.string();
+                final Collection<Key> keys = new TreeSet<>(Key.CMPRTR_STRING);
+                final SortedSet<String> bckndkeys = this.backend.data
+                    .navigableKeySet()
+                    .tailSet(prefix);
+                final SortedSet<Key> lclkeys = this.local
+                    .navigableKeySet()
+                    .tailSet(new Key.From(prefix));
+                final Set<Key> delcopy;
+                synchronized (this.deleted) {
+                    delcopy = new HashSet<>(this.deleted);
+                }
+                for (final String keystr : bckndkeys) {
+                    if (keystr.startsWith(prefix) && !delcopy.contains(new Key.From(keystr))) {
+                        keys.add(new Key.From(keystr));
+                    } else {
+                        break;
+                    }
+                }
+                for (final Key key : lclkeys) {
+                    if (key.string().startsWith(prefix) && !delcopy.contains(key)) {
+                        keys.add(key);
+                    } else {
+                        break;
+                    }
+                }
+                return keys;
+            }
+        );
     }
 
     @Override
@@ -95,7 +142,19 @@ public final class BenchmarkStorage implements Storage {
 
     @Override
     public CompletableFuture<Long> size(final Key key) {
-        throw new NotImplementedError("Not implemented yet");
+        final CompletionStage<Long> res;
+        if (this.deleted.contains(key) || !this.anyStorageContains(key)) {
+            res = notFoundCompletion(key);
+        } else {
+            if (this.local.containsKey(key)) {
+                res = CompletableFuture.completedFuture((long) this.local.get(key).length);
+            } else {
+                res = CompletableFuture.completedFuture(
+                    (long) this.backend.data.get(key.string()).length
+                );
+            }
+        }
+        return res.toCompletableFuture();
     }
 
     @Override
@@ -130,15 +189,20 @@ public final class BenchmarkStorage implements Storage {
     @Override
     public CompletableFuture<Void> delete(final Key key) {
         final CompletionStage<Void> res;
-        synchronized (this.deleted) {
-            if (this.anyStorageContains(key) && !this.deleted.contains(key)) {
-                this.deleted.add(key);
+        if (this.anyStorageContains(key)) {
+            final boolean added = this.deleted.add(key);
+            if (added) {
                 res = CompletableFuture.allOf();
             } else {
                 res = new FailedCompletionStage<>(
                     new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
                 );
             }
+
+        } else {
+            res = new FailedCompletionStage<>(
+                new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
+            );
         }
         return res.toCompletableFuture();
     }
