@@ -140,18 +140,13 @@ public final class BenchmarkStorage implements Storage {
     public CompletableFuture<Void> move(final Key source, final Key destination) {
         final CompletionStage<Void> res;
         if (this.deleted.contains(source)) {
-            res = artipieIOcompletion("No value for source key", source);
+            res = ioErrorCompletion("No value for source key", source);
         } else {
-            final byte[] lcl = this.local.get(source);
+            final byte[] lcl = this.local.computeIfAbsent(
+                source, key -> this.backend.data.get(key.string())
+            );
             if (lcl == null) {
-                final byte[] bcknd = this.backend.data.get(source.string());
-                if (bcknd == null) {
-                    res = artipieIOcompletion("No value for source key", source);
-                } else {
-                    this.local.put(destination, bcknd);
-                    this.deleted.remove(destination);
-                    res = CompletableFuture.allOf();
-                }
+                res = ioErrorCompletion("No value for source key", source);
             } else {
                 this.local.put(destination, lcl);
                 this.local.remove(source);
@@ -215,10 +210,10 @@ public final class BenchmarkStorage implements Storage {
             if (added) {
                 res = CompletableFuture.allOf();
             } else {
-                res = artipieIOcompletion("Key does not exist", key);
+                res = ioErrorCompletion("Key does not exist", key);
             }
         } else {
-            res = artipieIOcompletion("Key does not exist", key);
+            res = ioErrorCompletion("Key does not exist", key);
         }
         return res.toCompletableFuture();
     }
@@ -257,7 +252,7 @@ public final class BenchmarkStorage implements Storage {
      * @param <T> Ignore
      * @return Failed completion for absent key.
      */
-    private static <T> CompletionStage<T> artipieIOcompletion(final String msg, final Key key) {
+    private static <T> CompletionStage<T> ioErrorCompletion(final String msg, final Key key) {
         return new FailedCompletionStage<>(
             new ArtipieIOException(String.format("%s: %s", msg, key.string()))
         );
