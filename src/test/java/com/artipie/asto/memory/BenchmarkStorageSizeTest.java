@@ -7,7 +7,6 @@ package com.artipie.asto.memory;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.ValueNotFoundException;
-import com.artipie.asto.ext.PublisherAs;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletionException;
@@ -18,39 +17,47 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link BenchmarkStorage#delete(Key)}.
+ * Tests for {@link BenchmarkStorage#size(Key)}.
  * @since 1.2.0
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
-final class BenchmarkStorageDeleteTest {
+final class BenchmarkStorageSizeTest {
     @Test
-    void obtainsValueWhichWasAddedBySameKeyAfterDeletionToVerifyDeletedWasReset() {
+    void returnsSizeWhenPresentInLocalAndNotDeleted() {
+        final byte[] data = "example data".getBytes();
         final InMemoryStorage memory = new InMemoryStorage();
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
-        final Key key = new Key.From("somekey");
-        bench.save(key, new Content.From("old data".getBytes())).join();
-        bench.delete(key).join();
-        final byte[] upd = "updated data".getBytes();
-        bench.save(key, new Content.From(upd)).join();
+        final Key key = new Key.From("someLocalKey");
+        bench.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
-            new PublisherAs(bench.value(key).join())
-                .bytes()
-                .toCompletableFuture().join(),
-            new IsEqual<>(upd)
+            bench.size(key).join(),
+            new IsEqual<>((long) data.length)
         );
     }
 
     @Test
-    void returnsNotFoundIfValueWasDeletedButPresentInBackend() {
-        final Key key = new Key.From("somekey");
+    void returnsSizeWhenPresentInBackendAndNotDeleted() {
+        final byte[] data = "super data".getBytes();
+        final Key key = new Key.From("someBackendKey");
         final NavigableMap<String, byte[]> backdata = new TreeMap<>();
-        backdata.put(key.string(), "shouldBeObtained".getBytes());
+        backdata.put(key.string(), data);
         final InMemoryStorage memory = new InMemoryStorage(backdata);
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
+        MatcherAssert.assertThat(
+            bench.size(key).join(),
+            new IsEqual<>((long) data.length)
+        );
+    }
+
+    @Test
+    void throwsIfKeyWasDeleted() {
+        final InMemoryStorage memory = new InMemoryStorage();
+        final BenchmarkStorage bench = new BenchmarkStorage(memory);
+        final Key key = new Key.From("somekey");
+        bench.save(key, new Content.From("will be deleted".getBytes())).join();
         bench.delete(key).join();
         final Throwable thr = Assertions.assertThrows(
             CompletionException.class,
-            () -> bench.value(key).join()
+            () -> bench.size(key).join()
         );
         MatcherAssert.assertThat(
             thr.getCause(),

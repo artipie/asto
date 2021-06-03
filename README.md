@@ -59,7 +59,7 @@ The main types here are:
 [Key](https://www.javadoc.io/doc/com.artipie/asto/latest/com/artipie/asto/Key.html) and other types are
 documented in [javadoc](https://www.javadoc.io/doc/com.artipie/asto/latest/index.html).
 
-TODO: add more details
+TO DO: add more details
 
 ## How to contribute
 

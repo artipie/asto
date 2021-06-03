@@ -89,7 +89,7 @@ final class KeyTest {
         final Key frst = new Key.From("1");
         final Key scnd = new Key.From("2");
         MatcherAssert.assertThat(
-            Key.CMPRTR_STRING.compare(frst, scnd),
+            Key.CMP_STRING.compare(frst, scnd),
             new IsEqual<>(-1)
         );
     }
