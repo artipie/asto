@@ -23,7 +23,7 @@ public interface Key {
     /**
      * Comparator for key values by their string representation.
      */
-    Comparator<Key> CMPRTR_STRING = Comparator.comparing(Key::string);
+    Comparator<Key> CMP_STRING = Comparator.comparing(Key::string);
 
     /**
      * Root key.

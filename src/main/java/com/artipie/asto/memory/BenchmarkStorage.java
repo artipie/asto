@@ -69,7 +69,7 @@ public final class BenchmarkStorage implements Storage {
      */
     public BenchmarkStorage(final InMemoryStorage backend) {
         this.backend = backend;
-        this.local = new ConcurrentSkipListMap<>(Key.CMPRTR_STRING);
+        this.local = new ConcurrentSkipListMap<>(Key.CMP_STRING);
         this.deleted = ConcurrentHashMap.newKeySet();
     }
 
@@ -85,7 +85,7 @@ public final class BenchmarkStorage implements Storage {
         return CompletableFuture.supplyAsync(
             () -> {
                 final String prefix = root.string();
-                final Collection<Key> keys = new TreeSet<>(Key.CMPRTR_STRING);
+                final Collection<Key> keys = new TreeSet<>(Key.CMP_STRING);
                 final SortedSet<String> bckndkeys = this.backend.data
                     .navigableKeySet()
                     .tailSet(prefix);
