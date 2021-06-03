@@ -15,7 +15,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link BenchmarkStorage#list(Key)} (Key)}.
+ * Tests for {@link BenchmarkStorage#list(Key)}.
  * @since 1.2.0
  */
 final class BenchmarkStorageListTest {
@@ -69,7 +69,7 @@ final class BenchmarkStorageListTest {
         backdata.put(existkey.string(), "should remain".getBytes());
         final InMemoryStorage memory = new InMemoryStorage(backdata);
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
-        bench.delete(delkey);
+        bench.delete(delkey).join();
         MatcherAssert.assertThat(
             bench.list(Key.ROOT).join(),
             new IsEqual<>(Collections.singleton(existkey))

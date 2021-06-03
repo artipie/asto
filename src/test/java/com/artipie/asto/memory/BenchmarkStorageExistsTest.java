@@ -13,7 +13,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link BenchmarkStorage#exists(Key)} (Key)}.
+ * Tests for {@link BenchmarkStorage#exists(Key)}.
  * @since 1.2.0
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
@@ -49,7 +49,7 @@ final class BenchmarkStorageExistsTest {
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
         final Key key = new Key.From("somekey");
         bench.save(key, new Content.From("any data".getBytes())).join();
-        bench.delete(key);
+        bench.delete(key).join();
         MatcherAssert.assertThat(
             bench.exists(key).join(),
             new IsEqual<>(false)

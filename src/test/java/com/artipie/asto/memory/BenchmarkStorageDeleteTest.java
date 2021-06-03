@@ -29,7 +29,7 @@ final class BenchmarkStorageDeleteTest {
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
         final Key key = new Key.From("somekey");
         bench.save(key, new Content.From("old data".getBytes())).join();
-        bench.delete(key);
+        bench.delete(key).join();
         final byte[] upd = "updated data".getBytes();
         bench.save(key, new Content.From(upd)).join();
         MatcherAssert.assertThat(
@@ -47,7 +47,7 @@ final class BenchmarkStorageDeleteTest {
         backdata.put(key.string(), "shouldBeObtained".getBytes());
         final InMemoryStorage memory = new InMemoryStorage(backdata);
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
-        bench.delete(key);
+        bench.delete(key).join();
         final Throwable thr = Assertions.assertThrows(
             CompletionException.class,
             () -> bench.value(key).join()

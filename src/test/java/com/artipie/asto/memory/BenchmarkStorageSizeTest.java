@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link BenchmarkStorage#size(Key)} (Key)}.
+ * Tests for {@link BenchmarkStorage#size(Key)}.
  * @since 1.2.0
  */
 final class BenchmarkStorageSizeTest {
@@ -54,7 +54,7 @@ final class BenchmarkStorageSizeTest {
         final BenchmarkStorage bench = new BenchmarkStorage(memory);
         final Key key = new Key.From("somekey");
         bench.save(key, new Content.From("will be deleted".getBytes())).join();
-        bench.delete(key);
+        bench.delete(key).join();
         final Throwable thr = Assertions.assertThrows(
             CompletionException.class,
             () -> bench.size(key).join()
