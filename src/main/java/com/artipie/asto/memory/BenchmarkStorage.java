@@ -17,7 +17,6 @@ import com.artipie.asto.ext.CompletableFutureSupport;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.vavr.NotImplementedError;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedSet;
@@ -93,19 +92,15 @@ public final class BenchmarkStorage implements Storage {
                 final SortedSet<Key> lclkeys = this.local
                     .navigableKeySet()
                     .tailSet(new Key.From(prefix));
-                final Set<Key> delcopy;
-                synchronized (this.deleted) {
-                    delcopy = new HashSet<>(this.deleted);
-                }
                 for (final String keystr : bckndkeys) {
-                    if (keystr.startsWith(prefix) && !delcopy.contains(new Key.From(keystr))) {
+                    if (keystr.startsWith(prefix) && !this.deleted.contains(new Key.From(keystr))) {
                         keys.add(new Key.From(keystr));
                     } else {
                         break;
                     }
                 }
                 for (final Key key : lclkeys) {
-                    if (key.string().startsWith(prefix) && !delcopy.contains(key)) {
+                    if (key.string().startsWith(prefix) && !this.deleted.contains(key)) {
                         keys.add(key);
                     } else {
                         break;
