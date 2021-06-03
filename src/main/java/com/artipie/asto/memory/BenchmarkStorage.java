@@ -93,15 +93,19 @@ public final class BenchmarkStorage implements Storage {
                     .navigableKeySet()
                     .tailSet(new Key.From(prefix));
                 for (final String keystr : bckndkeys) {
-                    if (keystr.startsWith(prefix) && !this.deleted.contains(new Key.From(keystr))) {
-                        keys.add(new Key.From(keystr));
+                    if (keystr.startsWith(prefix)) {
+                        if (!this.deleted.contains(new Key.From(keystr))) {
+                            keys.add(new Key.From(keystr));
+                        }
                     } else {
                         break;
                     }
                 }
                 for (final Key key : lclkeys) {
-                    if (key.string().startsWith(prefix) && !this.deleted.contains(key)) {
-                        keys.add(key);
+                    if (key.string().startsWith(prefix)) {
+                        if (!this.deleted.contains(key)) {
+                            keys.add(key);
+                        }
                     } else {
                         break;
                     }

@@ -32,7 +32,7 @@ final class BenchmarkStorageListTest {
     }
 
     @Test
-    void returnsSizeWhenPresentInBackendAndNotDeleted() {
+    void returnsListWhenPresentInBackendAndNotDeleted() {
         final Key key = new Key.From("someBackendkey");
         final NavigableMap<String, byte[]> backdata = new TreeMap<>();
         backdata.put(key.string(), "".getBytes());
@@ -41,6 +41,26 @@ final class BenchmarkStorageListTest {
         MatcherAssert.assertThat(
             bench.list(key).join(),
             new IsEqual<>(Collections.singleton(key))
+        );
+    }
+
+    @Test
+    void returnListWhenSomeOfKeysWereDeleted() {
+        final byte[] data = "saved data".getBytes();
+        final Key prefix = new Key.From("somePrefix");
+        final Key keyone = new Key.From(prefix, "0", "someBackendKey");
+        final Key keytwo = new Key.From(prefix, "2", "orderImportant");
+        final Key keydel = new Key.From(prefix, "1", "shouldBeDeleted");
+        final NavigableMap<String, byte[]> backdata = new TreeMap<>();
+        backdata.put(keydel.string(), data);
+        backdata.put(keyone.string(), data);
+        backdata.put(keytwo.string(), data);
+        final InMemoryStorage memory = new InMemoryStorage(backdata);
+        final BenchmarkStorage bench = new BenchmarkStorage(memory);
+        bench.delete(keydel).join();
+        MatcherAssert.assertThat(
+            bench.list(prefix).join(),
+            Matchers.containsInAnyOrder(keyone, keytwo)
         );
     }
 
