@@ -198,7 +198,6 @@ public final class BenchmarkStorage implements Storage {
                     new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
                 );
             }
-
         } else {
             res = new FailedCompletionStage<>(
                 new ArtipieIOException(String.format("Key does not exist: %s", key.string()))
