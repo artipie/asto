@@ -143,6 +143,10 @@ SOFTWARE.
       <version>0.5.4</version>
     </dependency>
     <dependency>
+      <groupId>org.cactoos</groupId>
+      <artifactId>cactoos</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.etcd</groupId>
       <artifactId>jetcd-test</artifactId>
       <version>0.5.4</version>
