@@ -7,6 +7,7 @@ package com.artipie.asto;
 import com.artipie.ArtipieException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +20,10 @@ import java.util.stream.Stream;
  * @since 0.6
  */
 public interface Key {
+    /**
+     * Comparator for key values by their string representation.
+     */
+    Comparator<Key> CMP_STRING = Comparator.comparing(Key::string);
 
     /**
      * Root key.

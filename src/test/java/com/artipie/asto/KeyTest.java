@@ -83,4 +83,14 @@ final class KeyTest {
             !new Key.From("").parent().isPresent()
         );
     }
+
+    @Test
+    void comparesKeys() {
+        final Key frst = new Key.From("1");
+        final Key scnd = new Key.From("2");
+        MatcherAssert.assertThat(
+            Key.CMP_STRING.compare(frst, scnd),
+            new IsEqual<>(-1)
+        );
+    }
 }

@@ -8,6 +8,7 @@ package com.artipie.asto;
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.fs.VertxFileStorage;
+import com.artipie.asto.memory.BenchmarkStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.s3.S3Storage;
 import io.vertx.reactivex.core.Vertx;
@@ -82,7 +83,8 @@ final class StorageExtension
                 this.s3Storage(),
                 new SubStorage(new Key.From("prefix"), new InMemoryStorage()),
                 new FileStorage(Files.createTempDirectory("junit")),
-                new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx)
+                new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx),
+                new BenchmarkStorage(new InMemoryStorage())
             );
         } catch (final IOException ex) {
             throw new IllegalStateException("Failed to generate storage", ex);

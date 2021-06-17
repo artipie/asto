@@ -35,14 +35,24 @@ public final class InMemoryStorage implements Storage {
 
     /**
      * Values stored by key strings.
+     * It is package private for avoid using sync methods for operations of storage for benchmarks.
+     * @checkstyle VisibilityModifierCheck (2 lines)
      */
-    private final NavigableMap<String, byte[]> data;
+    final NavigableMap<String, byte[]> data;
 
     /**
      * Ctor.
      */
     public InMemoryStorage() {
-        this.data = new TreeMap<>();
+        this(new TreeMap<>());
+    }
+
+    /**
+     * Ctor.
+     * @param data Content of storage
+     */
+    InMemoryStorage(final NavigableMap<String, byte[]> data) {
+        this.data = data;
     }
 
     @Override
