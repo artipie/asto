@@ -7,7 +7,6 @@ package com.artipie.asto.misc;
 import com.artipie.ArtipieException;
 import com.artipie.asto.ArtipieIOException;
 import java.io.IOException;
-import org.cactoos.Scalar;
 
 /**
  * Scalar that throws {@link ArtipieException} on error.

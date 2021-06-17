@@ -5,7 +5,6 @@
 package com.artipie.asto.misc;
 
 import com.artipie.ArtipieException;
-import org.cactoos.Scalar;
 
 /**
  * Scalar that throws {@link com.artipie.ArtipieException} on error.
