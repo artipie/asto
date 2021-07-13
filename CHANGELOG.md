@@ -1,3 +1,10 @@
+# 1.3.0
+
+ - ci: added release script
+ - feature: copy storage with predicate
+ - deps: updated vertx, excluded jackson-databind
+ - deps: updated vertx, checked all deps (see issue descr) and excluded jackson-databind from main code.
+
 ## 1.2.0
 
 ### Benchmark storage #314
@@ -7,3 +14,4 @@
 
 ### Documentation
  - doc: added links to javadocs
+
