@@ -8,8 +8,6 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -32,7 +30,7 @@ public class CopyTest {
         final BlockingStorage bfrom = new BlockingStorage(from);
         bfrom.save(akey, "Hello world A".getBytes());
         bfrom.save(bkey, "Hello world B".getBytes());
-        new Copy(from, Stream.of(bkey, akey).collect(Collectors.toList())).copy(to).get();
+        new Copy(from, Arrays.asList(akey, bkey)).copy(to).get();
         for (final Key key : new BlockingStorage(from).list(Key.ROOT)) {
             MatcherAssert.assertThat(
                 Arrays.equals(
@@ -60,5 +58,19 @@ public class CopyTest {
                 new IsEqual<>(bfrom.value(key))
             );
         }
+    }
+
+    @Test
+    public void copyPredicate() {
+        final Storage src = new InMemoryStorage();
+        final Storage dst = new InMemoryStorage();
+        final Key foo = new Key.From("foo");
+        new BlockingStorage(src).save(foo, new byte[]{0x00});
+        new BlockingStorage(src).save(new Key.From("bar/baz"), new byte[]{0x00});
+        new Copy(src, key -> key.string().contains("oo")).copy(dst).join();
+        MatcherAssert.assertThat(
+            new BlockingStorage(dst).list(Key.ROOT),
+            Matchers.contains(foo)
+        );
     }
 }
