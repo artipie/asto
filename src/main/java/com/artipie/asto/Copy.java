@@ -4,17 +4,19 @@
  */
 package com.artipie.asto;
 
-import com.artipie.asto.rx.RxCopy;
 import com.artipie.asto.rx.RxStorageWrapper;
 import hu.akarnokd.rxjava2.interop.CompletableInterop;
+import io.reactivex.Observable;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Storage synchronization.
  * @since 0.19
- * @checkstyle ParameterNameCheck (500 lines)
  */
 public class Copy {
 
@@ -24,9 +26,9 @@ public class Copy {
     private final Storage from;
 
     /**
-     * The keys to transfer.
+     * Predicate condition to copy keys.
      */
-    private final Optional<Collection<Key>> keys;
+    private final Predicate<? super Key> predicate;
 
     /**
      * Ctor.
@@ -34,41 +36,54 @@ public class Copy {
      * @param from The storage to copy to.
      */
     public Copy(final Storage from) {
-        this(from, Optional.empty());
+        this(from, item -> true);
     }
 
     /**
      * Ctor.
-     * @param from The storage to copy to.
-     * @param keys The keys to copy.
+     * @param from The storage to copy to
+     * @param keys The keys to copy
      */
     public Copy(final Storage from, final Collection<Key> keys) {
-        this(from, Optional.of(keys));
+        this(from, new HashSet<>(keys));
+    }
+
+    /**
+     * Ctor.
+     * @param from The storage to copy to
+     * @param keys The keys to copy
+     */
+    public Copy(final Storage from, final Set<Key> keys) {
+        this(from, keys::contains);
     }
 
     /**
      * Ctor.
      *
-     * @param from The storage to copy to.
-     * @param keys The keys to copy.
+     * @param from The storage to copy to
+     * @param predicate Predicate to copy items
      */
-    private Copy(final Storage from, final Optional<Collection<Key>> keys) {
+    public Copy(final Storage from, final Predicate<? super Key> predicate) {
         this.from = from;
-        this.keys = keys;
+        this.predicate = predicate;
     }
 
     /**
      * Copy keys to the specified storage.
-     * @param to The storage to copy to.
+     * @param dest Destination storage
      * @return When copy operation completes
      */
-    public CompletableFuture<Void> copy(final Storage to) {
-        return this.keys
-            .map(ks -> new RxCopy(new RxStorageWrapper(this.from), ks))
-            .orElse(new RxCopy(new RxStorageWrapper(this.from)))
-            .copy(new RxStorageWrapper(to))
+    public CompletableFuture<Void> copy(final Storage dest) {
+        final RxStorageWrapper rxdst = new RxStorageWrapper(dest);
+        final RxStorageWrapper rxsrc = new RxStorageWrapper(this.from);
+        return rxsrc.list(Key.ROOT)
+            .map(lst -> lst.stream().filter(this.predicate).collect(Collectors.toList()))
+            .flatMapObservable(Observable::fromIterable)
+            .flatMapCompletable(
+                key -> rxsrc.value(key).flatMapCompletable(content -> rxdst.save(key, content))
+            )
             .to(CompletableInterop.await())
-            .<Void>thenApply(o -> null)
+            .thenApply(ignore -> (Void) null)
             .toCompletableFuture();
     }
 }
