@@ -1,3 +1,7 @@
+# 1.3.1
+
+ - dep: exclude android annotations from etcd
+
 # 1.3.0
 
  - ci: added release script
