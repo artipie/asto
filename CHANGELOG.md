@@ -1,3 +1,7 @@
+# 1.3.2
+
+ - dep: exclude fasterxml jackson databind from vertx-rx-java2
+
 # 1.3.1
 
  - dep: exclude android annotations from etcd
