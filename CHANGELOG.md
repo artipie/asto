@@ -1,3 +1,7 @@
+# v1.3.3
+
+ - deps: declare optional dependencies as provided (#331)
+
 # 1.3.2
 
  - dep: exclude fasterxml jackson databind from vertx-rx-java2
