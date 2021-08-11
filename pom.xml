@@ -98,11 +98,13 @@ SOFTWARE.
       <groupId>io.vertx</groupId>
       <artifactId>vertx-reactive-streams</artifactId>
       <version>${vertx.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-rx-java2</artifactId>
       <version>${vertx.version}</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
@@ -114,6 +116,7 @@ SOFTWARE.
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
       <version>${vertx.version}</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
@@ -147,6 +150,7 @@ SOFTWARE.
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
       <version>2.7.19</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
@@ -159,6 +163,7 @@ SOFTWARE.
       <groupId>io.etcd</groupId>
       <artifactId>jetcd-core</artifactId>
       <version>0.5.4</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.google.android</groupId>
