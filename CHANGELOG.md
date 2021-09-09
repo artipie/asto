@@ -1,3 +1,7 @@
+# v1.4.0
+
+ - feat: process storage item as input stream (#334)
+
 # v1.3.3
 
  - deps: declare optional dependencies as provided (#331)
