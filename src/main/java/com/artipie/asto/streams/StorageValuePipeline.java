@@ -57,7 +57,9 @@ public final class StorageValuePipeline {
      * @return Completion action
      * @throws ArtipieIOException On Error
      */
-    CompletionStage<Void> process(final BiConsumer<Optional<InputStream>, OutputStream> action) {
+    public CompletionStage<Void> process(
+        final BiConsumer<Optional<InputStream>, OutputStream> action
+    ) {
         return this.asto.exists(this.key).thenCompose(
             exists -> {
                 final CompletionStage<Void> future;
