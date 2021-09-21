@@ -1,3 +1,7 @@
+# v1.5.0
+
+ - feat: Added class to process asto value as input/output streams (#334)
+ 
 # v1.4.0
 
  - feat: process storage item as input stream (#334)
