@@ -1,3 +1,7 @@
+# v1.5.1
+
+ - fix: Make method `StorageValuePipeline.process()` public (#333)
+
 # v1.5.0
 
  - feat: Added class to process asto value as input/output streams (#334)
