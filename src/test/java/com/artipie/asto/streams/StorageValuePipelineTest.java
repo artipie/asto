@@ -8,7 +8,7 @@ import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.PublisherAs;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
 /**
- * Test for {@link StorageValueAsStream}.
+ * Test for {@link StorageValuePipeline}.
  * @since 1.5
  */
-class ProcessContentTest {
+class StorageValuePipelineTest {
 
     /**
      * Test storage.
@@ -41,7 +41,7 @@ class ProcessContentTest {
         final Key key = new Key.From("test.txt");
         final Charset charset = StandardCharsets.US_ASCII;
         this.asto.save(key, new Content.From("one\ntwo\nfour".getBytes(charset))).join();
-        new StorageValueAsStream(this.asto, key).process(
+        new StorageValuePipeline(this.asto, key).process(
             (input, out) -> {
                 try {
                     final List<String> list = IOUtils.readLines(input.get(), charset);
@@ -53,7 +53,7 @@ class ProcessContentTest {
             }
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new PublisherAs(this.asto.value(key).join()).asciiString().toCompletableFuture().join(),
+            new String(new BlockingStorage(this.asto).value(key), charset),
             new IsEqual<>("one\ntwo\nthree\nfour\n")
         );
     }
@@ -63,7 +63,7 @@ class ProcessContentTest {
         final Key key = new Key.From("my_test.txt");
         final Charset charset = StandardCharsets.US_ASCII;
         final String text = "Hello world!";
-        new StorageValueAsStream(this.asto, key).process(
+        new StorageValuePipeline(this.asto, key).process(
             (input, out) -> {
                 MatcherAssert.assertThat(
                     "Input should be absent",
@@ -79,7 +79,7 @@ class ProcessContentTest {
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
             "test.txt does not contain text `Hello world!`",
-            new PublisherAs(this.asto.value(key).join()).asciiString().toCompletableFuture().join(),
+            new String(new BlockingStorage(this.asto).value(key), charset),
             new IsEqual<>(text)
         );
     }

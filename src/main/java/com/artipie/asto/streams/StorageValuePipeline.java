@@ -24,10 +24,11 @@ import org.cqfn.rio.stream.ReactiveInputStream;
 import org.cqfn.rio.stream.ReactiveOutputStream;
 
 /**
- * Processes storage content as optional input and saves the result back as output stream.
+ * Processes storage value content as optional input stream and
+ * saves the result back as output stream.
  * @since 1.5
  */
-public final class StorageValueAsStream {
+public final class StorageValuePipeline {
 
     /**
      * Abstract storage.
@@ -44,7 +45,7 @@ public final class StorageValueAsStream {
      * @param asto Abstract storage
      * @param key Item key
      */
-    public StorageValueAsStream(final Storage asto, final Key key) {
+    public StorageValuePipeline(final Storage asto, final Key key) {
         this.asto = asto;
         this.key = key;
     }
@@ -82,7 +83,7 @@ public final class StorageValueAsStream {
                         nothing -> this.asto.save(
                             this.key,
                             new Content.From(
-                                new ReactiveInputStream(src).read(Buffers.Standard.K16)
+                                new ReactiveInputStream(src).read(Buffers.Standard.K8)
                             )
                         )
                     );
