@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import org.cqfn.rio.Buffers;
 import org.cqfn.rio.WriteGreed;
 import org.cqfn.rio.stream.ReactiveInputStream;
@@ -26,9 +27,10 @@ import org.cqfn.rio.stream.ReactiveOutputStream;
 /**
  * Processes storage value content as optional input stream and
  * saves the result back as output stream.
+ * @param <R> Result type
  * @since 1.5
  */
-public final class StorageValuePipeline {
+public final class StorageValuePipeline<R> {
 
     /**
      * Abstract storage.
@@ -60,12 +62,31 @@ public final class StorageValuePipeline {
     public CompletionStage<Void> process(
         final BiConsumer<Optional<InputStream>, OutputStream> action
     ) {
+        return this.processWithResult(
+            (opt, input) -> {
+                action.accept(opt, input);
+                return null;
+            }
+        ).thenAccept(nothing -> { });
+    }
+
+    /**
+     * Process storage item, save it back and return some result.
+     * @param action Action to perform with storage content if exists and write back as
+     *  output stream.
+     * @return Completion action with the result
+     * @throws ArtipieIOException On Error
+     */
+    public CompletionStage<R> processWithResult(
+        final BiFunction<Optional<InputStream>, OutputStream, R> action
+    ) {
         return this.asto.exists(this.key).thenCompose(
             exists -> {
                 final CompletionStage<Void> future;
                 Optional<InputStream> oinput = Optional.empty();
                 Optional<PipedOutputStream> oout = Optional.empty();
                 final CompletableFuture<Void> tmp;
+                final R result;
                 try (PipedOutputStream resout = new PipedOutputStream()) {
                     if (exists) {
                         oinput = Optional.of(new PipedInputStream());
@@ -89,14 +110,14 @@ public final class StorageValuePipeline {
                             )
                         )
                     );
-                    action.accept(oinput, resout);
+                    result = action.apply(oinput, resout);
                 } catch (final IOException err) {
                     throw new ArtipieIOException(err);
                 } finally {
                     oinput.ifPresent(new UncheckedIOConsumer<>(InputStream::close));
                     oout.ifPresent(new UncheckedIOConsumer<>(PipedOutputStream::close));
                 }
-                return future;
+                return future.thenApply(nothing -> result);
             }
         );
     }

@@ -1,3 +1,7 @@
+# v1.6.0
+
+ - feat: Extended `StorageValuePipeline` to return processing result (#333)
+
 # v1.5.1
 
  - fix: Make method `StorageValuePipeline.process()` public (#333)
