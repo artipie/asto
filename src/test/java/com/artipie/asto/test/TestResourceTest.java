@@ -8,11 +8,15 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Test for {@link TestResource}.
@@ -46,6 +50,16 @@ class TestResourceTest {
             new PublisherAs(storage.value(new Key.From(path)).join())
                 .bytes().toCompletableFuture().join(),
             new IsEqual<>("hello world".getBytes())
+        );
+    }
+
+    @Test
+    void saveToPath(@TempDir final Path tmp) throws Exception {
+        final Path target = tmp.resolve("target");
+        new TestResource("test.txt").saveTo(target);
+        MatcherAssert.assertThat(
+            Files.readAllLines(target),
+            Matchers.contains("hello world")
         );
     }
 
