@@ -1,3 +1,19 @@
+# v1.6.0
+
+ - feat: Extended `StorageValuePipeline` to return processing result (#333)
+
+# v1.5.1
+
+ - fix: Make method `StorageValuePipeline.process()` public (#333)
+
+# v1.5.0
+
+ - feat: Added class to process asto value as input/output streams (#334)
+ 
+# v1.4.0
+
+ - feat: process storage item as input stream (#334)
+
 # v1.3.3
 
  - deps: declare optional dependencies as provided (#331)
