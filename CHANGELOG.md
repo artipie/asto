@@ -1,3 +1,7 @@
+# v1.7.0
+
+  - ce5987f feat: test resource save to file (#339)
+
 # v1.6.0
 
  - feat: Extended `StorageValuePipeline` to return processing result (#333)
@@ -42,4 +46,3 @@
 
 ### Documentation
  - doc: added links to javadocs
-
