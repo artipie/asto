@@ -10,22 +10,34 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.misc.UncheckedIOFunc;
+import com.artipie.asto.test.TestResource;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
 /**
  * Test for {@link StorageValuePipeline}.
  * @since 1.5
  * @checkstyle MagicNumberCheck (500 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "rawtypes"})
 class StorageValuePipelineTest {
 
     /**
@@ -141,6 +153,42 @@ class StorageValuePipelineTest {
             "test.txt does not contain text `Have a food time!`",
             new String(new BlockingStorage(this.asto).value(key), charset),
             new IsEqual<>(text)
+        );
+    }
+
+    @RepeatedTest(10)
+    @Timeout(5)
+    void readsWritesInParallel() {
+        final List<String> items = Stream.of("one", "two", "three").collect(Collectors.toList());
+        items.forEach(
+            item -> new TestResource("primary.xml.gz")
+                .saveTo(this.asto, new Key.From(item, "primary.xml"))
+        );
+        final List<CompletableFuture<Void>> res = new ArrayList<>(3);
+        items.forEach(
+            item -> res.add(
+                new StorageValuePipeline<>(this.asto, new Key.From(item, "primary.xml"))
+                    .process(
+                        (inp, out) -> {
+                            final InputStream input = inp.map(
+                                new UncheckedIOFunc<>(GzipCompressorInputStream::new)
+                            ).get();
+                            try {
+                                IOUtils.writeLines(
+                                    IOUtils.readLines(input, StandardCharsets.UTF_8),
+                                    "\n", out, StandardCharsets.UTF_8
+                                );
+                            } catch (final IOException err) {
+                                throw new ArtipieIOException(err);
+                            }
+                        }
+                    ).toCompletableFuture()
+            )
+        );
+        CompletableFuture.allOf(res.toArray(new CompletableFuture[]{})).join();
+        MatcherAssert.assertThat(
+            this.asto.list(Key.ROOT).join(),
+            Matchers.iterableWithSize(3)
         );
     }
 
