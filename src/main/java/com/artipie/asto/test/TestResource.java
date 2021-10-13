@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -51,6 +52,15 @@ public final class TestResource {
      */
     public void saveTo(final Storage storage) {
         this.saveTo(storage, new Key.From(this.name));
+    }
+
+    /**
+     * Save test resource to path.
+     * @param path Where to save
+     * @throws IOException On IO error
+     */
+    public void saveTo(final Path path) throws IOException {
+        Files.write(path, this.asBytes());
     }
 
     /**

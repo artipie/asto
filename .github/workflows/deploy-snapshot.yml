@@ -19,8 +19,16 @@ jobs:
           key: ${{ runner.os }}-jdk-1.8-mvn-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-jdk-1.8-mvn-
+      - name: Create settings.xml
+        uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          servers: |
+            [
+              {
+                "id": "artipie-central",
+                "username": "${{ secrets.ARTIPIE_CENTRAL_USERNAME }}",
+                "password": "${{ secrets.ARTIPIE_CENTRAL_PASSWORD }}"
+              }
+            ]
       - name: Deploy snapshot to Artipie central
-        run: mvn clean deploy -B --settings=.github/.deploy/settings.xml
-        env:
-          ARTIPIE_CENTRAL_USERNAME: ${{ secrets.ARTIPIE_CENTRAL_USERNAME }}
-          ARTIPIE_CENTRAL_PASSWORD: ${{ secrets.ARTIPIE_CENTRAL_PASSWORD }}
+        run: mvn clean deploy -B

@@ -76,7 +76,7 @@ SOFTWARE.
     </site>
     <snapshotRepository>
       <id>artipie-central</id>
-      <url>http://central.artipie.com/maven</url>
+      <url>http://central.artipie.com/artipie/maven</url>
     </snapshotRepository>
   </distributionManagement>
   <properties>
