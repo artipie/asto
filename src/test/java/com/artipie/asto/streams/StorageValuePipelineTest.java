@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
