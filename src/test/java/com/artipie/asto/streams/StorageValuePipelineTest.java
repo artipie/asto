@@ -21,14 +21,15 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsNot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
 /**
@@ -157,27 +158,27 @@ class StorageValuePipelineTest {
     }
 
     @RepeatedTest(10)
-    @Timeout(5)
     void readsWritesInParallel() {
-        final List<String> items = Stream.of("one", "two", "three").collect(Collectors.toList());
-        items.forEach(
-            item -> new TestResource("primary.xml.gz")
-                .saveTo(this.asto, new Key.From(item, "primary.xml"))
-        );
+        final List<String> items = Stream.of(
+            "primary.xml.gz", "other.xml.gz", "filelists.xml.gz"
+        ).collect(Collectors.toList());
+        items.forEach(item -> new TestResource(item).saveTo(this.asto));
         final List<CompletableFuture<Void>> res = new ArrayList<>(3);
         items.forEach(
             item -> res.add(
-                new StorageValuePipeline<>(this.asto, new Key.From(item, "primary.xml"))
+                new StorageValuePipeline<>(this.asto, new Key.From(item))
                     .process(
                         (inp, out) -> {
                             final InputStream input = inp.map(
                                 new UncheckedIOFunc<>(GzipCompressorInputStream::new)
                             ).get();
                             try {
-                                IOUtils.writeLines(
-                                    IOUtils.readLines(input, StandardCharsets.UTF_8),
-                                    "\n", out, StandardCharsets.UTF_8
+                                final List<String> lines =
+                                    IOUtils.readLines(input, StandardCharsets.UTF_8);
+                                MatcherAssert.assertThat(
+                                    lines, new IsNot<>(Matchers.emptyIterable())
                                 );
+                                IOUtils.writeLines(lines, "\n", out, StandardCharsets.UTF_8);
                             } catch (final IOException err) {
                                 throw new ArtipieIOException(err);
                             }
