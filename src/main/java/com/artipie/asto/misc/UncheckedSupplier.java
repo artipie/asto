@@ -11,7 +11,7 @@ import java.util.function.Supplier;
  * Supplier to wrap checked supplier throwing checked exception
  * with unchecked one.
  * @param <T> Supplier type
- * @since 1.0
+ * @since 1.8
  */
 public final class UncheckedSupplier<T> implements Supplier<T> {
 
