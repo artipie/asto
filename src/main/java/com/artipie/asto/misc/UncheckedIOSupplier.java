@@ -25,7 +25,9 @@ public final class UncheckedIOSupplier<T> implements Supplier<T> {
      * Ctor.
      * @param checked Checked func
      */
-    public UncheckedIOSupplier(final UncheckedSupplier.CheckedSupplier<T, ? extends IOException> checked) {
+    public UncheckedIOSupplier(
+        final UncheckedSupplier.CheckedSupplier<T, ? extends IOException> checked
+    ) {
         this.checked = checked;
     }
 

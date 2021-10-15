@@ -25,7 +25,7 @@ class UncheckedSupplierTest {
         final Exception error = new Exception("Error");
         final Exception res = Assertions.assertThrows(
             ArtipieException.class,
-            () -> new UncheckedSupplier<>( () -> { throw error; }).get()
+            () -> new UncheckedSupplier<>(() -> { throw error; }).get()
         );
         MatcherAssert.assertThat(
             res.getCause(),
