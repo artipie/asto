@@ -1,3 +1,8 @@
+# v1.8.0
+
+  - c85259 feat: adds UncheckedSupplier (#342)
+  - e35da32 ci: artipie central snapshots config
+
 # v1.7.0
 
   - ce5987f feat: test resource save to file (#339)
