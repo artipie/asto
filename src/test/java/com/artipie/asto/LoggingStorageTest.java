@@ -4,6 +4,7 @@
  */
 package com.artipie.asto;
 
+import com.artipie.asto.memory.InMemoryStorage;
 import java.nio.charset.StandardCharsets;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -22,28 +23,28 @@ final class LoggingStorageTest {
 
     @Test
     void retrievesKeyExistingInOriginalStorage() throws Exception {
-        final FakeStorage storage = new FakeStorage();
+        final InMemoryStorage memsto = new InMemoryStorage();
         final Key key = new Key.From("repository");
         final Content content = new Content.From(
             "My blog on coding.".getBytes(StandardCharsets.UTF_8)
         );
-        storage.save(key, content).get();
+        memsto.save(key, content).get();
         MatcherAssert.assertThat(
-            new LoggingStorage(storage).exists(key).get(),
+            new LoggingStorage(memsto).exists(key).get(),
             new IsEqual<>(true)
         );
     }
 
     @Test
     void readsTheSize() throws Exception {
-        final FakeStorage fksto = new FakeStorage();
+        final InMemoryStorage memsto = new InMemoryStorage();
         final Key key = new Key.From("withSize");
-        fksto.save(
+        memsto.save(
             key,
             new Content.From(new byte[]{0x00, 0x00, 0x00})
         ).get();
         MatcherAssert.assertThat(
-            new LoggingStorage(fksto).size(key).get(),
+            new LoggingStorage(memsto).size(key).get(),
             // @checkstyle MagicNumberCheck (1 line)
             new IsEqual<>(3L)
         );
@@ -51,50 +52,54 @@ final class LoggingStorageTest {
 
     @Test
     void movesContent() throws Exception {
-        final Content data = new Content.From(
-            "data".getBytes(StandardCharsets.UTF_8)
-        );
-        final FakeStorage fksto = new FakeStorage();
+        final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
+        final InMemoryStorage memsto = new InMemoryStorage();
         final Key source = new Key.From("from");
-        fksto.save(source, data).get();
+        memsto.save(source, new Content.From(data)).get();
         final Key destination = new Key.From("to");
-        final LoggingStorage logsto = new LoggingStorage(fksto);
+        final LoggingStorage logsto = new LoggingStorage(memsto);
         logsto.move(source, destination).get();
         MatcherAssert.assertThat(
-            logsto.value(destination).get(),
+            new Remaining(
+                new Concatenation(
+                    logsto.value(destination).get()
+                ).single().blockingGet(),
+                true
+            ).bytes(),
             new IsEqual<>(data)
         );
     }
 
     @Test
     void savesAndLoads() throws Exception {
-        final LoggingStorage storage = new LoggingStorage(new FakeStorage());
+        final LoggingStorage storage = new LoggingStorage(new InMemoryStorage());
         final Key key = new Key.From("url");
-        final Content content = new Content.From(
-            "https://www.artipie.com".getBytes(StandardCharsets.UTF_8)
-        );
-        storage.save(key, content).get();
+        final byte[] content = "https://www.artipie.com"
+            .getBytes(StandardCharsets.UTF_8);
+        storage.save(key, new Content.From(content)).get();
         MatcherAssert.assertThat(
-            storage.value(key).get(),
+            new Remaining(
+                new Concatenation(storage.value(key).get()).single().blockingGet(),
+                true
+            ).bytes(),
             new IsEqual<>(content)
         );
     }
 
     @Test
     void saveOverwrites() throws Exception {
-        final Content original = new Content.From(
-            "1".getBytes(StandardCharsets.UTF_8)
-        );
-        final Content updated = new Content.From(
-            "2".getBytes(StandardCharsets.UTF_8)
-        );
-        final FakeStorage fksto = new FakeStorage();
+        final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
+        final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
+        final InMemoryStorage memsto = new InMemoryStorage();
         final Key key = new Key.From("foo");
-        fksto.save(key, original).get();
-        final LoggingStorage logsto = new LoggingStorage(fksto);
-        logsto.save(key, updated).get();
+        memsto.save(key, new Content.From(original)).get();
+        final LoggingStorage logsto = new LoggingStorage(memsto);
+        logsto.save(key, new Content.From(updated)).get();
         MatcherAssert.assertThat(
-            logsto.value(key).get(),
+            new Remaining(
+                new Concatenation(logsto.value(key).get()).single().blockingGet(),
+                true
+            ).bytes(),
             new IsEqual<>(updated)
         );
     }
