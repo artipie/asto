@@ -17,10 +17,16 @@ import java.util.function.Function;
  *
  * @since 1.8.1
  */
-public class FakeStorage implements Storage {
+public final class FakeStorage implements Storage {
 
+    /**
+     * Map for storing contents.
+     */
     private final Map<Key, Content> map;
 
+    /**
+     * Ctor.
+     */
     public FakeStorage() {
         this.map = new HashMap<>();
     }
@@ -37,8 +43,8 @@ public class FakeStorage implements Storage {
         return CompletableFuture.supplyAsync(
             () -> {
                 final Collection<Key> keys = new LinkedList<>();
-                for (Key key : this.map.keySet()) {
-                    if(key.string().startsWith(prefix.string())) {
+                for (final Key key : this.map.keySet()) {
+                    if (key.string().startsWith(prefix.string())) {
                         keys.add(key);
                     }
                 }
@@ -98,7 +104,7 @@ public class FakeStorage implements Storage {
         final Key key,
         final Function<Storage, CompletionStage<T>> operation
     ) {
-        if(!this.map.containsKey(key)) {
+        if (!this.map.containsKey(key)) {
             throw new IllegalArgumentException("Key doesn't exist !");
         }
         return operation.apply(this);

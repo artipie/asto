@@ -4,20 +4,20 @@
  */
 package com.artipie.asto;
 
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for {@link LoggingStorage}.
  *
  * @since 0.20.4
  * @todo #186:30min Test that operations are properly logged in LoggingStorage.
- *  We currently test that `LoggingStorage` preserves results provided by `Storage`.
- *  We now want to introduce tests that should check that operation results
- *  and parameters are properly logged.
+ *  We are currently testing that `LoggingStorage` preserves results provided
+ *  by `Storage`. We now want to introduce tests that should check that
+ *  operation results and parameters are properly logged.
  */
 final class LoggingStorageTest {
 
@@ -68,9 +68,9 @@ final class LoggingStorageTest {
     @Test
     void savesAndLoads() throws Exception {
         final LoggingStorage storage = new LoggingStorage(new FakeStorage());
-        final Key key = new Key.From("repository");
+        final Key key = new Key.From("url");
         final Content content = new Content.From(
-            "My blog on coding.".getBytes(StandardCharsets.UTF_8)
+            "https://www.artipie.com".getBytes(StandardCharsets.UTF_8)
         );
         storage.save(key, content);
         MatcherAssert.assertThat(
