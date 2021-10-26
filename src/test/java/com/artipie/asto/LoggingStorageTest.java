@@ -5,7 +5,6 @@
 package com.artipie.asto;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -22,14 +21,13 @@ import org.junit.jupiter.api.Test;
 final class LoggingStorageTest {
 
     @Test
-    void retrievesKeyExistingInOriginalStorage()
-        throws ExecutionException, InterruptedException {
+    void retrievesKeyExistingInOriginalStorage() throws Exception {
         final FakeStorage storage = new FakeStorage();
         final Key key = new Key.From("repository");
         final Content content = new Content.From(
             "My blog on coding.".getBytes(StandardCharsets.UTF_8)
         );
-        storage.save(key, content);
+        storage.save(key, content).get();
         MatcherAssert.assertThat(
             new LoggingStorage(storage).exists(key).get(),
             new IsEqual<>(true)
@@ -40,7 +38,10 @@ final class LoggingStorageTest {
     void readsTheSize() throws Exception {
         final FakeStorage fksto = new FakeStorage();
         final Key key = new Key.From("withSize");
-        fksto.save(key, new Content.From(new byte[]{0x00, 0x00, 0x00}));
+        fksto.save(
+            key,
+            new Content.From(new byte[]{0x00, 0x00, 0x00})
+        ).get();
         MatcherAssert.assertThat(
             new LoggingStorage(fksto).size(key).get(),
             // @checkstyle MagicNumberCheck (1 line)
@@ -55,7 +56,7 @@ final class LoggingStorageTest {
         );
         final FakeStorage fksto = new FakeStorage();
         final Key source = new Key.From("from");
-        fksto.save(source, data);
+        fksto.save(source, data).get();
         final Key destination = new Key.From("to");
         final LoggingStorage logsto = new LoggingStorage(fksto);
         logsto.move(source, destination).get();
@@ -72,7 +73,7 @@ final class LoggingStorageTest {
         final Content content = new Content.From(
             "https://www.artipie.com".getBytes(StandardCharsets.UTF_8)
         );
-        storage.save(key, content);
+        storage.save(key, content).get();
         MatcherAssert.assertThat(
             storage.value(key).get(),
             new IsEqual<>(content)
@@ -89,9 +90,9 @@ final class LoggingStorageTest {
         );
         final FakeStorage fksto = new FakeStorage();
         final Key key = new Key.From("foo");
-        fksto.save(key, original);
+        fksto.save(key, original).get();
         final LoggingStorage logsto = new LoggingStorage(fksto);
-        logsto.save(key, updated);
+        logsto.save(key, updated).get();
         MatcherAssert.assertThat(
             logsto.value(key).get(),
             new IsEqual<>(updated)
