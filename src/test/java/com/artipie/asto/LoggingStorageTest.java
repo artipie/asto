@@ -4,21 +4,19 @@
  */
 package com.artipie.asto;
 
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
-import com.artipie.asto.blocking.BlockingStorage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for {@link LoggingStorage}.
  *
  * @since 0.20.4
- * @todo #87:60min Add tests for LoggingStorage.
- *  LoggingStorage class lacks tests coverage.
- *  At very base level the tests should check that `LoggingStorage` preserves results
- *  provided by `Storage`. In very best case the tests should check that operation results
+ * @todo #186:30min Test that operations are properly logged in LoggingStorage.
+ *  We currently test that `LoggingStorage` preserves results provided by `Storage`.
+ *  We now want to introduce tests that should check that operation results
  *  and parameters are properly logged.
  */
 final class LoggingStorageTest {
