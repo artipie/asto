@@ -58,7 +58,7 @@ final class LoggingStorageTest {
         fksto.save(source, data);
         final Key destination = new Key.From("to");
         final LoggingStorage logsto = new LoggingStorage(fksto);
-        logsto.move(source, destination);
+        logsto.move(source, destination).get();
         MatcherAssert.assertThat(
             logsto.value(destination).get(),
             new IsEqual<>(data)
