@@ -39,9 +39,9 @@ final class LoggingStorageTest {
         final Content content = new Content.From(
             "My blog on coding.".getBytes(StandardCharsets.UTF_8)
         );
-        memsto.save(key, content).join();
+        this.memsto.save(key, content).join();
         MatcherAssert.assertThat(
-            new LoggingStorage(memsto).exists(key).join(),
+            new LoggingStorage(this.memsto).exists(key).join(),
             new IsEqual<>(true)
         );
     }
@@ -49,12 +49,12 @@ final class LoggingStorageTest {
     @Test
     void readsTheSize() {
         final Key key = new Key.From("withSize");
-        memsto.save(
+        this.memsto.save(
             key,
             new Content.From(new byte[]{0x00, 0x00, 0x00})
         ).join();
         MatcherAssert.assertThat(
-            new LoggingStorage(memsto).size(key).join(),
+            new LoggingStorage(this.memsto).size(key).join(),
             // @checkstyle MagicNumberCheck (1 line)
             new IsEqual<>(3L)
         );
@@ -64,9 +64,9 @@ final class LoggingStorageTest {
     void movesContent() {
         final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
         final Key source = new Key.From("from");
-        memsto.save(source, new Content.From(data)).join();
+        this.memsto.save(source, new Content.From(data)).join();
         final Key destination = new Key.From("to");
-        final LoggingStorage logsto = new LoggingStorage(memsto);
+        final LoggingStorage logsto = new LoggingStorage(this.memsto);
         logsto.move(source, destination).join();
         MatcherAssert.assertThat(
             new BlockingStorage(logsto).value(destination),
@@ -76,7 +76,7 @@ final class LoggingStorageTest {
 
     @Test
     void savesAndLoads() {
-        final LoggingStorage storage = new LoggingStorage(memsto);
+        final LoggingStorage storage = new LoggingStorage(this.memsto);
         final Key key = new Key.From("url");
         final byte[] content = "https://www.artipie.com"
             .getBytes(StandardCharsets.UTF_8);
@@ -92,8 +92,8 @@ final class LoggingStorageTest {
         final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
         final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
         final Key key = new Key.From("foo");
-        memsto.save(key, new Content.From(original)).join();
-        final LoggingStorage logsto = new LoggingStorage(memsto);
+        this.memsto.save(key, new Content.From(original)).join();
+        final LoggingStorage logsto = new LoggingStorage(this.memsto);
         logsto.save(key, new Content.From(updated)).join();
         MatcherAssert.assertThat(
             new BlockingStorage(logsto).value(key),
