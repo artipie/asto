@@ -4,6 +4,7 @@
  */
 package com.artipie.asto;
 
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.nio.charset.StandardCharsets;
 import org.hamcrest.MatcherAssert;
@@ -68,12 +69,7 @@ final class LoggingStorageTest {
         final LoggingStorage logsto = new LoggingStorage(memsto);
         logsto.move(source, destination).join();
         MatcherAssert.assertThat(
-            new Remaining(
-                new Concatenation(
-                    logsto.value(destination).join()
-                ).single().blockingGet(),
-                true
-            ).bytes(),
+            new BlockingStorage(logsto).value(destination),
             new IsEqual<>(data)
         );
     }
@@ -86,10 +82,7 @@ final class LoggingStorageTest {
             .getBytes(StandardCharsets.UTF_8);
         storage.save(key, new Content.From(content)).join();
         MatcherAssert.assertThat(
-            new Remaining(
-                new Concatenation(storage.value(key).join()).single().blockingGet(),
-                true
-            ).bytes(),
+            new BlockingStorage(storage).value(key),
             new IsEqual<>(content)
         );
     }
@@ -103,10 +96,7 @@ final class LoggingStorageTest {
         final LoggingStorage logsto = new LoggingStorage(memsto);
         logsto.save(key, new Content.From(updated)).join();
         MatcherAssert.assertThat(
-            new Remaining(
-                new Concatenation(logsto.value(key).join()).single().blockingGet(),
-                true
-            ).bytes(),
+            new BlockingStorage(logsto).value(key),
             new IsEqual<>(updated)
         );
     }
