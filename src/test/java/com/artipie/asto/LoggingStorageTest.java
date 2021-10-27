@@ -8,6 +8,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import java.nio.charset.StandardCharsets;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -21,9 +22,18 @@ import org.junit.jupiter.api.Test;
  */
 final class LoggingStorageTest {
 
+    /**
+     * Memory storage used in tests.
+     */
+    private InMemoryStorage memsto;
+
+    @BeforeEach
+    void setUp() {
+        this.memsto = new InMemoryStorage();
+    }
+
     @Test
     void retrievesKeyExistingInOriginalStorage() throws Exception {
-        final InMemoryStorage memsto = new InMemoryStorage();
         final Key key = new Key.From("repository");
         final Content content = new Content.From(
             "My blog on coding.".getBytes(StandardCharsets.UTF_8)
@@ -37,7 +47,6 @@ final class LoggingStorageTest {
 
     @Test
     void readsTheSize() throws Exception {
-        final InMemoryStorage memsto = new InMemoryStorage();
         final Key key = new Key.From("withSize");
         memsto.save(
             key,
@@ -53,7 +62,6 @@ final class LoggingStorageTest {
     @Test
     void movesContent() throws Exception {
         final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
-        final InMemoryStorage memsto = new InMemoryStorage();
         final Key source = new Key.From("from");
         memsto.save(source, new Content.From(data)).get();
         final Key destination = new Key.From("to");
@@ -72,7 +80,7 @@ final class LoggingStorageTest {
 
     @Test
     void savesAndLoads() throws Exception {
-        final LoggingStorage storage = new LoggingStorage(new InMemoryStorage());
+        final LoggingStorage storage = new LoggingStorage(memsto);
         final Key key = new Key.From("url");
         final byte[] content = "https://www.artipie.com"
             .getBytes(StandardCharsets.UTF_8);
@@ -90,7 +98,6 @@ final class LoggingStorageTest {
     void saveOverwrites() throws Exception {
         final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
         final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
-        final InMemoryStorage memsto = new InMemoryStorage();
         final Key key = new Key.From("foo");
         memsto.save(key, new Content.From(original)).get();
         final LoggingStorage logsto = new LoggingStorage(memsto);
