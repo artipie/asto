@@ -33,44 +33,44 @@ final class LoggingStorageTest {
     }
 
     @Test
-    void retrievesKeyExistingInOriginalStorage() throws Exception {
+    void retrievesKeyExistingInOriginalStorage() {
         final Key key = new Key.From("repository");
         final Content content = new Content.From(
             "My blog on coding.".getBytes(StandardCharsets.UTF_8)
         );
-        memsto.save(key, content).get();
+        memsto.save(key, content).join();
         MatcherAssert.assertThat(
-            new LoggingStorage(memsto).exists(key).get(),
+            new LoggingStorage(memsto).exists(key).join(),
             new IsEqual<>(true)
         );
     }
 
     @Test
-    void readsTheSize() throws Exception {
+    void readsTheSize() {
         final Key key = new Key.From("withSize");
         memsto.save(
             key,
             new Content.From(new byte[]{0x00, 0x00, 0x00})
-        ).get();
+        ).join();
         MatcherAssert.assertThat(
-            new LoggingStorage(memsto).size(key).get(),
+            new LoggingStorage(memsto).size(key).join(),
             // @checkstyle MagicNumberCheck (1 line)
             new IsEqual<>(3L)
         );
     }
 
     @Test
-    void movesContent() throws Exception {
+    void movesContent() {
         final byte[] data = "data".getBytes(StandardCharsets.UTF_8);
         final Key source = new Key.From("from");
-        memsto.save(source, new Content.From(data)).get();
+        memsto.save(source, new Content.From(data)).join();
         final Key destination = new Key.From("to");
         final LoggingStorage logsto = new LoggingStorage(memsto);
-        logsto.move(source, destination).get();
+        logsto.move(source, destination).join();
         MatcherAssert.assertThat(
             new Remaining(
                 new Concatenation(
-                    logsto.value(destination).get()
+                    logsto.value(destination).join()
                 ).single().blockingGet(),
                 true
             ).bytes(),
@@ -79,15 +79,15 @@ final class LoggingStorageTest {
     }
 
     @Test
-    void savesAndLoads() throws Exception {
+    void savesAndLoads() {
         final LoggingStorage storage = new LoggingStorage(memsto);
         final Key key = new Key.From("url");
         final byte[] content = "https://www.artipie.com"
             .getBytes(StandardCharsets.UTF_8);
-        storage.save(key, new Content.From(content)).get();
+        storage.save(key, new Content.From(content)).join();
         MatcherAssert.assertThat(
             new Remaining(
-                new Concatenation(storage.value(key).get()).single().blockingGet(),
+                new Concatenation(storage.value(key).join()).single().blockingGet(),
                 true
             ).bytes(),
             new IsEqual<>(content)
@@ -95,16 +95,16 @@ final class LoggingStorageTest {
     }
 
     @Test
-    void saveOverwrites() throws Exception {
+    void saveOverwrites() {
         final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
         final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
         final Key key = new Key.From("foo");
-        memsto.save(key, new Content.From(original)).get();
+        memsto.save(key, new Content.From(original)).join();
         final LoggingStorage logsto = new LoggingStorage(memsto);
-        logsto.save(key, new Content.From(updated)).get();
+        logsto.save(key, new Content.From(updated)).join();
         MatcherAssert.assertThat(
             new Remaining(
-                new Concatenation(logsto.value(key).get()).single().blockingGet(),
+                new Concatenation(logsto.value(key).join()).single().blockingGet(),
                 true
             ).bytes(),
             new IsEqual<>(updated)
