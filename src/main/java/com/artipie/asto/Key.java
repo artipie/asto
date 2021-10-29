@@ -5,12 +5,8 @@
 package com.artipie.asto;
 
 import com.artipie.ArtipieException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -198,6 +194,60 @@ public interface Key {
         @Override
         public String toString() {
             return this.string();
+        }
+    }
+
+    /**
+     * Key that excludes first part found.
+     * @since 1.8.1
+     */
+    final class ExcludeFirst extends Wrap {
+
+        /**
+         * Ctor.
+         * @param key Key
+         * @param part Part to exclude
+         */
+        public ExcludeFirst(final Key key, final String part) {
+            super(
+                new Key.From(ExcludeFirst.exclude(key, part))
+            );
+        }
+
+        private static List<String> exclude(final Key key, final String part) {
+            final List<String> parts = new LinkedList<>();
+            boolean isfound = false;
+            for (String prt : new From(key.string()).parts) {
+                if (prt.equals(part) && !isfound){
+                    isfound = true;
+                    continue;
+                }
+                parts.add(prt);
+            }
+            return parts;
+        }
+    }
+
+    /**
+     * Key that excludes all occurrences of part found.
+     * @since 1.8.1
+     */
+    final class ExcludeAll extends Wrap {
+
+        /**
+         * Ctor.
+         * @param key Key
+         * @param part Part to exclude
+         */
+        public ExcludeAll(final Key key, final String part) {
+            super(
+                new Key.From(
+                    new From(key.string())
+                        .parts.stream()
+                        .filter(p -> !p.equals(part))
+                        .collect(Collectors.toList())
+                )
+            );
         }
     }
 }

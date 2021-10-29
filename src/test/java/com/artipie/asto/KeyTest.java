@@ -93,4 +93,31 @@ final class KeyTest {
             new IsEqual<>(-1)
         );
     }
+
+    @Test
+    void excludesFirstPart() {
+        final Key key = new Key.From("1", "2", "1");
+        MatcherAssert.assertThat(
+            new Key.ExcludeFirst(key, "1").string(),
+            new IsEqual<>("2/1")
+        );
+    }
+
+    @Test
+    void excludesAllPart() {
+        final Key key = new Key.From("1", "2", "1");
+        MatcherAssert.assertThat(
+            new Key.ExcludeAll(key, "1").string(),
+            new IsEqual<>("2")
+        );
+    }
+
+    @Test
+    void excludesNonExistingPart() {
+        final Key key = new Key.From("1", "2");
+        MatcherAssert.assertThat(
+            new Key.ExcludeAll(key, "3").string(),
+            new IsEqual<>("1/2")
+        );
+    }
 }
