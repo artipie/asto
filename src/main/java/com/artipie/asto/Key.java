@@ -5,8 +5,13 @@
 package com.artipie.asto;
 
 import com.artipie.ArtipieException;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -198,7 +203,7 @@ public interface Key {
     }
 
     /**
-     * Key that excludes first part found.
+     * Key that excludes first occurrence of part.
      * @since 1.8.1
      */
     final class ExcludeFirst extends Wrap {
@@ -214,11 +219,17 @@ public interface Key {
             );
         }
 
+        /**
+         * Excludes first occurrence of part.
+         * @param key Key
+         * @param part Part to exclude
+         * @return List of parts
+         */
         private static List<String> exclude(final Key key, final String part) {
             final List<String> parts = new LinkedList<>();
             boolean isfound = false;
-            for (String prt : new From(key.string()).parts) {
-                if (prt.equals(part) && !isfound){
+            for (final String prt : new From(key.string()).parts) {
+                if (prt.equals(part) && !isfound) {
                     isfound = true;
                     continue;
                 }

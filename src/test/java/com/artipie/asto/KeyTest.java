@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.32
  */
+@SuppressWarnings("PMD.TooManyMethods")
 final class KeyTest {
 
     @Test
