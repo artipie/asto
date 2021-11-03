@@ -38,9 +38,26 @@ public final class StorageValuePipeline<R> {
     private final Storage asto;
 
     /**
-     * Storage item key to process.
+     * Storage item key to read from.
      */
-    private final Key key;
+    private final Key read;
+
+    /**
+     * Storage item key to write to.
+     */
+    private final Key write;
+
+    /**
+     * Ctor.
+     * @param asto Abstract storage
+     * @param read Storage item key to read from
+     * @param write Storage item key to write to
+     */
+    public StorageValuePipeline(final Storage asto, final Key read, final Key write) {
+        this.asto = asto;
+        this.read = read;
+        this.write = write;
+    }
 
     /**
      * Ctor.
@@ -48,8 +65,7 @@ public final class StorageValuePipeline<R> {
      * @param key Item key
      */
     public StorageValuePipeline(final Storage asto, final Key key) {
-        this.asto = asto;
-        this.key = key;
+        this(asto, key, key);
     }
 
     /**
@@ -80,7 +96,7 @@ public final class StorageValuePipeline<R> {
     public CompletionStage<R> processWithResult(
         final BiFunction<Optional<InputStream>, OutputStream, R> action
     ) {
-        return this.asto.exists(this.key).thenCompose(
+        return this.asto.exists(this.read).thenCompose(
             exists -> {
                 final CompletionStage<Void> future;
                 Optional<InputStream> oinput = Optional.empty();
@@ -93,7 +109,7 @@ public final class StorageValuePipeline<R> {
                         final PipedOutputStream tmpout =
                             new PipedOutputStream((PipedInputStream) oinput.get());
                         oout = Optional.of(tmpout);
-                        tmp = this.asto.value(this.key).thenCompose(
+                        tmp = this.asto.value(this.read).thenCompose(
                             input -> new ReactiveOutputStream(tmpout)
                                 .write(input, WriteGreed.SYSTEM)
                         );
@@ -104,7 +120,7 @@ public final class StorageValuePipeline<R> {
                     final PipedInputStream src = new PipedInputStream(resout);
                     future = tmp.thenCompose(
                         nothing -> this.asto.save(
-                            this.key,
+                            this.write,
                             new Content.From(
                                 new ReactiveInputStream(src).read(Buffers.Standard.K8)
                             )
