@@ -36,7 +36,7 @@ public final class KeyExcludeFirst extends Key.Wrap {
     private static List<String> exclude(final Key key, final String part) {
         final List<String> parts = new LinkedList<>();
         boolean isfound = false;
-        for (final String prt : new KeyParts(key)) {
+        for (final String prt : key.parts()) {
             if (prt.equals(part) && !isfound) {
                 isfound = true;
                 continue;

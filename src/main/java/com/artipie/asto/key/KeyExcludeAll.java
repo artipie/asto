@@ -23,7 +23,7 @@ public final class KeyExcludeAll extends Key.Wrap {
     public KeyExcludeAll(final Key key, final String part) {
         super(
             new Key.From(
-                new KeyParts(key).stream()
+                key.parts().stream()
                     .filter(p -> !p.equals(part))
                     .collect(Collectors.toList())
             )

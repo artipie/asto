@@ -19,6 +19,15 @@ import org.junit.jupiter.api.Test;
 final class KeyTest {
 
     @Test
+    void getPartsOfKey() {
+        final Key key = new Key.From("1", "2");
+        MatcherAssert.assertThat(
+            key.parts(),
+            Matchers.containsInRelativeOrder("1", "2")
+        );
+    }
+
+    @Test
     void resolvesKeysFromParts() {
         MatcherAssert.assertThat(
             new Key.From("one1", "two2", "three3/four4").string(),

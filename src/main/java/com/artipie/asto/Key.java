@@ -5,7 +5,6 @@
 package com.artipie.asto;
 
 import com.artipie.ArtipieException;
-import com.artipie.asto.key.KeyParts;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,6 +23,11 @@ import java.util.stream.Stream;
  *  a part to a key by specifying the position (Like we do with {@code List.add(Obj, index)}).
  */
 public interface Key {
+    /**
+     * Delimiter used to split string into parts and join parts into string.
+     */
+    String DELIMITER = "/";
+
     /**
      * Comparator for key values by their string representation.
      */
@@ -45,6 +49,12 @@ public interface Key {
      * @return Parent key or Optional.empty if the current key is ROOT
      */
     Optional<Key> parent();
+
+    /**
+     * Parts of key.
+     * @return List of parts
+     */
+    List<String> parts();
 
     /**
      * Default decorator.
@@ -76,6 +86,11 @@ public interface Key {
         }
 
         @Override
+        public List<String> parts() {
+            return this.origin.parts();
+        }
+
+        @Override
         public final String toString() {
             return this.string();
         }
@@ -97,7 +112,7 @@ public interface Key {
          * @param parts Parts delimited by `/` symbol
          */
         public From(final String parts) {
-            this(new KeyParts(parts));
+            this(parts.split(Key.DELIMITER));
         }
 
         /**
@@ -157,11 +172,11 @@ public interface Key {
                 if (part.isEmpty()) {
                     throw new ArtipieException("Empty parts are not allowed");
                 }
-                if (part.contains(KeyParts.DELIMITER)) {
+                if (part.contains(Key.DELIMITER)) {
                     throw new ArtipieException(String.format("Invalid part: '%s'", part));
                 }
             }
-            return String.join(KeyParts.DELIMITER, this.parts);
+            return String.join(Key.DELIMITER, this.parts);
         }
 
         @Override
@@ -175,6 +190,11 @@ public interface Key {
                 );
             }
             return parent;
+        }
+
+        @Override
+        public List<String> parts() {
+            return this.parts.stream().collect(Collectors.toList());
         }
 
         @Override
