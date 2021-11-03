@@ -65,6 +65,7 @@ public final class EtcdStorageITCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void getSize() {
         final Key key = new Key.From("another", "key");
         final byte[] data = "data with size".getBytes();

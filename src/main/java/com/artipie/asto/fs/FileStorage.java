@@ -4,9 +4,11 @@
  */
 package com.artipie.asto.fs;
 
+import com.artipie.ArtipieException;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
@@ -22,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -179,16 +182,18 @@ public final class FileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Long> size(final Key key) {
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
+                final BasicFileAttributes attrs;
                 try {
-                    return Files.size(this.path(key));
-                } catch (final NoSuchFileException nofile) {
-                    throw new ValueNotFoundException(key, nofile);
-                } catch (final IOException iex) {
-                    throw new ArtipieIOException(iex);
+                    attrs = Files.readAttributes(this.path(key), BasicFileAttributes.class);
+                } catch (final NoSuchFileException fex) {
+                    throw new ValueNotFoundException(key, fex);
+                } catch (final IOException iox) {
+                    throw new ArtipieIOException(iox);
                 }
+                return new FileMeta(attrs);
             }
         );
     }
@@ -201,7 +206,13 @@ public final class FileStorage implements Storage {
                 new ArtipieIOException("Unable to load from root")
             ).get();
         } else {
-            res = this.size(key).thenApply(
+            res = this.metadata(key).thenApply(
+                meta -> meta.read(Meta.OP_SIZE).orElseThrow(
+                    () -> new ArtipieException(
+                        String.format("Size is not available for '%s' key", key.string())
+                    )
+                )
+            ).thenApply(
                 size -> new Content.OneTime(
                     new Content.From(size, new File(this.path(key)).content())
                 )
