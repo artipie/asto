@@ -144,4 +144,34 @@ class StorageValuePipelineTest {
         );
     }
 
+    @Test
+    void writesToNewLocation() {
+        final Key read = new Key.From("read.txt");
+        final Key write = new Key.From("write.txt");
+        final Charset charset = StandardCharsets.US_ASCII;
+        this.asto.save(read, new Content.From("Hello".getBytes(charset))).join();
+        new StorageValuePipeline<>(this.asto, read, write).process(
+            (input, out) -> {
+                try {
+                    IOUtils.write(
+                        String.join(" ", IOUtils.toString(input.get(), charset), "world!"),
+                        out, charset
+                    );
+                } catch (final IOException err) {
+                    throw new ArtipieIOException(err);
+                }
+            }
+        ).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            "Storage item to read stays intact",
+            new String(new BlockingStorage(this.asto).value(read), charset),
+            new IsEqual<>("Hello")
+        );
+        MatcherAssert.assertThat(
+            "Data were written to `write` location",
+            new String(new BlockingStorage(this.asto).value(write), charset),
+            new IsEqual<>("Hello world!")
+        );
+    }
+
 }
