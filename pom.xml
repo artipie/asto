@@ -171,6 +171,12 @@ SOFTWARE.
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.cactoos/cactoos -->
+    <dependency>
+      <groupId>org.cactoos</groupId>
+      <artifactId>cactoos</artifactId>
+      <version>0.50</version>
+    </dependency>
     <dependency>
       <groupId>io.etcd</groupId>
       <artifactId>jetcd-test</artifactId>

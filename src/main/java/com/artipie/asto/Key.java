@@ -5,10 +5,10 @@
 package com.artipie.asto;
 
 import com.artipie.ArtipieException;
+import com.artipie.asto.key.KeyParts;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,7 +22,6 @@ import java.util.stream.Stream;
  * @todo #341:30min Add others key operations (exclusion by index, insertion,..).
  *  We should exclude a part from a storage key by index. We should also insert
  *  a part to a key by specifying the position (Like we do with {@code List.add(Obj, index)}).
- *  We also want to get parts of a storage key as list or stream.
  */
 public interface Key {
     /**
@@ -89,11 +88,6 @@ public interface Key {
     final class From implements Key {
 
         /**
-         * Delimiter used to split string into parts and join parts into string.
-         */
-        private static final String DELIMITER = "/";
-
-        /**
          * Parts.
          */
         private final List<String> parts;
@@ -103,7 +97,7 @@ public interface Key {
          * @param parts Parts delimited by `/` symbol
          */
         public From(final String parts) {
-            this(parts.split(From.DELIMITER));
+            this(new KeyParts(parts));
         }
 
         /**
@@ -163,11 +157,11 @@ public interface Key {
                 if (part.isEmpty()) {
                     throw new ArtipieException("Empty parts are not allowed");
                 }
-                if (part.contains(From.DELIMITER)) {
+                if (part.contains(KeyParts.DELIMITER)) {
                     throw new ArtipieException(String.format("Invalid part: '%s'", part));
                 }
             }
-            return String.join(From.DELIMITER, this.parts);
+            return String.join(KeyParts.DELIMITER, this.parts);
         }
 
         @Override
@@ -206,63 +200,4 @@ public interface Key {
         }
     }
 
-    /**
-     * Key that excludes first occurrence of part.
-     * @since 1.8.1
-     */
-    final class ExcludeFirst extends Wrap {
-
-        /**
-         * Ctor.
-         * @param key Key
-         * @param part Part to exclude
-         */
-        public ExcludeFirst(final Key key, final String part) {
-            super(
-                new Key.From(ExcludeFirst.exclude(key, part))
-            );
-        }
-
-        /**
-         * Excludes first occurrence of part.
-         * @param key Key
-         * @param part Part to exclude
-         * @return List of parts
-         */
-        private static List<String> exclude(final Key key, final String part) {
-            final List<String> parts = new LinkedList<>();
-            boolean isfound = false;
-            for (final String prt : new From(key.string()).parts) {
-                if (prt.equals(part) && !isfound) {
-                    isfound = true;
-                    continue;
-                }
-                parts.add(prt);
-            }
-            return parts;
-        }
-    }
-
-    /**
-     * Key that excludes all occurrences of part found.
-     * @since 1.8.1
-     */
-    final class ExcludeAll extends Wrap {
-
-        /**
-         * Ctor.
-         * @param key Key
-         * @param part Part to exclude
-         */
-        public ExcludeAll(final Key key, final String part) {
-            super(
-                new Key.From(
-                    new From(key.string())
-                        .parts.stream()
-                        .filter(p -> !p.equals(part))
-                        .collect(Collectors.toList())
-                )
-            );
-        }
-    }
 }
