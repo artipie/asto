@@ -22,7 +22,7 @@ final class KeyExcludeFirstTest {
         final Key key = new Key.From("1", "2", "1");
         MatcherAssert.assertThat(
             new KeyExcludeFirst(key, "1").string(),
-            new IsEqual<>("2")
+            new IsEqual<>("2/1")
         );
     }
 
