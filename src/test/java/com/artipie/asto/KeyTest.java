@@ -15,7 +15,17 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.32
  */
+@SuppressWarnings("PMD.TooManyMethods")
 final class KeyTest {
+
+    @Test
+    void getPartsOfKey() {
+        final Key key = new Key.From("1", "2");
+        MatcherAssert.assertThat(
+            key.parts(),
+            Matchers.containsInRelativeOrder("1", "2")
+        );
+    }
 
     @Test
     void resolvesKeysFromParts() {
