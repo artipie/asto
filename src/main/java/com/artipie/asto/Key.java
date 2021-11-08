@@ -194,7 +194,7 @@ public interface Key {
 
         @Override
         public List<String> parts() {
-            return this.parts.stream().collect(Collectors.toList());
+            return Collections.unmodifiableList(this.parts);
         }
 
         @Override
