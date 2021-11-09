@@ -18,8 +18,16 @@ import java.util.stream.Stream;
  * Storage key.
  *
  * @since 0.6
+ * @todo #341:30min Add others key operations (exclusion by index, insertion,..).
+ *  We should exclude a part from a storage key by index. We should also insert
+ *  a part to a key by specifying the position (Like we do with {@code List.add(Obj, index)}).
  */
 public interface Key {
+    /**
+     * Delimiter used to split string into parts and join parts into string.
+     */
+    String DELIMITER = "/";
+
     /**
      * Comparator for key values by their string representation.
      */
@@ -41,6 +49,12 @@ public interface Key {
      * @return Parent key or Optional.empty if the current key is ROOT
      */
     Optional<Key> parent();
+
+    /**
+     * Parts of key.
+     * @return List of parts
+     */
+    List<String> parts();
 
     /**
      * Default decorator.
@@ -72,6 +86,11 @@ public interface Key {
         }
 
         @Override
+        public List<String> parts() {
+            return this.origin.parts();
+        }
+
+        @Override
         public final String toString() {
             return this.string();
         }
@@ -84,11 +103,6 @@ public interface Key {
     final class From implements Key {
 
         /**
-         * Delimiter used to split string into parts and join parts into string.
-         */
-        private static final String DELIMITER = "/";
-
-        /**
          * Parts.
          */
         private final List<String> parts;
@@ -98,7 +112,7 @@ public interface Key {
          * @param parts Parts delimited by `/` symbol
          */
         public From(final String parts) {
-            this(parts.split(From.DELIMITER));
+            this(parts.split(Key.DELIMITER));
         }
 
         /**
@@ -158,11 +172,11 @@ public interface Key {
                 if (part.isEmpty()) {
                     throw new ArtipieException("Empty parts are not allowed");
                 }
-                if (part.contains(From.DELIMITER)) {
+                if (part.contains(Key.DELIMITER)) {
                     throw new ArtipieException(String.format("Invalid part: '%s'", part));
                 }
             }
-            return String.join(From.DELIMITER, this.parts);
+            return String.join(Key.DELIMITER, this.parts);
         }
 
         @Override
@@ -176,6 +190,11 @@ public interface Key {
                 );
             }
             return parent;
+        }
+
+        @Override
+        public List<String> parts() {
+            return Collections.unmodifiableList(this.parts);
         }
 
         @Override
@@ -200,4 +219,5 @@ public interface Key {
             return this.string();
         }
     }
+
 }
