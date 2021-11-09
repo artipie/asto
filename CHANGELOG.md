@@ -1,9 +1,9 @@
 # v1.9.0
 
-  - 90387fff fix: SubStorage list operation (#353)
+  - 90387fff fix: `SubStorage` list operation (#353)
   - 60c0d4c7 feat: excludes any part from storage key (#347)
-  - 7a6a1309 feat: extended StorageValuePipeline to accept diff keys (#349)
-  - 7e07dd52 test: Adds base tests for LoggingStorage (#344)
+  - 7a6a1309 feat: extended `StorageValuePipeline` to accept diff keys (#349)
+  - 7e07dd52 test: Adds base tests for `LoggingStorage` (#344)
 
 # v1.8.0
 
