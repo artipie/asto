@@ -163,6 +163,7 @@ public final class StorageSaveAndLoadTest {
             value::join
         );
         MatcherAssert.assertThat(
+            String.format("storage '%s' should fail", storage.getClass().getName()),
             exception.getCause(),
             new IsInstanceOf(ValueNotFoundException.class)
         );

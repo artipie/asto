@@ -8,6 +8,7 @@ package com.artipie.asto.etcd;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
@@ -106,16 +107,8 @@ public final class EtcdStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Long> size(final Key key) {
-        return this.client.getKVClient().get(keyToSeq(key)).thenApply(
-            rsp -> rsp.getKvs().stream().max(
-                (left, right) -> Long.compare(left.getVersion(), right.getVersion())
-            )
-        ).thenApply(
-            kv -> kv.orElseThrow(
-                () -> new ValueNotFoundException(key)
-            ).getValue().getBytes()
-        ).thenApply(bytes -> Long.valueOf(bytes.length));
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
+        return CompletableFuture.completedFuture(Meta.EMPTY);
     }
 
     @Override

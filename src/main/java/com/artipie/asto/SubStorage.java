@@ -82,9 +82,16 @@ public final class SubStorage implements Storage {
         );
     }
 
+    // @checkstyle MissingDeprecatedCheck (5 lines)
     @Override
+    @Deprecated
     public CompletableFuture<Long> size(final Key key) {
         return this.origin.size(new PrefixedKed(this.prefix, key));
+    }
+
+    @Override
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
+        return this.origin.metadata(new PrefixedKed(this.prefix, key));
     }
 
     @Override

@@ -7,6 +7,7 @@ package com.artipie.asto.lock.storage;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
@@ -224,8 +225,14 @@ final class StorageLockTest {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public CompletableFuture<Long> size(final Key key) {
             return this.storage.size(key);
+        }
+
+        @Override
+        public CompletableFuture<? extends Meta> metadata(final Key key) {
+            return this.storage.metadata(key);
         }
 
         @Override
