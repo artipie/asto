@@ -46,7 +46,9 @@ final class LoggingStorageTest {
         );
     }
 
+    // @checkstyle MissingDeprecatedCheck (5 lines)
     @Test
+    @Deprecated
     void readsTheSize() {
         final Key key = new Key.From("withSize");
         this.memsto.save(

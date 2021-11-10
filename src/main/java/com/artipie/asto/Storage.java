@@ -4,6 +4,7 @@
  */
 package com.artipie.asto;
 
+import com.artipie.ArtipieException;
 import com.artipie.asto.fs.FileStorage;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -62,8 +63,25 @@ public interface Storage {
      *
      * @param key The key of value.
      * @return Size of value in bytes.
+     * @deprecated Use {@link #metadata(Key)} to get content size
      */
-    CompletableFuture<Long> size(Key key);
+    @Deprecated
+    default CompletableFuture<Long> size(final Key key) {
+        return this.metadata(key).thenApply(
+            meta -> meta.read(Meta.OP_SIZE).orElseThrow(
+                () -> new ArtipieException(
+                    String.format("SIZE could't be read for %s key", key.string())
+                )
+            )
+        );
+    }
+
+    /**
+     * Get content metadata.
+     * @param key Content key
+     * @return Future with metadata
+     */
+    CompletableFuture<? extends Meta> metadata(Key key);
 
     /**
      * Obtain bytes by key.
