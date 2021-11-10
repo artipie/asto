@@ -80,7 +80,7 @@ SOFTWARE.
     </snapshotRepository>
   </distributionManagement>
   <properties>
-    <vertx.version>4.1.1</vertx.version>
+    <vertx.version>4.2.1</vertx.version>
     <qulice.license>${project.basedir}/LICENSE.header</qulice.license>
   </properties>
   <dependencies>
