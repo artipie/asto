@@ -78,7 +78,9 @@ public class BlockingStorage {
      *
      * @param key The key of value.
      * @return Size of value in bytes.
+     * @deprecated Storage size is deprecated
      */
+    @Deprecated
     public long size(final Key key) {
         return this.storage.size(key).join();
     }
