@@ -162,7 +162,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.etcd</groupId>
       <artifactId>jetcd-core</artifactId>
-      <version>0.5.4</version>
+      <version>0.5.11</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
