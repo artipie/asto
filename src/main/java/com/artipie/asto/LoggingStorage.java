@@ -88,7 +88,9 @@ public final class LoggingStorage implements Storage {
         );
     }
 
+    // @checkstyle MissingDeprecatedCheck (5 lines)
     @Override
+    @Deprecated
     public CompletableFuture<Long> size(final Key key) {
         return this.storage.size(key).thenApply(
             result -> {
@@ -126,6 +128,16 @@ public final class LoggingStorage implements Storage {
         return this.storage.exclusively(key, operation).thenApply(
             result -> {
                 this.log("Exclusively for '%s': %s", key, operation);
+                return result;
+            }
+        );
+    }
+
+    @Override
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
+        return this.storage.metadata(key).thenApply(
+            result -> {
+                this.log("Metadata '%s': %s", key.string(), result);
                 return result;
             }
         );

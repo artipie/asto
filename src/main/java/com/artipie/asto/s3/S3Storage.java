@@ -8,6 +8,7 @@ import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
@@ -30,7 +31,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -184,20 +184,18 @@ public final class S3Storage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Long> size(final Key key) {
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
         return this.client.headObject(
             HeadObjectRequest.builder()
                 .bucket(this.bucket)
                 .key(key.string())
                 .build()
-        ).thenApply(HeadObjectResponse::contentLength)
-            .handle(
-                new InternalExceptionHandle<>(
-                    NoSuchKeyException.class,
-                    cause -> new ValueNotFoundException(key, cause)
-                )
+        ).thenApply(S3HeadMeta::new).handle(
+            new InternalExceptionHandle<>(
+                NoSuchKeyException.class,
+                cause -> new ValueNotFoundException(key, cause)
             )
-            .thenCompose(Function.identity());
+        ).thenCompose(Function.identity());
     }
 
     @Override
@@ -390,5 +388,4 @@ public final class S3Storage implements Storage {
             this.promise.completeExceptionally(throwable);
         }
     }
-
 }

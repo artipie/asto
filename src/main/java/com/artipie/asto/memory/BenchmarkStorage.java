@@ -9,6 +9,7 @@ import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
@@ -157,7 +158,9 @@ public final class BenchmarkStorage implements Storage {
         return res.toCompletableFuture();
     }
 
+    // @checkstyle MissingDeprecatedCheck (5 lines)
     @Override
+    @Deprecated
     public CompletableFuture<Long> size(final Key key) {
         final CompletionStage<Long> res;
         if (this.deleted.contains(key) || !this.anyStorageContains(key)) {
@@ -170,6 +173,19 @@ public final class BenchmarkStorage implements Storage {
                     (long) this.backend.data.get(key.string()).length
                 );
             }
+        }
+        return res.toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
+        final CompletableFuture<Meta> res;
+        if (this.deleted.contains(key) || !this.anyStorageContains(key)) {
+            res = new FailedCompletionStage<Meta>(new ValueNotFoundException(key))
+                .toCompletableFuture();
+        } else {
+            res = new CompletableFuture<>();
+            res.complete(Meta.EMPTY);
         }
         return res.toCompletableFuture();
     }

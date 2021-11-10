@@ -97,6 +97,7 @@ final class FileStorageTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void readsTheSize() throws Exception {
         final BlockingStorage bsto = new BlockingStorage(this.storage);
         final Key key = new Key.From("withSize");

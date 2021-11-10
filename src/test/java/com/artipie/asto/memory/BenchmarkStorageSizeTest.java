@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link BenchmarkStorage#size(Key)}.
  * @since 1.2.0
  */
+@SuppressWarnings("deprecation")
 final class BenchmarkStorageSizeTest {
     @Test
     void returnsSizeWhenPresentInLocalAndNotDeleted() {
