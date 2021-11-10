@@ -8,6 +8,7 @@ import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
@@ -17,7 +18,10 @@ import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -128,15 +132,15 @@ public final class InMemoryStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Long> size(final Key key) {
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
         return CompletableFuture.supplyAsync(
             () -> {
                 synchronized (this.data) {
-                    final byte[] content = this.data.get(key.string());
-                    if (content == null) {
+                    if (!this.data.containsKey(key.string())) {
                         throw new ValueNotFoundException(key);
                     }
-                    return (long) content.length;
+                    final byte[] content = this.data.get(key.string());
+                    return new MemoryMeta(content.length);
                 }
             }
         );
@@ -188,5 +192,32 @@ public final class InMemoryStorage implements Storage {
         final Function<Storage, CompletionStage<T>> operation
     ) {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
+    }
+
+    /**
+     * Metadata for memory storage.
+     * @since 1.9
+     */
+    private static final class MemoryMeta implements Meta {
+
+        /**
+         * Byte-array length.
+         */
+        private final long length;
+
+        /**
+         * New metadata.
+         * @param length Array length
+         */
+        MemoryMeta(final int length) {
+            this.length = length;
+        }
+
+        @Override
+        public <T> T read(final ReadOperator<T> opr) {
+            final Map<String, String> raw = new HashMap<>();
+            Meta.OP_SIZE.put(raw, this.length);
+            return opr.take(Collections.unmodifiableMap(raw));
+        }
     }
 }
