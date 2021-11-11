@@ -143,7 +143,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.github.resilience4j</groupId>
       <artifactId>resilience4j-retry</artifactId>
-      <version>1.5.0</version>
+      <version>1.7.1</version>
     </dependency>
     <!-- S3 client -->
     <dependency>
@@ -197,7 +197,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.adobe.testing</groupId>
       <artifactId>s3mock-junit5</artifactId>
-      <version>2.1.26</version>
+      <version>2.2.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
