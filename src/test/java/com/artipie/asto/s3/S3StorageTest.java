@@ -12,6 +12,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.google.common.io.ByteStreams;
 import io.reactivex.Flowable;
@@ -46,7 +47,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
  */
 @SuppressWarnings("PMD.TooManyMethods")
 class S3StorageTest {
-
     /**
      * Mock S3 server.
      */
@@ -216,6 +216,26 @@ class S3StorageTest {
         MatcherAssert.assertThat(
             client.doesObjectExist(this.bucket, key),
             new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void readMetadata(final AmazonS3 client) throws Exception {
+        final String key = "random/data";
+        client.putObject(
+            this.bucket, key,
+            new ByteArrayInputStream("random data".getBytes()), new ObjectMetadata()
+        );
+        final Meta meta = this.storage().metadata(new Key.From(key)).join();
+        MatcherAssert.assertThat(
+            "size",
+            meta.read(Meta.OP_SIZE).get(),
+            new IsEqual<>(11L)
+        );
+        MatcherAssert.assertThat(
+            "MD5",
+            meta.read(Meta.OP_MD5).get(),
+            new IsEqual<>("3e58b24739a19c3e2e1b21bac818c6cd")
         );
     }
 

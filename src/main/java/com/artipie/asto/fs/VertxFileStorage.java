@@ -7,6 +7,7 @@ package com.artipie.asto.fs;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
 import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class VertxFileStorage implements Storage {
 
     /**
@@ -181,22 +183,6 @@ public final class VertxFileStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Long> size(final Key key) {
-        return Single.fromCallable(
-            () -> {
-                try {
-                    return Files.size(this.path(key));
-                } catch (final NoSuchFileException nofile) {
-                    throw new ValueNotFoundException(key, nofile);
-                } catch (final IOException iex) {
-                    throw new ArtipieIOException(iex);
-                }
-            }
-        ).subscribeOn(RxHelper.blockingScheduler(this.vertx.getDelegate()))
-            .to(SingleInterop.get()).toCompletableFuture();
-    }
-
-    @Override
     public CompletableFuture<Content> value(final Key key) {
         final CompletableFuture<Content> res;
         if (Key.ROOT.equals(key)) {
@@ -204,7 +190,7 @@ public final class VertxFileStorage implements Storage {
                 new ArtipieIOException("Unable to load from root")
             ).get();
         } else {
-            res = this.size(key).thenApply(
+            res = VertxFileStorage.size(this.path(key)).thenApply(
                 size ->
                     new Content.OneTime(
                         new Content.From(
@@ -225,6 +211,18 @@ public final class VertxFileStorage implements Storage {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
+    // @checkstyle MissingDeprecatedCheck (5 lines)
+    @Deprecated
+    @Override
+    public CompletableFuture<Long> size(final Key key) {
+        return VertxFileStorage.size(this.path(key));
+    }
+
+    @Override
+    public CompletableFuture<? extends Meta> metadata(final Key key) {
+        return CompletableFuture.completedFuture(Meta.EMPTY);
+    }
+
     /**
      * Resolves key to file system path.
      *
@@ -233,5 +231,24 @@ public final class VertxFileStorage implements Storage {
      */
     private Path path(final Key key) {
         return Paths.get(this.dir.toString(), key.string());
+    }
+
+    /**
+     * File size.
+     * @param path File path
+     * @return Size
+     */
+    private static CompletableFuture<Long> size(final Path path) {
+        return CompletableFuture.supplyAsync(
+            () -> {
+                try {
+                    return Files.size(path);
+                } catch (final NoSuchFileException fex) {
+                    throw new ValueNotFoundException(Key.ROOT, fex);
+                } catch (final IOException iex) {
+                    throw new ArtipieIOException(iex);
+                }
+            }
+        );
     }
 }

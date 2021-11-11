@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  *
  * @since 0.17
  */
+@SuppressWarnings("deprecation")
 @ExtendWith(StorageExtension.class)
 public final class StorageSizeTest {
 
@@ -41,6 +42,7 @@ public final class StorageSizeTest {
             size::join
         );
         MatcherAssert.assertThat(
+            String.format("storage '%s' should fail", storage.getClass().getSimpleName()),
             exception.getCause(),
             new IsInstanceOf(ValueNotFoundException.class)
         );
