@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
  *
  * @since 1.8.1
  */
-@SuppressWarnings("PMD.TooManyMethods")
 final class KeyExcludeFirstTest {
 
     @Test
