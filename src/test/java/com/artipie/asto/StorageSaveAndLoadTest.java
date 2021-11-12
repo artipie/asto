@@ -104,8 +104,8 @@ public final class StorageSaveAndLoadTest {
         storage.save(key, new Content.OneTime(new Content.From(Flowable.empty()))).get();
         MatcherAssert.assertThat(
             "Saved content should be empty",
-            new BlockingStorage(storage).value(key),
-            Matchers.equalTo(new byte[0])
+            new BlockingStorage(storage).value(key).length,
+            Matchers.equalTo(0)
         );
     }
 
