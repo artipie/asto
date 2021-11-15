@@ -118,14 +118,8 @@ final class LoggingStorageTest {
 
     @Test
     void logsWhenListingKeys() {
-        this.memsto.save(
-            new Key.From("one/two"),
-            new Content.From("data1".getBytes(StandardCharsets.UTF_8))
-        ).join();
-        this.memsto.save(
-            new Key.From("one/three"),
-            new Content.From("data2".getBytes(StandardCharsets.UTF_8))
-        ).join();
+        this.memsto.save(new Key.From("one/two"), Content.EMPTY).join();
+        this.memsto.save(new Key.From("one/three"), Content.EMPTY).join();
         new LoggingStorage(this.memsto).list(new Key.From("one")).join();
         MatcherAssert.assertThat(
             this.writer.toString(),
@@ -135,9 +129,8 @@ final class LoggingStorageTest {
 
     @Test
     void logsWhenCheckingExistence() {
-        final byte[] data = "0101".getBytes(StandardCharsets.UTF_8);
         final Key key = new Key.From("binary-file");
-        this.memsto.save(key, new Content.From(data)).join();
+        this.memsto.save(key, Content.EMPTY).join();
         new LoggingStorage(this.memsto).exists(key).join();
         MatcherAssert.assertThat(
             this.writer.toString(),
