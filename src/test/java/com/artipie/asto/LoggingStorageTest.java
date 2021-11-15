@@ -146,7 +146,7 @@ final class LoggingStorageTest {
         logsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
             this.writer.toString(),
-            new IsEqual<>("Save 'key': 7")
+            new IsEqual<>(String.format("Save 'key': %s", data.length))
         );
     }
 }
