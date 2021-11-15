@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 1.8.1
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class KeyExcludeFirstTest {
 
     @Test
@@ -22,6 +23,15 @@ final class KeyExcludeFirstTest {
         MatcherAssert.assertThat(
             new KeyExcludeFirst(key, "1").string(),
             new IsEqual<>("2/1")
+        );
+    }
+
+    @Test
+    void excludesWhenPartIsNotAtBeginning() {
+        final Key key = new Key.From("one", "two", "three");
+        MatcherAssert.assertThat(
+            new KeyExcludeFirst(key, "two").string(),
+            new IsEqual<>("one/three")
         );
     }
 

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 1.9.1
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class KeyExcludeLastTest {
 
     @Test
@@ -22,6 +23,15 @@ final class KeyExcludeLastTest {
         MatcherAssert.assertThat(
             new KeyExcludeLast(key, "1").string(),
             new IsEqual<>("1/2")
+        );
+    }
+
+    @Test
+    void excludesWhenPartIsNotAtEnd() {
+        final Key key = new Key.From("one", "two", "three");
+        MatcherAssert.assertThat(
+            new KeyExcludeLast(key, "two").string(),
+            new IsEqual<>("one/three")
         );
     }
 

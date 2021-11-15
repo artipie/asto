@@ -35,20 +35,17 @@ public final class KeyExcludeLast extends Key.Wrap {
      */
     private static List<String> exclude(final Key key, final String part) {
         final List<String> allparts = key.parts();
-        int lastindex = -1;
+        int ifound = -1;
         for (int ind = allparts.size() - 1; ind >= 0; ind = ind - 1) {
             final String prt = allparts.get(ind);
             if (prt.equals(part)) {
-                lastindex = ind - 1;
+                ifound = ind;
                 break;
             }
         }
-        final List<String> parts;
-        if (lastindex == -1) {
-            parts = allparts;
-        } else {
-            parts = new LinkedList<>();
-            for (int ind = 0; ind <= lastindex; ind = ind + 1) {
+        final List<String> parts = new LinkedList<>();
+        for (int ind = 0; ind < allparts.size(); ind = ind + 1) {
+            if (ind != ifound) {
                 parts.add(allparts.get(ind));
             }
         }
