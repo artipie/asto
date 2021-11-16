@@ -109,14 +109,14 @@ class SubStorageTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"my-project", "com/example"})
-    void savesValue(final String pref) {
+    void savesContent(final String pref) {
         final Key prefix = new Key.From(pref);
         final byte[] data = "some data".getBytes(StandardCharsets.UTF_8);
         final SubStorage substo = new SubStorage(prefix, this.asto);
         substo.save(new Key.From("package"), new Content.From(data)).join();
         MatcherAssert.assertThat(
             "Returns storage item with prefix",
-            new BlockingStorage(substo).value(new Key.From("package")),
+            new BlockingStorage(this.asto).value(new Key.From(prefix, "package")),
             new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
@@ -129,7 +129,7 @@ class SubStorageTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"my-project", "com/example"})
-    void movesValue(final String pref) {
+    void movesContent(final String pref) {
         final Key prefix = new Key.From(pref);
         final byte[] data = "source".getBytes(StandardCharsets.UTF_8);
         final Key source = new Key.From("src");
@@ -143,7 +143,7 @@ class SubStorageTest {
         substo.move(source, destination).join();
         MatcherAssert.assertThat(
             "Moves key value with prefix",
-            new BlockingStorage(substo).value(destination),
+            new BlockingStorage(this.asto).value(new Key.From(prefix, destination)),
             new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
@@ -157,7 +157,7 @@ class SubStorageTest {
     @SuppressWarnings("deprecation")
     @ParameterizedTest
     @ValueSource(strings = {"url", "sub/url"})
-    void getSize(final String pref) {
+    void readsSize(final String pref) {
         final Key prefix = new Key.From(pref);
         final byte[] data = "012004407".getBytes(StandardCharsets.UTF_8);
         final Long datalgt = Long.valueOf(data.length);
