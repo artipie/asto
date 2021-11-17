@@ -16,6 +16,7 @@ import java.util.logging.Level;
  *
  * @since 0.20.4
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class LoggingStorage implements Storage {
 
     /**
