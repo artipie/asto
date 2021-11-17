@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Key that excludes the last occurrence of a part.
- * If part to exclude was not found, the class can return the origin key.
+ * @implNote If part to exclude was not found, the class can return the origin key.
  * @since 1.9.1
  */
 public final class KeyExcludeLast extends Key.Wrap {

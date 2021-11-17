@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Key that excludes a part by its index.
- * If index is out of bounds, the class can return the origin key.
+ * @implNote If index is out of bounds, the class can return the origin key.
  * @since 1.9.1
  */
 public final class KeyExcludeByIndex extends Key.Wrap {

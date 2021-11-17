@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Key that excludes the first occurrence of a part.
- * If part to exclude was not found, the class can return the origin key.
+ * @implNote If part to exclude was not found, the class can return the origin key.
  * @since 1.8.1
  */
 public final class KeyExcludeFirst extends Key.Wrap {

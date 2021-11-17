@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 /**
  * Key that excludes all occurrences of a part.
- * If part to exclude was not found, the class can return the origin key.
+ * @implNote If part to exclude was not found, the class can return the origin key.
  * @since 1.8.1
  */
 public final class KeyExcludeAll extends Key.Wrap {
