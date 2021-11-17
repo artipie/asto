@@ -35,7 +35,7 @@ public final class StorageDeleteAllTest {
             new IsEqual<>(0)
         );
         MatcherAssert.assertThat(
-            "Should have other items",
+            "Should list other items",
             blocking.list(Key.ROOT),
             Matchers.hasItems(
                 new Key.From("b", "three"),
