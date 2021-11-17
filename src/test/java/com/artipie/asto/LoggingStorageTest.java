@@ -8,6 +8,7 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.WriterAppender;
@@ -146,7 +147,7 @@ final class LoggingStorageTest {
         logsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
             this.writer.toString(),
-            new IsEqual<>(String.format("Save 'key': %s", data.length))
+            new IsEqual<>(String.format("Save 'key': %s", Optional.of(data.length)))
         );
     }
 }

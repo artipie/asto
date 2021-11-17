@@ -72,7 +72,7 @@ public final class LoggingStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Content content) {
         return this.storage.save(key, content).thenApply(
             result -> {
-                this.log("Save '%s': %s", key.string(), content.size().get());
+                this.log("Save '%s': %s", key.string(), content.size());
                 return result;
             }
         );
