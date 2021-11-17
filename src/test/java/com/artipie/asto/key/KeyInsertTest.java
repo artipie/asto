@@ -5,7 +5,6 @@
 package com.artipie.asto.key;
 
 import com.artipie.asto.Key;
-import com.artipie.asto.PartIndexOutOfBoundsException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -31,7 +30,7 @@ final class KeyInsertTest {
     void insertsIndexOutOfBounds() {
         final Key key = new Key.From("1", "2");
         Assertions.assertThrows(
-            PartIndexOutOfBoundsException.class,
+            IndexOutOfBoundsException.class,
             () -> new KeyInsert(key, "3", -1)
         );
     }

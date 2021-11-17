@@ -2,11 +2,9 @@
  * The MIT License (MIT) Copyright (c) 2020-2021 artipie.com
  * https://github.com/artipie/asto/LICENSE.txt
  */
-
 package com.artipie.asto.key;
 
 import com.artipie.asto.Key;
-import com.artipie.asto.PartIndexOutOfBoundsException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -37,12 +35,8 @@ public final class KeyInsert extends Key.Wrap {
      * @return List of parts
      */
     private static List<String> insert(final Key key, final String part, final int index) {
-        try {
-            final List<String> parts = new LinkedList<>(key.parts());
-            parts.add(index, part);
-            return parts;
-        } catch (final IndexOutOfBoundsException ex) {
-            throw new PartIndexOutOfBoundsException(key, index, ex);
-        }
+        final List<String> parts = new LinkedList<>(key.parts());
+        parts.add(index, part);
+        return parts;
     }
 }
