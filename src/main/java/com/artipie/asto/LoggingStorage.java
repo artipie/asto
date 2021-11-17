@@ -121,6 +121,16 @@ public final class LoggingStorage implements Storage {
     }
 
     @Override
+    public CompletableFuture<Void> deleteAll(final Key prefix) {
+        return this.storage.deleteAll(prefix).thenApply(
+            result -> {
+                this.log("Delete all keys prefixed by '%s'", prefix.string());
+                return result;
+            }
+        );
+    }
+
+    @Override
     public <T> CompletionStage<T> exclusively(
         final Key key,
         final Function<Storage, CompletionStage<T>> operation
