@@ -18,9 +18,6 @@ import java.util.stream.Stream;
  * Storage key.
  *
  * @since 0.6
- * @todo #341:30min Add others key operations (exclusion by index, insertion,..).
- *  We should exclude a part from a storage key by index. We should also insert
- *  a part to a key by specifying the position (Like we do with {@code List.add(Obj, index)}).
  */
 public interface Key {
     /**

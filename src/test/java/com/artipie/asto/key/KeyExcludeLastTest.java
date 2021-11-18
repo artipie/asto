@@ -10,37 +10,37 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link KeyExcludeFirst}.
+ * Test case for {@link KeyExcludeLast}.
  *
- * @since 1.8.1
+ * @since 1.9.1
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-final class KeyExcludeFirstTest {
+final class KeyExcludeLastTest {
 
     @Test
-    void excludesFirstPart() {
+    void excludesLastPart() {
         final Key key = new Key.From("1", "2", "1");
         MatcherAssert.assertThat(
-            new KeyExcludeFirst(key, "1").string(),
-            new IsEqual<>("2/1")
+            new KeyExcludeLast(key, "1").string(),
+            new IsEqual<>("1/2")
         );
     }
 
     @Test
-    void excludesWhenPartIsNotAtBeginning() {
+    void excludesWhenPartIsNotAtEnd() {
         final Key key = new Key.From("one", "two", "three");
         MatcherAssert.assertThat(
-            new KeyExcludeFirst(key, "two").string(),
+            new KeyExcludeLast(key, "two").string(),
             new IsEqual<>("one/three")
         );
     }
 
     @Test
     void excludesNonExistingPart() {
-        final Key key = new Key.From("1", "2");
+        final Key key = new Key.From("3", "4");
         MatcherAssert.assertThat(
-            new KeyExcludeFirst(key, "3").string(),
-            new IsEqual<>("1/2")
+            new KeyExcludeLast(key, "5").string(),
+            new IsEqual<>("3/4")
         );
     }
 }
