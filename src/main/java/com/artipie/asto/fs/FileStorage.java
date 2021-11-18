@@ -89,7 +89,7 @@ public final class FileStorage implements Storage {
                 final Collection<Key> keys;
                 if (Files.exists(path)) {
                     final int dirnamelen;
-                    if (Key.ROOT.equals(prefix)) {
+                    if (Key.ROOT.string().equals(prefix.string())) {
                         dirnamelen = path.toString().length() + 1;
                     } else {
                         dirnamelen = path.toString().length() - prefix.string().length();
