@@ -56,6 +56,18 @@ SOFTWARE.
       <timezone>+1</timezone>
     </developer>
   </developers>
+  <contributors>
+    <contributor>
+      <name>Olivier B. OURA</name>
+      <email>baudoliver7@gmail.com</email>
+      <organization>baudoliver7.com</organization>
+      <organizationUrl>https://www.baudoliver7.com</organizationUrl>
+      <roles>
+        <role>Developer</role>
+      </roles>
+      <timezone>+0</timezone>
+    </contributor>
+  </contributors>
   <issueManagement>
     <system>GitHub</system>
     <url>https://github.com/artipie/asto/issues</url>
