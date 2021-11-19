@@ -22,10 +22,10 @@ public final class StorageDeleteAllTest {
 
     @TestTemplate
     void shouldDeleteAllItemsWithKeyPrefix(final Storage storage) {
-        final Key prefix = new Key.From("a");
+        final Key prefix = new Key.From("p1");
         storage.save(new Key.From(prefix, "one"), Content.EMPTY).join();
         storage.save(new Key.From(prefix, "two"), Content.EMPTY).join();
-        storage.save(new Key.From("b", "three"), Content.EMPTY).join();
+        storage.save(new Key.From("p2", "three"), Content.EMPTY).join();
         storage.save(new Key.From("four"), Content.EMPTY).join();
         final BlockingStorage blocking = new BlockingStorage(storage);
         blocking.deleteAll(prefix);
@@ -38,7 +38,7 @@ public final class StorageDeleteAllTest {
             "Should list other items",
             blocking.list(Key.ROOT),
             Matchers.hasItems(
-                new Key.From("b", "three"),
+                new Key.From("p2", "three"),
                 new Key.From("four")
             )
         );
