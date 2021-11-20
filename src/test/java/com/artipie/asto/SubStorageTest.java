@@ -7,6 +7,9 @@ package com.artipie.asto;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -173,6 +176,77 @@ class SubStorageTest {
             new BlockingStorage(new SubStorage(Key.ROOT, this.asto))
                 .size(new Key.From(prefix, keyres)),
             new IsEqual<>(datalgt)
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"repo", "com/repo"})
+    void deletesContent(final String pref) {
+        final Key prefix = new Key.From(pref);
+        final Key key = new Key.From("file");
+        final Key prefkey = new Key.From(prefix, key);
+        this.asto.save(prefkey, Content.EMPTY).join();
+        new SubStorage(prefix, this.asto).delete(key).join();
+        MatcherAssert.assertThat(
+            "Deletes storage item with prefix",
+            new BlockingStorage(this.asto).exists(prefkey),
+            new IsEqual<>(false)
+        );
+        this.asto.save(prefkey, Content.EMPTY).join();
+        new SubStorage(Key.ROOT, this.asto).delete(prefkey).join();
+        MatcherAssert.assertThat(
+            "Deletes storage item with ROOT prefix",
+            new BlockingStorage(this.asto).exists(prefkey),
+            new IsEqual<>(false)
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"repo", "com/repo"})
+    void readsMetadata(final String pref) {
+        final Key prefix = new Key.From(pref);
+        final Key key = new Key.From("file");
+        final Key prefkey = new Key.From(prefix, key);
+        final byte[] data = "My code is written here"
+            .getBytes(StandardCharsets.UTF_8);
+        final long dlg = data.length;
+        this.asto.save(prefkey, new Content.From(data)).join();
+        final Meta submeta =
+            new SubStorage(prefix, this.asto).metadata(key).join();
+        MatcherAssert.assertThat(
+            "Reads storage metadata of a item with prefix",
+            submeta.read(Meta.OP_SIZE).get(),
+            new IsEqual<>(dlg)
+        );
+        final Meta rtmeta =
+            new SubStorage(Key.ROOT, this.asto).metadata(prefkey).join();
+        MatcherAssert.assertThat(
+            "Reads storage metadata of a item with ROOT prefix",
+            rtmeta.read(Meta.OP_SIZE).get(),
+            new IsEqual<>(dlg)
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"var", "var/repo"})
+    void runsExclusively(final String pref) {
+        final Key prefix = new Key.From(pref);
+        final Key key = new Key.From("key-exec");
+        final Key prefkey = new Key.From(prefix, key);
+        this.asto.save(prefkey, Content.EMPTY).join();
+        final Function<Storage, CompletionStage<Boolean>> operation =
+            sto -> CompletableFuture.completedFuture(true);
+        final Boolean subfinished = new LoggingStorage(this.asto)
+            .exclusively(key, operation).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            "Runs exclusively a storage key with prefix",
+            subfinished, new IsEqual<>(true)
+        );
+        final Boolean rtfinished = new SubStorage(Key.ROOT, this.asto)
+            .exclusively(prefkey, operation).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            "Runs exclusively a storage key with ROOT prefix",
+            rtfinished, new IsEqual<>(true)
         );
     }
 }
