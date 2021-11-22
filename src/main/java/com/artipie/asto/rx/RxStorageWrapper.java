@@ -18,6 +18,7 @@ import java.util.function.Function;
  * Reactive wrapper over {@code Storage}.
  *
  * @since 0.9
+ * @todo #55:60min Add test coverage for RxStorage, RxStorageTransaction.
  */
 public final class RxStorageWrapper implements RxStorage {
 
