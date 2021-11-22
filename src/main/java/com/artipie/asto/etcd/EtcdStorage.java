@@ -15,11 +15,14 @@ import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.ext.PublisherAs;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
+import io.etcd.jetcd.KeyValue;
+import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.options.GetOption;
 import io.etcd.jetcd.options.GetOption.SortOrder;
 import io.vavr.NotImplementedError;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
  * </p>
  * @since 1.0
  * @checkstyle ReturnCountCheck (200 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class EtcdStorage implements Storage {
 
@@ -67,13 +71,28 @@ public final class EtcdStorage implements Storage {
 
     @Override
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        return this.client.getKVClient().get(
-            keyToSeq(prefix),
-            GetOption.newBuilder()
-                .withKeysOnly(true)
-                .withSortOrder(SortOrder.ASCEND)
-                .build()
-        ).thenApply(
+        final CompletableFuture<GetResponse> future;
+        if (prefix == Key.ROOT) {
+            final ByteSequence root = keyToSeq(new Key.From("\0"));
+            future = this.client.getKVClient().get(
+                root,
+                GetOption.newBuilder()
+                    .withKeysOnly(true)
+                    .withSortOrder(SortOrder.ASCEND)
+                    .withRange(root)
+                    .build()
+            );
+        } else {
+            future = this.client.getKVClient().get(
+                keyToSeq(prefix),
+                GetOption.newBuilder()
+                    .withKeysOnly(true)
+                    .withSortOrder(SortOrder.ASCEND)
+                    .isPrefix(true)
+                    .build()
+            );
+        }
+        return future.thenApply(
             rsp -> rsp.getKvs().stream()
                 .map(kv -> new String(kv.getKey().getBytes(), StandardCharsets.UTF_8))
                 .map(str -> new Key.From(str))
@@ -108,14 +127,22 @@ public final class EtcdStorage implements Storage {
 
     @Override
     public CompletableFuture<? extends Meta> metadata(final Key key) {
-        return CompletableFuture.completedFuture(Meta.EMPTY);
+        return this.client.getKVClient().get(keyToSeq(key)).thenApply(
+            rsp -> rsp.getKvs().stream().max(
+                Comparator.comparingLong(KeyValue::getVersion)
+            )
+        ).thenApply(
+            kv -> kv.orElseThrow(
+                () -> new ValueNotFoundException(key)
+            )
+        ).thenApply(kv -> new EtcdMeta(kv));
     }
 
     @Override
     public CompletableFuture<Content> value(final Key key) {
         return this.client.getKVClient().get(keyToSeq(key)).thenApply(
             rsp -> rsp.getKvs().stream().max(
-                (left, right) -> Long.compare(left.getVersion(), right.getVersion())
+                Comparator.comparingLong(KeyValue::getVersion)
             )
         ).thenApply(
             kv -> kv.orElseThrow(
