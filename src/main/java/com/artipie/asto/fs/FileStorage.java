@@ -127,7 +127,7 @@ public final class FileStorage implements Storage {
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final Path next = this.dir.resolve(key.string());
         if (!next.normalize().startsWith(next)) {
-            throw new IllegalStateException("Entry path is out of storage.");
+            throw new ArtipieException("Entry path is out of storage.");
         }
         return CompletableFuture.supplyAsync(
             () -> {

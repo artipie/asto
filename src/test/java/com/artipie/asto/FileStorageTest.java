@@ -4,6 +4,7 @@
  */
 package com.artipie.asto;
 
+import com.artipie.ArtipieException;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Emitter;
@@ -100,9 +101,11 @@ final class FileStorageTest {
     @Test
     void shouldAlwaysWriteInStorageSandbox() {
         Assertions.assertThrows(
-            IllegalStateException.class, () -> {
-                this.storage.save(new Key.From("../../etc/password"), Content.EMPTY).get();
-            },
+            ArtipieException.class,
+            () -> this.storage.save(
+                new Key.From("../../etc/password"),
+                Content.EMPTY
+            ).get(),
             "Entry path is out of storage"
         );
     }
