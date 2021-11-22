@@ -125,6 +125,10 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
+        final Path next = this.dir.resolve(key.string());
+        if (!next.normalize().startsWith(next)) {
+            throw new IllegalStateException("Entry path is out of storage.");
+        }
         return CompletableFuture.supplyAsync(
             () -> {
                 final Path tmp = Paths.get(

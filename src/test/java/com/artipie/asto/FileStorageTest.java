@@ -21,6 +21,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -33,7 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
 final class FileStorageTest {
 
     /**
@@ -93,6 +94,16 @@ final class FileStorageTest {
         MatcherAssert.assertThat(
             this.storage.list(Key.ROOT).join(),
             new IsEmptyCollection<>()
+        );
+    }
+
+    @Test
+    void shouldAlwaysWriteInStorageSandbox() {
+        Assertions.assertThrows(
+            IllegalStateException.class, () -> {
+                this.storage.save(new Key.From("../../etc/password"), Content.EMPTY).get();
+            },
+            "Entry path is out of storage"
         );
     }
 
