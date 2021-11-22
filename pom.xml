@@ -80,7 +80,7 @@ SOFTWARE.
     </snapshotRepository>
   </distributionManagement>
   <properties>
-    <vertx.version>4.1.1</vertx.version>
+    <vertx.version>4.2.1</vertx.version>
     <qulice.license>${project.basedir}/LICENSE.header</qulice.license>
   </properties>
   <dependencies>
@@ -168,7 +168,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.etcd</groupId>
       <artifactId>jetcd-core</artifactId>
-      <version>0.5.11</version>
+      <version>0.6.1</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
