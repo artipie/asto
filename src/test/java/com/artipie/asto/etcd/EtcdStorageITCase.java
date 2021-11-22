@@ -27,10 +27,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * @todo #306:90min The test is disabled,
  *  the CI can't start ETCD extension which depends on testcontainer with
  *  etcd Docker image. Let's fix this issue on CI and enable the test.
- * @todo #306:90min Add etcd storage to StorageExtension to run all common
- *  tests on EtcdStorage too. It could be not an easy task, since etcd
- *  test depends on etcd clust with at least one node. For this test
- *  it starts using testcontainers and `EtcdCluster` junit extension.
  */
 @Disabled
 public final class EtcdStorageITCase {

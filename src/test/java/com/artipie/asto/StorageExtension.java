@@ -6,13 +6,17 @@
 package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
+import com.artipie.asto.etcd.EtcdStorage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.fs.VertxFileStorage;
 import com.artipie.asto.memory.BenchmarkStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.s3.S3Storage;
+import com.github.dockerjava.api.DockerClient;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.launcher.EtcdContainer;
+import io.etcd.jetcd.test.EtcdClusterExtension;
 import io.vertx.reactivex.core.Vertx;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -28,8 +32,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
+import org.testcontainers.DockerClientFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -40,7 +46,9 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * JUnit5 test template extension running test methods with all Storage types.
  *
  * @since 0.15
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 final class StorageExtension
     implements TestTemplateInvocationContextProvider, BeforeAllCallback, AfterAllCallback {
 
@@ -52,19 +60,32 @@ final class StorageExtension
         .build();
 
     /**
+     * Etcd cluster.
+     */
+    @RegisterExtension
+    private final EtcdClusterExtension etcd = new EtcdClusterExtension(
+        "test-etcd",
+        1,
+        false,
+        "--data-dir",
+        "/data.etcd0"
+    );
+
+    /**
      * Vert.x file System.
      */
     private Vertx vertx;
 
     @Override
-    public void beforeAll(final ExtensionContext extension) {
+    public void beforeAll(final ExtensionContext extension) throws Exception {
         this.mock.beforeAll(extension);
         this.vertx = Vertx.vertx();
     }
 
     @Override
-    public void afterAll(final ExtensionContext extension) {
+    public void afterAll(final ExtensionContext extension) throws Exception {
         this.mock.afterAll(extension);
+        this.etcd.afterAll(extension);
         this.vertx.close();
     }
 
@@ -86,7 +107,8 @@ final class StorageExtension
                 new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx),
                 new BenchmarkStorage(new InMemoryStorage())
             );
-        } catch (final IOException ex) {
+        // @checkstyle IllegalCatchCheck (1 line)
+        } catch (final Exception ex) {
             throw new IllegalStateException("Failed to generate storage", ex);
         }
         return storages.stream().map(StorageContext::new);
@@ -111,6 +133,32 @@ final class StorageExtension
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
         return new S3Storage(client, bucket);
+    }
+
+    /**
+     * Creates {@link EtcdStorage} instance.
+     *
+     * @return EtcdStorage instance
+     * @throws Exception If fails
+     * @todo #310:30min Implement properly list, exclusively and size methods for EtcdStorage.
+     *  Some test cases ({@link StorageExclusivelyTest}, {@link StorageSizeTest},
+     *  {@link StorageListTest} etc.) fail because methods {@code list}, {@code exclusively},
+     *  {@code size} are not properly implemented. We should fix them and use method
+     *  {@code etcdStorage} below to add {@link EtcdStorage} to others storages in method
+     *  {@code provideTestTemplateInvocationContexts} for enabling test on it.
+     */
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private EtcdStorage etcdStorage() throws Exception {
+        final DockerClient client = DockerClientFactory.instance().client();
+        client.pullImageCmd(EtcdContainer.ETCD_DOCKER_IMAGE_NAME)
+            .start()
+            .awaitCompletion();
+        this.etcd.start();
+        return new EtcdStorage(
+            Client.builder()
+                .endpoints(this.etcd.getClientEndpoints())
+                .build()
+        );
     }
 
     /**
