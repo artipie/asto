@@ -81,7 +81,13 @@ final class StorageExtension
             storages = Arrays.asList(
                 new InMemoryStorage(),
                 this.s3Storage(),
-                new SubStorage(new Key.From("prefix"), new InMemoryStorage()),
+                new SubStorage(new Key.From("mem-prefix"), new InMemoryStorage()),
+                new SubStorage(
+                    new Key.From("file-prefix"),
+                    new FileStorage(Files.createTempDirectory("pref-sub"))
+                ),
+                new SubStorage(Key.ROOT, new InMemoryStorage()),
+                new SubStorage(Key.ROOT, new FileStorage(Files.createTempDirectory("sub"))),
                 new FileStorage(Files.createTempDirectory("junit")),
                 new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx),
                 new BenchmarkStorage(new InMemoryStorage())

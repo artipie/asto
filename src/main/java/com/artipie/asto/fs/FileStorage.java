@@ -89,7 +89,7 @@ public final class FileStorage implements Storage {
                 final Collection<Key> keys;
                 if (Files.exists(path)) {
                     final int dirnamelen;
-                    if (Key.ROOT.equals(prefix)) {
+                    if (Key.ROOT.string().equals(prefix.string())) {
                         dirnamelen = path.toString().length() + 1;
                     } else {
                         dirnamelen = path.toString().length() - prefix.string().length();
@@ -201,7 +201,7 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Content> value(final Key key) {
         final CompletableFuture<Content> res;
-        if (Key.ROOT.equals(key)) {
+        if (Key.ROOT.string().equals(key.string())) {
             res = new CompletableFutureSupport.Failed<Content>(
                 new ArtipieIOException("Unable to load from root")
             ).get();
