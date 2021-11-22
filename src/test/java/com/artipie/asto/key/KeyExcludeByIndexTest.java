@@ -10,18 +10,18 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link KeyExcludeAll}.
+ * Test case for {@link KeyExcludeByIndex}.
  *
- * @since 1.8.1
+ * @since 1.9.1
  */
-final class KeyExcludeAllTest {
+final class KeyExcludeByIndexTest {
 
     @Test
-    void excludesAllPart() {
+    void excludesPart() {
         final Key key = new Key.From("1", "2", "1");
         MatcherAssert.assertThat(
-            new KeyExcludeAll(key, "1").string(),
-            new IsEqual<>("2")
+            new KeyExcludeByIndex(key, 0).string(),
+            new IsEqual<>("2/1")
         );
     }
 
@@ -29,7 +29,7 @@ final class KeyExcludeAllTest {
     void excludesNonExistingPart() {
         final Key key = new Key.From("1", "2");
         MatcherAssert.assertThat(
-            new KeyExcludeAll(key, "3").string(),
+            new KeyExcludeByIndex(key, -1).string(),
             new IsEqual<>("1/2")
         );
     }

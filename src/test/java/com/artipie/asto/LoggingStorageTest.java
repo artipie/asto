@@ -6,7 +6,12 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.WriterAppender;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,10 +21,11 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link LoggingStorage}.
  *
  * @since 0.20.4
- * @todo #186:30min Test that operations are properly logged in LoggingStorage.
- *  We are currently testing that `LoggingStorage` preserves results provided
- *  by `Storage`. We now want to introduce tests that should check that
- *  operation results and parameters are properly logged.
+ * @todo #345:30min Continue to test that operations are properly logged in {@ling LoggingStorage}.
+ *  We have tested a number of operations of {@ling LoggingStorage}.
+ *  We want to continue to test that remaining operations results
+ *  and parameters are properly logged.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class LoggingStorageTest {
 
@@ -28,9 +34,17 @@ final class LoggingStorageTest {
      */
     private InMemoryStorage memsto;
 
+    /**
+     * Log writer.
+     */
+    private StringWriter writer;
+
     @BeforeEach
     void setUp() {
         this.memsto = new InMemoryStorage();
+        this.writer = new StringWriter();
+        Logger.getLogger(this.memsto.getClass())
+            .addAppender(new WriterAppender(new PatternLayout("%m"), this.writer));
     }
 
     @Test
@@ -100,6 +114,40 @@ final class LoggingStorageTest {
         MatcherAssert.assertThat(
             new BlockingStorage(logsto).value(key),
             new IsEqual<>(updated)
+        );
+    }
+
+    @Test
+    void logsWhenListingKeys() {
+        this.memsto.save(new Key.From("one/two"), Content.EMPTY).join();
+        this.memsto.save(new Key.From("one/three"), Content.EMPTY).join();
+        new LoggingStorage(this.memsto).list(new Key.From("one")).join();
+        MatcherAssert.assertThat(
+            this.writer.toString(),
+            new IsEqual<>("List 'one': 2")
+        );
+    }
+
+    @Test
+    void logsWhenCheckingExistence() {
+        final Key key = new Key.From("binary-file");
+        this.memsto.save(key, Content.EMPTY).join();
+        new LoggingStorage(this.memsto).exists(key).join();
+        MatcherAssert.assertThat(
+            this.writer.toString(),
+            new IsEqual<>("Exists 'binary-file': true")
+        );
+    }
+
+    @Test
+    void logsWhenSaving() {
+        final byte[] data = "content".getBytes(StandardCharsets.UTF_8);
+        final Key key = new Key.From("key");
+        final LoggingStorage logsto = new LoggingStorage(this.memsto);
+        logsto.save(key, new Content.From(data)).join();
+        MatcherAssert.assertThat(
+            this.writer.toString(),
+            new IsEqual<>(String.format("Save 'key': %s", Optional.of(data.length)))
         );
     }
 }
