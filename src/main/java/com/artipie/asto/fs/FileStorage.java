@@ -5,7 +5,15 @@
 package com.artipie.asto.fs;
 
 import com.artipie.ArtipieException;
-import com.artipie.asto.*;
+import com.artipie.asto.ArtipieIOException;
+import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
+import com.artipie.asto.Key;
+import com.artipie.asto.Meta;
+import com.artipie.asto.OneTimePublisher;
+import com.artipie.asto.Storage;
+import com.artipie.asto.UnderLockOperation;
+import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
@@ -118,9 +126,9 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        final Path next = this.dir.resolve(key.string());
-        final CompletableFuture<Void> future;
-        if (next.normalize().startsWith(next)) {
+        CompletableFuture<Void> future;
+        try {
+            this.validateKey(key);
             future = CompletableFuture.supplyAsync(
                 () -> {
                     final Path tmp = Paths.get(
@@ -151,38 +159,50 @@ public final class FileStorage implements Storage {
                     }
                 ).thenCompose(Function.identity())
             );
-        } else {
-            future = new FailedCompletionStage<Void>(
-                new ArtipieIOException(
-                    String.format("Entry path is out of storage: %s", key)
-                )
-            ).toCompletableFuture();
+        } catch (final ArtipieIOException ex) {
+            future = new FailedCompletionStage<Void>(ex).toCompletableFuture();
         }
         return future;
     }
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return FileStorage.move(this.path(source), this.path(destination));
+        CompletableFuture<Void> future;
+        try {
+            this.validateKey(source);
+            this.validateKey(destination);
+            future = FileStorage.move(this.path(source), this.path(destination));
+        } catch (final ArtipieIOException ex) {
+            future = new FailedCompletionStage<Void>(ex).toCompletableFuture();
+        }
+        return future;
     }
 
     @Override
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     public CompletableFuture<Void> delete(final Key key) {
-        return CompletableFuture.runAsync(
-            () -> {
-                final Path path = this.path(key);
-                if (Files.exists(path) && !Files.isDirectory(path)) {
-                    try {
-                        Files.delete(path);
-                        this.deleteEmptyParts(key.parent());
-                    } catch (final IOException iex) {
-                        throw new ArtipieIOException(iex);
+        CompletableFuture<Void> future;
+        try {
+            this.validateKey(key);
+            future = CompletableFuture.runAsync(
+                () -> {
+                    final Path path = this.path(key);
+                    if (Files.exists(path) && !Files.isDirectory(path)) {
+                        try {
+                            Files.delete(path);
+                            this.deleteEmptyParts(key.parent());
+                        } catch (final IOException iex) {
+                            throw new ArtipieIOException(iex);
+                        }
+                    } else {
+                        throw new ValueNotFoundException(key);
                     }
-                } else {
-                    throw new ValueNotFoundException(key);
                 }
-            }
-        );
+            );
+        } catch (final ArtipieIOException ex) {
+            future = new FailedCompletionStage<Void>(ex).toCompletableFuture();
+        }
+        return future;
     }
 
     @Override
@@ -267,6 +287,21 @@ public final class FileStorage implements Storage {
                     throw new ArtipieIOException(err);
                 }
             }
+        }
+    }
+
+    /**
+     * Checks if key point into the storage.
+     *
+     * @param key Key to validate.
+     * @throws ArtipieIOException If not valid key
+     */
+    private void validateKey(final Key key) {
+        final Path next = this.dir.resolve(key.string());
+        if (!next.normalize().startsWith(next)) {
+            throw new ArtipieIOException(
+                String.format("Entry path is out of storage: %s", key)
+            );
         }
     }
 

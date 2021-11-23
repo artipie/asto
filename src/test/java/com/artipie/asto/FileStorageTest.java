@@ -30,7 +30,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Test case for {@link Storage}.
+ * Test case for {@link FileStorage}.
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
@@ -99,21 +99,99 @@ final class FileStorageTest {
     }
 
     @Test
-    void shouldAlwaysWriteInStorageSandbox() {
+    void shouldAlwaysSaveInStorageSandbox() {
         final Key key = new Key.From("../../etc/password");
         final Exception cex = Assertions.assertThrows(
             Exception.class,
             () -> this.storage.save(key, Content.EMPTY).get()
         );
         MatcherAssert.assertThat(
-            "Should throw an io exception",
+            "Should throw an io exception while saving",
             ExceptionUtils.getRootCause(cex).getClass(),
             new IsEqual<>(IOException.class)
         );
         MatcherAssert.assertThat(
-            "Should throw with exception message",
+            "Should throw with exception message while saving",
             ExceptionUtils.getRootCause(cex).getMessage(),
             new IsEqual<>(String.format("Entry path is out of storage: %s", key))
+        );
+    }
+
+    @Test
+    void shouldAlwaysDeleteInStorageSandbox() throws IOException {
+        final Path myfolder = this.tmp.resolve("my-folder");
+        myfolder.toFile().mkdirs();
+        myfolder.resolve("file.txt").toFile().createNewFile();
+        final Path afolder = this.tmp.resolve("another-folder");
+        afolder.toFile().mkdirs();
+        final FileStorage sto = new FileStorage(afolder);
+        final Key key = new Key.From("../my-folder/file.txt");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> sto.delete(key).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while saving",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while saving",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", key))
+        );
+    }
+
+    @Test
+    void shouldAlwaysMoveFromStorageSandbox() throws IOException {
+        final Path myfolder = this.tmp.resolve("my-folder-move-from");
+        myfolder.toFile().mkdirs();
+        myfolder.resolve("file.txt").toFile().createNewFile();
+        final Path afolder = this.tmp.resolve("another-folder-move-from");
+        afolder.toFile().mkdirs();
+        final FileStorage sto = new FileStorage(afolder);
+        final Key source = new Key.From("../my-folder-move-from/file.txt");
+        final Key destination = new Key.From("another-folder-move-from/file.txt");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> sto.move(source, destination).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while saving",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while saving",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", source))
+        );
+    }
+
+    @Test
+    void shouldAlwaysMoveToStorageSandbox() throws IOException {
+        final Path myfolder = this.tmp.resolve("my-folder-move-to");
+        myfolder.toFile().mkdirs();
+        myfolder.resolve("file.txt").toFile().createNewFile();
+        final Path afolder = this.tmp.resolve("another-folder-move-to");
+        afolder.toFile().mkdirs();
+        afolder.resolve("file.txt").toFile().createNewFile();
+        final FileStorage sto = new FileStorage(afolder);
+        final Key source = new Key.From("another-folder-move-to/file.txt");
+        final Key destination = new Key.From("../my-folder-move-to/file.txt");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> sto.move(source, destination).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while saving",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while saving",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", destination))
         );
     }
 
