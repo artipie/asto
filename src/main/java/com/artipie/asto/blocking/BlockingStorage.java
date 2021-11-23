@@ -108,4 +108,13 @@ public class BlockingStorage {
     public void delete(final Key key) {
         this.storage.delete(key).join();
     }
+
+    /**
+     * Removes all items with key prefix.
+     *
+     * @param prefix Key prefix.
+     */
+    public void deleteAll(final Key prefix) {
+        this.storage.deleteAll(prefix).join();
+    }
 }
