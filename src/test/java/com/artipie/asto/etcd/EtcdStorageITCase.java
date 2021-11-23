@@ -9,7 +9,9 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
+import com.github.dockerjava.api.DockerClient;
 import io.etcd.jetcd.Client;
+import io.etcd.jetcd.launcher.EtcdContainer;
 import io.etcd.jetcd.test.EtcdClusterExtension;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionException;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.DockerClientFactory;
 
 /**
  * Test case for etcd-storage.
@@ -52,7 +55,11 @@ final class EtcdStorageITCase {
     private Storage storage;
 
     @BeforeAll
-    static void beforeAll() {
+    static void beforeAll() throws InterruptedException {
+        final DockerClient client = DockerClientFactory.instance().client();
+        client.pullImageCmd(EtcdContainer.ETCD_DOCKER_IMAGE_NAME)
+            .start()
+            .awaitCompletion();
         ETCD.start();
     }
 
