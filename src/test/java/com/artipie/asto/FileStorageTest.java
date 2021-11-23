@@ -131,12 +131,12 @@ final class FileStorageTest {
             () -> sto.delete(key).get()
         );
         MatcherAssert.assertThat(
-            "Should throw an io exception while saving",
+            "Should throw an io exception while deleting",
             ExceptionUtils.getRootCause(cex).getClass(),
             new IsEqual<>(IOException.class)
         );
         MatcherAssert.assertThat(
-            "Should throw with exception message while saving",
+            "Should throw with exception message while deleting",
             ExceptionUtils.getRootCause(cex).getMessage(),
             new IsEqual<>(String.format("Entry path is out of storage: %s", key))
         );
@@ -157,12 +157,12 @@ final class FileStorageTest {
             () -> sto.move(source, destination).get()
         );
         MatcherAssert.assertThat(
-            "Should throw an io exception while saving",
+            "Should throw an io exception while moving from",
             ExceptionUtils.getRootCause(cex).getClass(),
             new IsEqual<>(IOException.class)
         );
         MatcherAssert.assertThat(
-            "Should throw with exception message while saving",
+            "Should throw with exception message while moving from",
             ExceptionUtils.getRootCause(cex).getMessage(),
             new IsEqual<>(String.format("Entry path is out of storage: %s", source))
         );
@@ -184,12 +184,12 @@ final class FileStorageTest {
             () -> sto.move(source, destination).get()
         );
         MatcherAssert.assertThat(
-            "Should throw an io exception while saving",
+            "Should throw an io exception while moving to",
             ExceptionUtils.getRootCause(cex).getClass(),
             new IsEqual<>(IOException.class)
         );
         MatcherAssert.assertThat(
-            "Should throw with exception message while saving",
+            "Should throw with exception message while moving to",
             ExceptionUtils.getRootCause(cex).getMessage(),
             new IsEqual<>(String.format("Entry path is out of storage: %s", destination))
         );
