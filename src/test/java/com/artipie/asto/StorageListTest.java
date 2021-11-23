@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 0.14
  */
 @ExtendWith(StorageExtension.class)
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class StorageListTest {
 
     @TestTemplate
@@ -29,6 +30,22 @@ public final class StorageListTest {
             .map(Key::string)
             .collect(Collectors.toList());
         MatcherAssert.assertThat(keys, Matchers.empty());
+    }
+
+    @TestTemplate
+    void shouldListAllItemsByRootKey(final Storage storage) throws Exception {
+        final BlockingStorage blocking = new BlockingStorage(storage);
+        blocking.save(new Key.From("one", "file.txt"), new byte[]{});
+        blocking.save(new Key.From("one", "two", "file.txt"), new byte[]{});
+        blocking.save(new Key.From("another"), new byte[]{});
+        final Collection<String> keys = blocking.list(Key.ROOT)
+            .stream()
+            .map(Key::string)
+            .collect(Collectors.toList());
+        MatcherAssert.assertThat(
+            keys,
+            Matchers.hasItems("one/file.txt", "one/two/file.txt", "another")
+        );
     }
 
     @TestTemplate
