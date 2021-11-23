@@ -4,11 +4,10 @@
  */
 package com.artipie.asto.blocking;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.util.Arrays;
 import java.util.Collection;
@@ -72,8 +71,7 @@ class BlockingStorageTest {
     @Test
     void shouldExistInOriginalWhenKeyIsSavedByBlocking() throws Exception {
         final Key key = new Key.From("test_key_2");
-        final byte[] data = "test data2".getBytes();
-        this.blocking.save(key, data);
+        this.blocking.save(key, "test data2".getBytes());
         MatcherAssert.assertThat(
             this.original.exists(key).get(),
             new IsEqual<>(true)
@@ -88,12 +86,9 @@ class BlockingStorageTest {
         this.original.save(source, new Content.From(data)).join();
         this.blocking.move(source, destination);
         MatcherAssert.assertThat(
-            new Remaining(
-                this.original.value(destination).thenApplyAsync(
-                    pub -> new Concatenation(pub).single().blockingGet()
-                ).join(),
-                true
-            ).bytes(),
+            new PublisherAs(
+                this.original.value(destination).join()
+            ).bytes().toCompletableFuture().join(),
             Matchers.equalTo(data)
         );
     }
@@ -101,7 +96,7 @@ class BlockingStorageTest {
     @Test
     void shouldDeleteInOriginalWhenKeyIsDeletedByBlocking() throws Exception {
         final Key key = new Key.From("test_key_6");
-        this.original.save(key, new Content.From("some data6".getBytes())).join();
+        this.original.save(key, Content.EMPTY).join();
         this.blocking.delete(key);
         MatcherAssert.assertThat(
             this.original.exists(key).get(),
