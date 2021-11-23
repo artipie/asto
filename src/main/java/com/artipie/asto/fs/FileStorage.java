@@ -5,14 +5,7 @@
 package com.artipie.asto.fs;
 
 import com.artipie.ArtipieException;
-import com.artipie.asto.ArtipieIOException;
-import com.artipie.asto.Content;
-import com.artipie.asto.Key;
-import com.artipie.asto.Meta;
-import com.artipie.asto.OneTimePublisher;
-import com.artipie.asto.Storage;
-import com.artipie.asto.UnderLockOperation;
-import com.artipie.asto.ValueNotFoundException;
+import com.artipie.asto.*;
 import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.lock.storage.StorageLock;
 import com.jcabi.log.Logger;
@@ -126,39 +119,46 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final Path next = this.dir.resolve(key.string());
-        if (!next.normalize().startsWith(next)) {
-            throw new ArtipieException("Entry path is out of storage.");
-        }
-        return CompletableFuture.supplyAsync(
-            () -> {
-                final Path tmp = Paths.get(
-                    this.dir.toString(),
-                    String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
-                );
-                tmp.getParent().toFile().mkdirs();
-                return tmp;
-            }
-        ).thenCompose(
-            tmp -> new File(tmp).write(
-                new OneTimePublisher<>(content),
-                StandardOpenOption.WRITE,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING
-            ).thenCompose(
-                nothing -> FileStorage.move(tmp, this.path(key))
-            ).handleAsync(
-                (nothing, throwable) -> {
-                    tmp.toFile().delete();
-                    final CompletableFuture<Void> result = new CompletableFuture<>();
-                    if (throwable == null) {
-                        result.complete(null);
-                    } else {
-                        result.completeExceptionally(new ArtipieIOException(throwable));
-                    }
-                    return result;
+        final CompletableFuture<Void> future;
+        if (next.normalize().startsWith(next)) {
+            future = CompletableFuture.supplyAsync(
+                () -> {
+                    final Path tmp = Paths.get(
+                        this.dir.toString(),
+                        String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
+                    );
+                    tmp.getParent().toFile().mkdirs();
+                    return tmp;
                 }
-            ).thenCompose(Function.identity())
-        );
+            ).thenCompose(
+                tmp -> new File(tmp).write(
+                    new OneTimePublisher<>(content),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING
+                ).thenCompose(
+                    nothing -> FileStorage.move(tmp, this.path(key))
+                ).handleAsync(
+                    (nothing, throwable) -> {
+                        tmp.toFile().delete();
+                        final CompletableFuture<Void> result = new CompletableFuture<>();
+                        if (throwable == null) {
+                            result.complete(null);
+                        } else {
+                            result.completeExceptionally(new ArtipieIOException(throwable));
+                        }
+                        return result;
+                    }
+                ).thenCompose(Function.identity())
+            );
+        } else {
+            future = new FailedCompletionStage<Void>(
+                new ArtipieIOException(
+                    String.format("Entry path is out of storage: %s", key)
+                )
+            ).toCompletableFuture();
+        }
+        return future;
     }
 
     @Override

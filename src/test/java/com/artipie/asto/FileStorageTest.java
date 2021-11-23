@@ -4,7 +4,6 @@
  */
 package com.artipie.asto;
 
-import com.artipie.ArtipieException;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Emitter;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -100,13 +100,20 @@ final class FileStorageTest {
 
     @Test
     void shouldAlwaysWriteInStorageSandbox() {
-        Assertions.assertThrows(
-            ArtipieException.class,
-            () -> this.storage.save(
-                new Key.From("../../etc/password"),
-                Content.EMPTY
-            ).get(),
-            "Entry path is out of storage"
+        final Key key = new Key.From("../../etc/password");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> this.storage.save(key, Content.EMPTY).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", key))
         );
     }
 
