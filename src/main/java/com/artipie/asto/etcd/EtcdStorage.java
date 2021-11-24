@@ -49,6 +49,12 @@ public final class EtcdStorage implements Storage {
     private static final long MAX_SIZE = 1024 * 1024 * 10;
 
     /**
+     * Etcd root key.
+     */
+    private static final ByteSequence ETCD_ROOT_KEY =
+        ByteSequence.from("\0", StandardCharsets.UTF_8);
+
+    /**
      * Etcd client.
      */
     private final Client client;
@@ -73,13 +79,12 @@ public final class EtcdStorage implements Storage {
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
         final CompletableFuture<GetResponse> future;
         if (prefix == Key.ROOT) {
-            final ByteSequence root = keyToSeq(new Key.From("\0"));
             future = this.client.getKVClient().get(
-                root,
+                EtcdStorage.ETCD_ROOT_KEY,
                 GetOption.newBuilder()
                     .withKeysOnly(true)
                     .withSortOrder(SortOrder.ASCEND)
-                    .withRange(root)
+                    .withRange(EtcdStorage.ETCD_ROOT_KEY)
                     .build()
             );
         } else {
