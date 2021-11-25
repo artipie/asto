@@ -27,4 +27,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-jdk-${{ matrix.java }}-mvn-
       - name: Build it with Maven
-        run: mvn clean verify -B -Pqulice
+        run: mvn clean test -B -Pqulice # Only run unit tests
