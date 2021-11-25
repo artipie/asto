@@ -9,6 +9,7 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -119,11 +120,9 @@ final class FileStorageTest {
 
     @Test
     void shouldAlwaysDeleteInStorageSandbox() throws IOException {
-        final Path myfolder = this.tmp.resolve("my-folder");
-        myfolder.toFile().mkdirs();
-        myfolder.resolve("file.txt").toFile().createNewFile();
-        final Path afolder = this.tmp.resolve("another-folder");
-        afolder.toFile().mkdirs();
+        final Path myfolder = FileStorageTest.createNewDirectory(this.tmp, "my-folder");
+        FileStorageTest.createNewFile(myfolder, "file.txt");
+        final Path afolder = FileStorageTest.createNewDirectory(this.tmp, "another-folder");
         final FileStorage sto = new FileStorage(afolder);
         final Key key = new Key.From("../my-folder/file.txt");
         final Exception cex = Assertions.assertThrows(
@@ -144,11 +143,11 @@ final class FileStorageTest {
 
     @Test
     void shouldAlwaysMoveFromStorageSandbox() throws IOException {
-        final Path myfolder = this.tmp.resolve("my-folder-move-from");
-        myfolder.toFile().mkdirs();
-        myfolder.resolve("file.txt").toFile().createNewFile();
-        final Path afolder = this.tmp.resolve("another-folder-move-from");
-        afolder.toFile().mkdirs();
+        final Path myfolder =
+            FileStorageTest.createNewDirectory(this.tmp, "my-folder-move-from");
+        FileStorageTest.createNewFile(myfolder, "file.txt");
+        final Path afolder =
+            FileStorageTest.createNewDirectory(this.tmp, "another-folder-move-from");
         final FileStorage sto = new FileStorage(afolder);
         final Key source = new Key.From("../my-folder-move-from/file.txt");
         final Key destination = new Key.From("another-folder-move-from/file.txt");
@@ -170,12 +169,12 @@ final class FileStorageTest {
 
     @Test
     void shouldAlwaysMoveToStorageSandbox() throws IOException {
-        final Path myfolder = this.tmp.resolve("my-folder-move-to");
-        myfolder.toFile().mkdirs();
-        myfolder.resolve("file.txt").toFile().createNewFile();
-        final Path afolder = this.tmp.resolve("another-folder-move-to");
-        afolder.toFile().mkdirs();
-        afolder.resolve("file.txt").toFile().createNewFile();
+        final Path myfolder =
+            FileStorageTest.createNewDirectory(this.tmp, "my-folder-move-to");
+        FileStorageTest.createNewFile(myfolder, "file.txt");
+        final Path afolder =
+            FileStorageTest.createNewDirectory(this.tmp, "another-folder-move-to");
+        FileStorageTest.createNewFile(afolder, "file.txt");
         final FileStorage sto = new FileStorage(afolder);
         final Key source = new Key.From("another-folder-move-to/file.txt");
         final Key destination = new Key.From("../my-folder-move-to/file.txt");
@@ -304,6 +303,34 @@ final class FileStorageTest {
             Files.exists(this.tmp.resolve("one/file.txt")),
             new IsEqual<>(true)
         );
+    }
+
+    /**
+     * Create a directory.
+     * @param parent Directory parent path
+     * @param dirname Directory name
+     * @return Path of directory
+     */
+    private static Path createNewDirectory(final Path parent, final String dirname) {
+        final Path dir = parent.resolve(dirname);
+        dir.toFile().mkdirs();
+        return dir;
+    }
+
+    /**
+     * Create a file.
+     * @param parent Parent file path
+     * @param filename File name
+     * @return File created
+     * @throws IOException If fails to create
+     */
+    private static File createNewFile(
+        final Path parent,
+        final String filename
+    ) throws IOException {
+        final File file = parent.resolve(filename).toFile();
+        file.createNewFile();
+        return file;
     }
 
     /**
