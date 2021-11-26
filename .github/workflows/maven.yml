@@ -31,19 +31,14 @@ jobs:
           if [ "$RUNNER_OS" == "Linux" ]; then
              mvn clean verify -B -Pqulice
           elif [ "$RUNNER_OS" == "Windows" ]; then
-             mvn clean test -B -Pqulice
+             docker run -i --rm \
+               -v "npipe:////.pipe/docker_engine":"npipe:////.pipe/docker_engine" \
+               -v "$(PWD)":"C:/Src" \
+               -w C:/Src \
+               maven:3.3 \
+               mvn clean verify -B -PQulice
           else
              echo "$RUNNER_OS not supported"
              exit 1
           fi
         shell: bash
-  # @todo #309:30min Fix ci integration tests with testcontainers for Windows.
-  #  The Windows command run only unit tests (Integration tests are ignored).
-  #  When we execute {@code mvn clean verify -B -Pqulice}, integration tests based on testcontainers
-  #  failed to run with this message : `main org.testcontainers.dockerclient.DockerClientProviderStrategy:
-  #  NpipeSocketClientProviderStrategy: failed with exception InvalidConfigurationException (windows containers
-  #  are currently not supported)`.
-  #  We have to find the right configuration that allow us to run docker in docker
-  #  for Windows and replace Windows command. You can find at
-  #  {@link https://www.testcontainers.org/supported_docker_environment/continuous_integration/dind_patterns/}
-  #  some documentation about that.
