@@ -80,7 +80,6 @@ SOFTWARE.
     </snapshotRepository>
   </distributionManagement>
   <properties>
-    <skip.unit.tests>false</skip.unit.tests>
     <vertx.version>4.2.1</vertx.version>
     <qulice.license>${project.basedir}/LICENSE.header</qulice.license>
   </properties>
@@ -243,16 +242,6 @@ SOFTWARE.
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
-        <configuration>
-          <skipTests>${skip.unit.tests}</skipTests>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

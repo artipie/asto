@@ -50,7 +50,7 @@ jobs:
               }
             ]
       - name: Deploy artifacts
-        run: mvn deploy -Partipie,publish,sonatype,gpg-sign --errors
+        run: mvn deploy -Partipie,publish,sonatype,gpg-sign -DskipITs --errors
       - name: Create Github Release
         id: create_release
         uses: actions/create-release@v1
