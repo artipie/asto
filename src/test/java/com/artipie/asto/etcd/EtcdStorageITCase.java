@@ -44,8 +44,8 @@ import org.testcontainers.DockerClientFactory;
  *  docker image. After that, enable the test below for windows by removing
  *  {@code @DisabledOnOs(OS.WINDOWS)}.
  */
-@DisabledOnOs(OS.WINDOWS)
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@DisabledOnOs(OS.WINDOWS)
 final class EtcdStorageITCase {
 
     /**
