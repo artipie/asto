@@ -1,3 +1,21 @@
+# v1.10.0
+
+  - e3a281b9 feat: introduce a default method in Storage to delete prefixed keys (#368)
+  - efc54e69 test: add more tests for SubStorage (#375)
+  - 4d52959d test: LoggingStorage tests (#374)
+  - b2a64be6 deps: bump vertx.version from 4.1.1 to 4.2.1 (#356)
+  - bc45a44b fix: substorage compare keys by string representation (#373)
+  - 089ee1e6 feat: add storage Key operations (#365)
+  - 1014d517 test: add tests for logging (#367)
+  - aee483fc test: add  tests for SubStorage (#366)
+  - aa0493ef deps: bump jcabi-log from 0.18.1 to 0.20.1 (#357)
+  - 047aba87 deps: bump resilience4j-retry from 1.5.0 to 1.7.1 (#361)
+  - 5d64f1be deps: bump jetcd-core from 0.5.4 to 0.5.11 (#358)
+  - 105483b2 deps: bump jetcd-test from 0.5.4 to 0.5.11 (#360)
+  - 7eaa8ce3 cI: removed gitlinter
+  - c7aea333 feat(metadata): storage metadata API (#350)
+  - fe8ba924 ci: added dependabot 
+
 # v1.9.0
 
   - 90387fff fix: `SubStorage` list operation (#353)
