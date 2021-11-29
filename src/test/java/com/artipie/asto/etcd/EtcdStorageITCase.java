@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.DockerClientFactory;
 
@@ -33,7 +35,16 @@ import org.testcontainers.DockerClientFactory;
  *  tests on EtcdStorage too. It could be not an easy task, since etcd
  *  test depends on etcd clust with at least one node. For this test
  *  it starts using testcontainers and `EtcdCluster` junit extension.
+ * @todo #309:30min Run Etcd in windows containers while testing on windows.
+ *  Currently, when we try to run integration tests based on testcontainers within a platform
+ *  windows, we notice that Etcd container (presently based on Linux) doesn't work. We have to build
+ *  and publish an Etcd docker image based on windows to avoid this issue.
+ *  Please, build an Etcd image for windows (version 3.5.1) and write tests so as to detect before
+ *  running integration tests, the type of platform (linux or windows) in order to pull the right
+ *  docker image. After that, enable the test below for windows by removing
+ *  {@code @DisabledOnOs(OS.WINDOWS)}.
  */
+@DisabledOnOs(OS.WINDOWS)
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class EtcdStorageITCase {
 
