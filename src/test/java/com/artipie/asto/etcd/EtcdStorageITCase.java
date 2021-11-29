@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.DockerClientFactory;
 
 /**
@@ -51,7 +50,6 @@ final class EtcdStorageITCase {
     /**
      * Test cluster.
      */
-    @RegisterExtension
     static final EtcdClusterExtension ETCD = new EtcdClusterExtension(
         "test-etcd",
         1,
