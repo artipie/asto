@@ -9,6 +9,7 @@ import com.artipie.asto.fs.FileStorage;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -17,10 +18,12 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -28,12 +31,12 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Test case for {@link Storage}.
+ * Test case for {@link FileStorage}.
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
 final class FileStorageTest {
 
     /**
@@ -93,6 +96,101 @@ final class FileStorageTest {
         MatcherAssert.assertThat(
             this.storage.list(Key.ROOT).join(),
             new IsEmptyCollection<>()
+        );
+    }
+
+    @Test
+    void shouldAlwaysSaveInStorageSandbox() {
+        final Key key = new Key.From("../../etc/password");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> this.storage.save(key, Content.EMPTY).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while saving",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while saving",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", key))
+        );
+    }
+
+    @Test
+    void shouldAlwaysDeleteInStorageSandbox() throws IOException {
+        final Path myfolder = FileStorageTest.createNewDirectory(this.tmp, "my-folder");
+        FileStorageTest.createNewFile(myfolder, "file.txt");
+        final Path afolder = FileStorageTest.createNewDirectory(this.tmp, "another-folder");
+        final FileStorage sto = new FileStorage(afolder);
+        final Key key = new Key.From("../my-folder/file.txt");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> sto.delete(key).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while deleting",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while deleting",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", key))
+        );
+    }
+
+    @Test
+    void shouldAlwaysMoveFromStorageSandbox() throws IOException {
+        final Path myfolder =
+            FileStorageTest.createNewDirectory(this.tmp, "my-folder-move-from");
+        FileStorageTest.createNewFile(myfolder, "file.txt");
+        final Path afolder =
+            FileStorageTest.createNewDirectory(this.tmp, "another-folder-move-from");
+        final FileStorage sto = new FileStorage(afolder);
+        final Key source = new Key.From("../my-folder-move-from/file.txt");
+        final Key destination = new Key.From("another-folder-move-from/file.txt");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> sto.move(source, destination).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while moving from",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while moving from",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", source))
+        );
+    }
+
+    @Test
+    void shouldAlwaysMoveToStorageSandbox() throws IOException {
+        final Path myfolder =
+            FileStorageTest.createNewDirectory(this.tmp, "my-folder-move-to");
+        FileStorageTest.createNewFile(myfolder, "file.txt");
+        final Path afolder =
+            FileStorageTest.createNewDirectory(this.tmp, "another-folder-move-to");
+        FileStorageTest.createNewFile(afolder, "file.txt");
+        final FileStorage sto = new FileStorage(afolder);
+        final Key source = new Key.From("another-folder-move-to/file.txt");
+        final Key destination = new Key.From("../my-folder-move-to/file.txt");
+        final Exception cex = Assertions.assertThrows(
+            Exception.class,
+            () -> sto.move(source, destination).get()
+        );
+        MatcherAssert.assertThat(
+            "Should throw an io exception while moving to",
+            ExceptionUtils.getRootCause(cex).getClass(),
+            new IsEqual<>(IOException.class)
+        );
+        MatcherAssert.assertThat(
+            "Should throw with exception message while moving to",
+            ExceptionUtils.getRootCause(cex).getMessage(),
+            new IsEqual<>(String.format("Entry path is out of storage: %s", destination))
         );
     }
 
@@ -205,6 +303,34 @@ final class FileStorageTest {
             Files.exists(this.tmp.resolve("one/file.txt")),
             new IsEqual<>(true)
         );
+    }
+
+    /**
+     * Create a directory.
+     * @param parent Directory parent path
+     * @param dirname Directory name
+     * @return Path of directory
+     */
+    private static Path createNewDirectory(final Path parent, final String dirname) {
+        final Path dir = parent.resolve(dirname);
+        dir.toFile().mkdirs();
+        return dir;
+    }
+
+    /**
+     * Create a file.
+     * @param parent Parent file path
+     * @param filename File name
+     * @return File created
+     * @throws IOException If fails to create
+     */
+    private static File createNewFile(
+        final Path parent,
+        final String filename
+    ) throws IOException {
+        final File file = parent.resolve(filename).toFile();
+        file.createNewFile();
+        return file;
     }
 
     /**
