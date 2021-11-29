@@ -5,51 +5,111 @@
 
 package com.artipie.asto.etcd;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
+import com.github.dockerjava.api.DockerClient;
 import io.etcd.jetcd.Client;
-import io.etcd.jetcd.launcher.EtcdCluster;
+import io.etcd.jetcd.launcher.EtcdContainer;
 import io.etcd.jetcd.test.EtcdClusterExtension;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.testcontainers.DockerClientFactory;
 
 /**
  * Test case for etcd-storage.
  * @since 1.0
- * @todo #306:90min The test is disabled,
- *  the CI can't start ETCD extension which depends on testcontainer with
- *  etcd Docker image. Let's fix this issue on CI and enable the test.
  * @todo #306:90min Add etcd storage to StorageExtension to run all common
  *  tests on EtcdStorage too. It could be not an easy task, since etcd
  *  test depends on etcd clust with at least one node. For this test
  *  it starts using testcontainers and `EtcdCluster` junit extension.
+ * @todo #309:30min Run Etcd in windows containers while testing on windows.
+ *  Currently, when we try to run integration tests based on testcontainers within a platform
+ *  windows, we notice that Etcd container (presently based on Linux) doesn't work. We have to build
+ *  and publish an Etcd docker image based on windows to avoid this issue.
+ *  Please, build an Etcd image for windows (version 3.5.1) and write tests so as to detect before
+ *  running integration tests, the type of platform (linux or windows) in order to pull the right
+ *  docker image. After that, enable the test below for windows by removing
+ *  {@code @DisabledOnOs(OS.WINDOWS)}.
  */
-@Disabled
-public final class EtcdStorageITCase {
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@DisabledOnOs(OS.WINDOWS)
+final class EtcdStorageITCase {
 
     /**
      * Test cluster.
      */
-    @RegisterExtension
-    static final EtcdCluster ETCD = new EtcdClusterExtension("test-etcd", 1);
+    static final EtcdClusterExtension ETCD = new EtcdClusterExtension(
+        "test-etcd",
+        1,
+        false,
+        "--data-dir",
+        "/data.etcd0"
+    );
 
     /**
      * Storage.
      */
     private Storage storage;
 
+    @BeforeAll
+    static void beforeAll() throws InterruptedException {
+        final DockerClient client = DockerClientFactory.instance().client();
+        client.pullImageCmd(EtcdContainer.ETCD_DOCKER_IMAGE_NAME)
+            .start()
+            .awaitCompletion();
+        ETCD.start();
+    }
+
     @BeforeEach
     void setUp() {
         this.storage = new EtcdStorage(
             Client.builder().endpoints(ETCD.getClientEndpoints()).build()
+        );
+    }
+
+    @AfterAll
+    static void afterAll() {
+        ETCD.close();
+    }
+
+    @Test
+    void listsItems() {
+        final Key one = new Key.From("one");
+        final Key two = new Key.From("a/two");
+        final Key three = new Key.From("a/three");
+        this.storage.save(
+            one,
+            new Content.From("data 1".getBytes(StandardCharsets.UTF_8))
+        ).join();
+        this.storage.save(
+            two,
+            new Content.From("data 2".getBytes(StandardCharsets.UTF_8))
+        ).join();
+        this.storage.save(
+            three,
+            new Content.From("data 3".getBytes(StandardCharsets.UTF_8))
+        ).join();
+        MatcherAssert.assertThat(
+            "Should list all items",
+            new BlockingStorage(this.storage).list(Key.ROOT),
+            Matchers.hasItems(one, two, three)
+        );
+        MatcherAssert.assertThat(
+            "Should list prefixed items",
+            new BlockingStorage(this.storage).list(new Key.From("a")),
+            Matchers.hasItems(two, three)
         );
     }
 
@@ -114,8 +174,8 @@ public final class EtcdStorageITCase {
             () -> bsto.delete(key)
         );
         MatcherAssert.assertThat(
-            cex.getCause().getMessage(),
-            Matchers.stringContainsInOrder("Key", key.toString(), "was not found")
+            cex.getCause().getCause().getMessage(),
+            new IsEqual<>(String.format("No value for key: %s", key))
         );
     }
 }
