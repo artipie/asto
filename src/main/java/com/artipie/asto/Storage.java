@@ -102,15 +102,19 @@ public interface Storage {
     /**
      * Removes all items with key prefix.
      *
+     * @implNote It is important that keys are deleted sequentially.
      * @param prefix Key prefix.
      * @return Completion or error signal.
      */
     default CompletableFuture<Void> deleteAll(final Key prefix) {
         return this.list(prefix).thenCompose(
-            list -> CompletableFuture.allOf(
-                list.stream().map(this::delete)
-                    .toArray(CompletableFuture[]::new)
-            )
+            keys -> {
+                CompletableFuture<Void> res = CompletableFuture.allOf();
+                for (final Key key : keys) {
+                    res = res.thenCompose(noth -> this.delete(key));
+                }
+                return res;
+            }
         );
     }
 
