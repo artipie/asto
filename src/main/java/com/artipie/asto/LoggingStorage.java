@@ -16,6 +16,7 @@ import java.util.logging.Level;
  *
  * @since 0.20.4
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class LoggingStorage implements Storage {
 
     /**
@@ -115,6 +116,16 @@ public final class LoggingStorage implements Storage {
         return this.storage.delete(key).thenApply(
             result -> {
                 this.log("Delete '%s'", key.string());
+                return result;
+            }
+        );
+    }
+
+    @Override
+    public CompletableFuture<Void> deleteAll(final Key prefix) {
+        return this.storage.deleteAll(prefix).thenApply(
+            result -> {
+                this.log("Delete all keys prefixed by '%s'", prefix.string());
                 return result;
             }
         );

@@ -8,11 +8,16 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.WriterAppender;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,10 +26,6 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link LoggingStorage}.
  *
  * @since 0.20.4
- * @todo #345:30min Continue to test that operations are properly logged in {@ling LoggingStorage}.
- *  We have tested a number of operations of {@ling LoggingStorage}.
- *  We want to continue to test that remaining operations results
- *  and parameters are properly logged.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class LoggingStorageTest {
@@ -55,24 +56,94 @@ final class LoggingStorageTest {
         );
         this.memsto.save(key, content).join();
         MatcherAssert.assertThat(
+            "Should retrieve key existing in original storage",
             new LoggingStorage(this.memsto).exists(key).join(),
             new IsEqual<>(true)
+        );
+        MatcherAssert.assertThat(
+            "Should log after checking existence",
+            this.writer.toString(),
+            new IsEqual<>(String.format("Exists '%s': true", key))
         );
     }
 
     // @checkstyle MissingDeprecatedCheck (5 lines)
     @Test
     @Deprecated
-    void readsTheSize() {
+    void readsSize() {
         final Key key = new Key.From("withSize");
-        this.memsto.save(
-            key,
-            new Content.From(new byte[]{0x00, 0x00, 0x00})
-        ).join();
+        final byte[] data = new byte[]{0x00, 0x00, 0x00};
+        final long dlg = data.length;
+        this.memsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
+            "Should read the size",
             new LoggingStorage(this.memsto).size(key).join(),
-            // @checkstyle MagicNumberCheck (1 line)
-            new IsEqual<>(3L)
+            new IsEqual<>(dlg)
+        );
+        MatcherAssert.assertThat(
+            "Should log after reading size",
+            this.writer.toString(),
+            new IsEqual<>(String.format("Size '%s': %s", key, dlg))
+        );
+    }
+
+    @Test
+    void savesContent() {
+        final byte[] data = "01201".getBytes(StandardCharsets.UTF_8);
+        final Key key = new Key.From("binary-key");
+        new LoggingStorage(this.memsto).save(key, new Content.From(data)).join();
+        MatcherAssert.assertThat(
+            "Should save content",
+            new BlockingStorage(this.memsto).value(key),
+            new IsEqual<>(data)
+        );
+        MatcherAssert.assertThat(
+            "Should log after saving content",
+            this.writer.toString(),
+            new IsEqual<>(String.format("Save '%s': %s", key, Optional.of(data.length)))
+        );
+    }
+
+    @Test
+    void loadsContent() {
+        final Key key = new Key.From("url");
+        final byte[] data = "https://www.artipie.com"
+            .getBytes(StandardCharsets.UTF_8);
+        this.memsto.save(key, new Content.From(data)).join();
+        MatcherAssert.assertThat(
+            "Should load content",
+            new BlockingStorage(
+                new LoggingStorage(this.memsto)
+            ).value(key),
+            new IsEqual<>(data)
+        );
+        MatcherAssert.assertThat(
+            "Should log after loading content",
+            this.writer.toString(),
+            new IsEqual<>(
+                String.format("Value '%s': %s", key, Optional.of(data.length))
+            )
+        );
+    }
+
+    @Test
+    void listsItems() {
+        final Key prefix = new Key.From("pref");
+        final Key one = new Key.From(prefix, "one");
+        final Key two = new Key.From(prefix, "two");
+        this.memsto.save(one, Content.EMPTY).join();
+        this.memsto.save(two, Content.EMPTY).join();
+        final Collection<Key> keys =
+            new LoggingStorage(this.memsto).list(prefix).join();
+        MatcherAssert.assertThat(
+            "Should list items",
+            keys,
+            Matchers.hasItems(one, two)
+        );
+        MatcherAssert.assertThat(
+            "Should log after listing items",
+            this.writer.toString(),
+            new IsEqual<>(String.format("List '%s': %s", prefix, keys.size()))
         );
     }
 
@@ -82,72 +153,73 @@ final class LoggingStorageTest {
         final Key source = new Key.From("from");
         this.memsto.save(source, new Content.From(data)).join();
         final Key destination = new Key.From("to");
-        final LoggingStorage logsto = new LoggingStorage(this.memsto);
-        logsto.move(source, destination).join();
+        new LoggingStorage(this.memsto).move(source, destination).join();
         MatcherAssert.assertThat(
-            new BlockingStorage(logsto).value(destination),
+            "Should move content",
+            new BlockingStorage(this.memsto).value(destination),
             new IsEqual<>(data)
         );
-    }
-
-    @Test
-    void savesAndLoads() {
-        final LoggingStorage storage = new LoggingStorage(this.memsto);
-        final Key key = new Key.From("url");
-        final byte[] content = "https://www.artipie.com"
-            .getBytes(StandardCharsets.UTF_8);
-        storage.save(key, new Content.From(content)).join();
         MatcherAssert.assertThat(
-            new BlockingStorage(storage).value(key),
-            new IsEqual<>(content)
-        );
-    }
-
-    @Test
-    void saveOverwrites() {
-        final byte[] original = "1".getBytes(StandardCharsets.UTF_8);
-        final byte[] updated = "2".getBytes(StandardCharsets.UTF_8);
-        final Key key = new Key.From("foo");
-        this.memsto.save(key, new Content.From(original)).join();
-        final LoggingStorage logsto = new LoggingStorage(this.memsto);
-        logsto.save(key, new Content.From(updated)).join();
-        MatcherAssert.assertThat(
-            new BlockingStorage(logsto).value(key),
-            new IsEqual<>(updated)
-        );
-    }
-
-    @Test
-    void logsWhenListingKeys() {
-        this.memsto.save(new Key.From("one/two"), Content.EMPTY).join();
-        this.memsto.save(new Key.From("one/three"), Content.EMPTY).join();
-        new LoggingStorage(this.memsto).list(new Key.From("one")).join();
-        MatcherAssert.assertThat(
+            "Should log after moving content",
             this.writer.toString(),
-            new IsEqual<>("List 'one': 2")
+            new IsEqual<>(String.format("Move '%s' '%s'", source, destination))
         );
     }
 
     @Test
-    void logsWhenCheckingExistence() {
-        final Key key = new Key.From("binary-file");
+    void deletesContent() {
+        final byte[] data = "my file content".getBytes(StandardCharsets.UTF_8);
+        final Key key = new Key.From("filename");
+        this.memsto.save(key, new Content.From(data)).join();
+        new LoggingStorage(this.memsto).delete(key).join();
+        MatcherAssert.assertThat(
+            "Should delete content",
+            new BlockingStorage(this.memsto).exists(key),
+            new IsEqual<>(false)
+        );
+        MatcherAssert.assertThat(
+            "Should log after deleting content",
+            this.writer.toString(),
+            new IsEqual<>(String.format("Delete '%s'", key))
+        );
+    }
+
+    @Test
+    void retrievesMetadata() {
+        final Key key = new Key.From("page");
+        final byte[] data = "Wiki content".getBytes(StandardCharsets.UTF_8);
+        final long dlg = data.length;
+        this.memsto.save(key, new Content.From(data)).join();
+        final Meta metadata = new LoggingStorage(this.memsto).metadata(key).join();
+        MatcherAssert.assertThat(
+            "Should retrieve metadata size",
+            metadata.read(Meta.OP_SIZE).get(),
+            new IsEqual<>(dlg)
+        );
+        MatcherAssert.assertThat(
+            "Should log after retrieving metadata",
+            this.writer.toString(),
+            new IsEqual<>(String.format("Metadata '%s': %s", key, metadata))
+        );
+    }
+
+    @Test
+    void shouldRunExclusively() {
+        final Key key = new Key.From("key-exc");
+        final Function<Storage, CompletionStage<Boolean>> operation =
+            sto -> CompletableFuture.completedFuture(true);
         this.memsto.save(key, Content.EMPTY).join();
-        new LoggingStorage(this.memsto).exists(key).join();
+        final Boolean finished = new LoggingStorage(this.memsto)
+            .exclusively(key, operation).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.writer.toString(),
-            new IsEqual<>("Exists 'binary-file': true")
+            "Should run exclusively",
+            finished,
+            new IsEqual<>(true)
         );
-    }
-
-    @Test
-    void logsWhenSaving() {
-        final byte[] data = "content".getBytes(StandardCharsets.UTF_8);
-        final Key key = new Key.From("key");
-        final LoggingStorage logsto = new LoggingStorage(this.memsto);
-        logsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
+            "Should log after running exclusively",
             this.writer.toString(),
-            new IsEqual<>(String.format("Save 'key': %s", Optional.of(data.length)))
+            new IsEqual<>(String.format("Exclusively for '%s': %s", key, operation))
         );
     }
 }

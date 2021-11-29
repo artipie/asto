@@ -7,6 +7,7 @@ package com.artipie.asto.fs;
 import com.artipie.ArtipieException;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
 import com.artipie.asto.Meta;
 import com.artipie.asto.OneTimePublisher;
@@ -89,7 +90,7 @@ public final class FileStorage implements Storage {
                 final Collection<Key> keys;
                 if (Files.exists(path)) {
                     final int dirnamelen;
-                    if (Key.ROOT.equals(prefix)) {
+                    if (Key.ROOT.string().equals(prefix.string())) {
                         dirnamelen = path.toString().length() + 1;
                     } else {
                         dirnamelen = path.toString().length() - prefix.string().length();
@@ -125,60 +126,83 @@ public final class FileStorage implements Storage {
 
     @Override
     public CompletableFuture<Void> save(final Key key, final Content content) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                final Path tmp = Paths.get(
-                    this.dir.toString(),
-                    String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
-                );
-                tmp.getParent().toFile().mkdirs();
-                return tmp;
-            }
-        ).thenCompose(
-            tmp -> new File(tmp).write(
-                new OneTimePublisher<>(content),
-                StandardOpenOption.WRITE,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING
-            ).thenCompose(
-                nothing -> FileStorage.move(tmp, this.path(key))
-            ).handleAsync(
-                (nothing, throwable) -> {
-                    tmp.toFile().delete();
-                    final CompletableFuture<Void> result = new CompletableFuture<>();
-                    if (throwable == null) {
-                        result.complete(null);
-                    } else {
-                        result.completeExceptionally(new ArtipieIOException(throwable));
-                    }
-                    return result;
+        CompletableFuture<Void> future;
+        try {
+            this.validateKey(key);
+            future = CompletableFuture.supplyAsync(
+                () -> {
+                    final Path tmp = Paths.get(
+                        this.dir.toString(),
+                        String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
+                    );
+                    tmp.getParent().toFile().mkdirs();
+                    return tmp;
                 }
-            ).thenCompose(Function.identity())
-        );
+            ).thenCompose(
+                tmp -> new File(tmp).write(
+                    new OneTimePublisher<>(content),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING
+                ).thenCompose(
+                    nothing -> FileStorage.move(tmp, this.path(key))
+                ).handleAsync(
+                    (nothing, throwable) -> {
+                        tmp.toFile().delete();
+                        final CompletableFuture<Void> result = new CompletableFuture<>();
+                        if (throwable == null) {
+                            result.complete(null);
+                        } else {
+                            result.completeExceptionally(new ArtipieIOException(throwable));
+                        }
+                        return result;
+                    }
+                ).thenCompose(Function.identity())
+            );
+        } catch (final ArtipieIOException ex) {
+            future = new FailedCompletionStage<Void>(ex).toCompletableFuture();
+        }
+        return future;
     }
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return FileStorage.move(this.path(source), this.path(destination));
+        CompletableFuture<Void> future;
+        try {
+            this.validateKey(source);
+            this.validateKey(destination);
+            future = FileStorage.move(this.path(source), this.path(destination));
+        } catch (final ArtipieIOException ex) {
+            future = new FailedCompletionStage<Void>(ex).toCompletableFuture();
+        }
+        return future;
     }
 
     @Override
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     public CompletableFuture<Void> delete(final Key key) {
-        return CompletableFuture.runAsync(
-            () -> {
-                final Path path = this.path(key);
-                if (Files.exists(path) && !Files.isDirectory(path)) {
-                    try {
-                        Files.delete(path);
-                        this.deleteEmptyParts(key.parent());
-                    } catch (final IOException iex) {
-                        throw new ArtipieIOException(iex);
+        CompletableFuture<Void> future;
+        try {
+            this.validateKey(key);
+            future = CompletableFuture.runAsync(
+                () -> {
+                    final Path path = this.path(key);
+                    if (Files.exists(path) && !Files.isDirectory(path)) {
+                        try {
+                            Files.delete(path);
+                            this.deleteEmptyParts(key.parent());
+                        } catch (final IOException iex) {
+                            throw new ArtipieIOException(iex);
+                        }
+                    } else {
+                        throw new ValueNotFoundException(key);
                     }
-                } else {
-                    throw new ValueNotFoundException(key);
                 }
-            }
-        );
+            );
+        } catch (final ArtipieIOException ex) {
+            future = new FailedCompletionStage<Void>(ex).toCompletableFuture();
+        }
+        return future;
     }
 
     @Override
@@ -201,7 +225,7 @@ public final class FileStorage implements Storage {
     @Override
     public CompletableFuture<Content> value(final Key key) {
         final CompletableFuture<Content> res;
-        if (Key.ROOT.equals(key)) {
+        if (Key.ROOT.string().equals(key.string())) {
             res = new CompletableFutureSupport.Failed<Content>(
                 new ArtipieIOException("Unable to load from root")
             ).get();
@@ -263,6 +287,21 @@ public final class FileStorage implements Storage {
                     throw new ArtipieIOException(err);
                 }
             }
+        }
+    }
+
+    /**
+     * Checks if key point into the storage.
+     *
+     * @param key Key to validate.
+     * @throws ArtipieIOException If not valid key
+     */
+    private void validateKey(final Key key) {
+        final Path next = this.dir.resolve(key.string());
+        if (!next.normalize().startsWith(next)) {
+            throw new ArtipieIOException(
+                String.format("Entry path is out of storage: %s", key)
+            );
         }
     }
 

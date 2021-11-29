@@ -100,6 +100,25 @@ public interface Storage {
     CompletableFuture<Void> delete(Key key);
 
     /**
+     * Removes all items with key prefix.
+     *
+     * @implNote It is important that keys are deleted sequentially.
+     * @param prefix Key prefix.
+     * @return Completion or error signal.
+     */
+    default CompletableFuture<Void> deleteAll(final Key prefix) {
+        return this.list(prefix).thenCompose(
+            keys -> {
+                CompletableFuture<Void> res = CompletableFuture.allOf();
+                for (final Key key : keys) {
+                    res = res.thenCompose(noth -> this.delete(key));
+                }
+                return res;
+            }
+        );
+    }
+
+    /**
      * Runs operation exclusively for specified key.
      *
      * @param key Key which is scope of operation.
@@ -166,6 +185,11 @@ public interface Storage {
         @Override
         public final CompletableFuture<Void> delete(final Key key) {
             return this.delegate.delete(key);
+        }
+
+        @Override
+        public final CompletableFuture<Void> deleteAll(final Key prefix) {
+            return this.delegate.deleteAll(prefix);
         }
 
         @Override
