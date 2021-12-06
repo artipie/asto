@@ -79,7 +79,7 @@ public final class EtcdStorage implements Storage {
     @Override
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
         final CompletableFuture<GetResponse> future;
-        if (prefix == Key.ROOT) {
+        if (prefix.equals(Key.ROOT)) {
             future = this.client.getKVClient().get(
                 EtcdStorage.ETCD_ROOT_KEY,
                 GetOption.newBuilder()
