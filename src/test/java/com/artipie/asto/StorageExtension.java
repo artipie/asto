@@ -125,12 +125,15 @@ final class StorageExtension
                 )
             );
             if (!SystemUtils.IS_OS_WINDOWS) {
+                storages.add(this.etcdStorage());
                 storages.add(
-                    new EtcdStorage(
-                        Client.builder()
-                            .endpoints(this.etcd.getClientEndpoints())
-                            .build()
+                    new SubStorage(
+                        new Key.From("etcd-prefix"),
+                        this.etcdStorage()
                     )
+                );
+                storages.add(
+                    new SubStorage(Key.ROOT, this.etcdStorage())
                 );
             }
         // @checkstyle IllegalCatchCheck (1 line)
@@ -159,6 +162,19 @@ final class StorageExtension
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
         return new S3Storage(client, bucket);
+    }
+
+    /**
+     * Creates {@link EtcdStorage} instance.
+     *
+     * @return Etcd instance.
+     */
+    private EtcdStorage etcdStorage() {
+        return new EtcdStorage(
+            Client.builder()
+                .endpoints(this.etcd.getClientEndpoints())
+                .build()
+        );
     }
 
     /**

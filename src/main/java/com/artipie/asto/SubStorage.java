@@ -53,8 +53,14 @@ public final class SubStorage implements Storage {
 
     @Override
     public CompletableFuture<Collection<Key>> list(final Key filter) {
+        final Key cleanfilter;
+        if (this.prefix == Key.ROOT && filter == Key.ROOT) {
+            cleanfilter = Key.ROOT;
+        } else {
+            cleanfilter = new PrefixedKed(this.prefix, filter);
+        }
         final Pattern ptn = Pattern.compile(String.format("^%s/", this.prefix.string()));
-        return this.origin.list(new PrefixedKed(this.prefix, filter)).thenApply(
+        return this.origin.list(cleanfilter).thenApply(
             keys -> keys.stream()
                 .map(key -> new Key.From(ptn.matcher(key.string()).replaceFirst("")))
                 .collect(Collectors.toList())
