@@ -91,6 +91,16 @@ public interface Key {
         public final String toString() {
             return this.string();
         }
+
+        @Override
+        public boolean equals(final Object another) {
+            return this.origin.equals(another);
+        }
+
+        @Override
+        public int hashCode() {
+            return this.origin.hashCode();
+        }
     }
 
     /**

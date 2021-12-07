@@ -6,21 +6,27 @@
 package com.artipie.asto;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
+import com.artipie.asto.etcd.EtcdStorage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.fs.VertxFileStorage;
 import com.artipie.asto.memory.BenchmarkStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.s3.S3Storage;
+import com.github.dockerjava.api.DockerClient;
+import io.etcd.jetcd.Client;
+import io.etcd.jetcd.launcher.EtcdContainer;
+import io.etcd.jetcd.test.EtcdClusterExtension;
 import io.vertx.reactivex.core.Vertx;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
@@ -30,6 +36,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
+import org.testcontainers.DockerClientFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -40,7 +47,9 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * JUnit5 test template extension running test methods with all Storage types.
  *
  * @since 0.15
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 final class StorageExtension
     implements TestTemplateInvocationContextProvider, BeforeAllCallback, AfterAllCallback {
 
@@ -52,18 +61,39 @@ final class StorageExtension
         .build();
 
     /**
+     * Etcd cluster.
+     */
+    private final EtcdClusterExtension etcd = new EtcdClusterExtension(
+        "test-etcd",
+        1,
+        false,
+        "--data-dir",
+        "/data.etcd0"
+    );
+
+    /**
      * Vert.x file System.
      */
     private Vertx vertx;
 
     @Override
-    public void beforeAll(final ExtensionContext extension) {
+    public void beforeAll(final ExtensionContext extension) throws Exception {
+        if (!SystemUtils.IS_OS_WINDOWS) {
+            final DockerClient client = DockerClientFactory.instance().client();
+            client.pullImageCmd(EtcdContainer.ETCD_DOCKER_IMAGE_NAME)
+                .start()
+                .awaitCompletion();
+            this.etcd.beforeAll(extension);
+        }
         this.mock.beforeAll(extension);
         this.vertx = Vertx.vertx();
     }
 
     @Override
-    public void afterAll(final ExtensionContext extension) {
+    public void afterAll(final ExtensionContext extension) throws Exception {
+        if (!SystemUtils.IS_OS_WINDOWS) {
+            this.etcd.afterAll(extension);
+        }
         this.mock.afterAll(extension);
         this.vertx.close();
     }
@@ -78,21 +108,36 @@ final class StorageExtension
         final ExtensionContext context) {
         final Collection<Storage> storages;
         try {
-            storages = Arrays.asList(
-                new InMemoryStorage(),
-                this.s3Storage(),
-                new SubStorage(new Key.From("mem-prefix"), new InMemoryStorage()),
-                new SubStorage(
-                    new Key.From("file-prefix"),
-                    new FileStorage(Files.createTempDirectory("pref-sub"))
-                ),
-                new SubStorage(Key.ROOT, new InMemoryStorage()),
-                new SubStorage(Key.ROOT, new FileStorage(Files.createTempDirectory("sub"))),
-                new FileStorage(Files.createTempDirectory("junit")),
-                new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx),
-                new BenchmarkStorage(new InMemoryStorage())
+            storages = new LinkedList<>(
+                Arrays.asList(
+                    new InMemoryStorage(),
+                    this.s3Storage(),
+                    new SubStorage(new Key.From("mem-prefix"), new InMemoryStorage()),
+                    new SubStorage(
+                        new Key.From("file-prefix"),
+                        new FileStorage(Files.createTempDirectory("pref-sub"))
+                    ),
+                    new SubStorage(Key.ROOT, new InMemoryStorage()),
+                    new SubStorage(Key.ROOT, new FileStorage(Files.createTempDirectory("sub"))),
+                    new FileStorage(Files.createTempDirectory("junit")),
+                    new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx),
+                    new BenchmarkStorage(new InMemoryStorage())
+                )
             );
-        } catch (final IOException ex) {
+            if (!SystemUtils.IS_OS_WINDOWS) {
+                storages.add(this.etcdStorage());
+                storages.add(
+                    new SubStorage(
+                        new Key.From("etcd-prefix"),
+                        this.etcdStorage()
+                    )
+                );
+                storages.add(
+                    new SubStorage(Key.ROOT, this.etcdStorage())
+                );
+            }
+        // @checkstyle IllegalCatchCheck (1 line)
+        } catch (final Exception ex) {
             throw new IllegalStateException("Failed to generate storage", ex);
         }
         return storages.stream().map(StorageContext::new);
@@ -117,6 +162,19 @@ final class StorageExtension
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
         return new S3Storage(client, bucket);
+    }
+
+    /**
+     * Creates {@link EtcdStorage} instance.
+     *
+     * @return Etcd instance.
+     */
+    private EtcdStorage etcdStorage() {
+        return new EtcdStorage(
+            Client.builder()
+                .endpoints(this.etcd.getClientEndpoints())
+                .build()
+        );
     }
 
     /**

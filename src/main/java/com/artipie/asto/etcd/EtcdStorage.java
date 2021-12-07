@@ -10,16 +10,17 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
+import com.artipie.asto.UnderLockOperation;
 import com.artipie.asto.ValueNotFoundException;
 import com.artipie.asto.ext.CompletableFutureSupport;
 import com.artipie.asto.ext.PublisherAs;
+import com.artipie.asto.lock.storage.StorageLock;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.KeyValue;
 import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.options.GetOption;
 import io.etcd.jetcd.options.GetOption.SortOrder;
-import io.vavr.NotImplementedError;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Comparator;
@@ -78,7 +79,7 @@ public final class EtcdStorage implements Storage {
     @Override
     public CompletableFuture<Collection<Key>> list(final Key prefix) {
         final CompletableFuture<GetResponse> future;
-        if (prefix == Key.ROOT) {
+        if (prefix.equals(Key.ROOT)) {
             future = this.client.getKVClient().get(
                 EtcdStorage.ETCD_ROOT_KEY,
                 GetOption.newBuilder()
@@ -110,10 +111,10 @@ public final class EtcdStorage implements Storage {
     @SuppressWarnings("PMD.OnlyOneReturn")
     public CompletableFuture<Void> save(final Key key, final Content content) {
         final long size = content.size().orElse(0L);
-        if (size <= 0 || size > EtcdStorage.MAX_SIZE) {
+        if (size < 0 || size > EtcdStorage.MAX_SIZE) {
             return new CompletableFutureSupport.Failed<Void>(
                 new ArtipieIOException(
-                    String.format("Content size must be in range (1;%d)", EtcdStorage.MAX_SIZE)
+                    String.format("Content size must be in range (0;%d)", EtcdStorage.MAX_SIZE)
                 )
             ).get();
         }
@@ -153,7 +154,11 @@ public final class EtcdStorage implements Storage {
             kv -> kv.orElseThrow(
                 () -> new ValueNotFoundException(key)
             ).getValue().getBytes()
-        ).thenApply(bytes -> new Content.From(bytes));
+        ).thenApply(
+            bytes -> new Content.OneTime(
+                new Content.From(bytes)
+            )
+        );
     }
 
     @Override
@@ -170,7 +175,7 @@ public final class EtcdStorage implements Storage {
     @Override
     public <T> CompletionStage<T> exclusively(final Key key,
         final Function<Storage, CompletionStage<T>> operation) {
-        throw new NotImplementedError("size not implemented");
+        return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
     /**

@@ -30,10 +30,6 @@ import org.testcontainers.DockerClientFactory;
 /**
  * Test case for etcd-storage.
  * @since 1.0
- * @todo #306:90min Add etcd storage to StorageExtension to run all common
- *  tests on EtcdStorage too. It could be not an easy task, since etcd
- *  test depends on etcd clust with at least one node. For this test
- *  it starts using testcontainers and `EtcdCluster` junit extension.
  * @todo #309:30min Run Etcd in windows containers while testing on windows.
  *  Currently, when we try to run integration tests based on testcontainers within a platform
  *  windows, we notice that Etcd container (presently based on Linux) doesn't work. We have to build
