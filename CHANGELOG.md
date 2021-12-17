@@ -1,3 +1,18 @@
+# v1.11.0
+
+ - a0e4296 - fix(fs): check path for FS read (#385)
+   by Kirill <g4s8.public@gmail.com>
+ - dbbdbe5 - test: setup etcd cluster for StorageExtension (#377)
+   by Olivier B. OURA <baudoliver7@gmail.com>
+ - 1435113 - fix: fix CI to run tests of EtcdStorageITCase (#380)
+   by Olivier Baudouin OURA <baudoliver7@gmail.com>
+ - 0ba492e - test: add tests for BlockingStorage (#378)
+   by Denis Garus <garus.d.g@gmail.com>
+ - 324a0b3 - fix: prevent file to be written out of FileStorage scope (#379)
+   by Olivier Baudouin OURA <baudoliver7@gmail.com>
+ - 96606d1 - fix: fix delete all operation (#382)
+   by Alexander <38591972+genryxy@users.noreply.github.com>
+
 # v1.10.0
 
   - e3a281b9 feat: introduce a default method in Storage to delete prefixed keys (#368)
