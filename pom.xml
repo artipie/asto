@@ -216,6 +216,11 @@ SOFTWARE.
       <artifactId>hamcrest</artifactId>
       <version>2.2</version>
     </dependency>
+    <dependency>
+      <groupId>wtf.g4s8</groupId>
+      <artifactId>tuples</artifactId>
+      <version>0.1.2</version>
+    </dependency>
     <!-- TestNG compatibility layer with Junit5 -->
     <dependency>
       <groupId>com.github.testng-team</groupId>
