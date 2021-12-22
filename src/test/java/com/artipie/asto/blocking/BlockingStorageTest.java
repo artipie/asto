@@ -145,6 +145,15 @@ final class BlockingStorageTest {
                 new Key.From("root3")
             )
         );
+    }
+
+    @Test
+    void shouldDeleteAllItemsWithRootKey() {
+        final Key prefix = new Key.From("dir1");
+        this.original.save(new Key.From(prefix, "file1"), Content.EMPTY).join();
+        this.original.save(new Key.From(prefix, "file2"), Content.EMPTY).join();
+        this.original.save(new Key.From("dir2/subdir", "file3"), Content.EMPTY).join();
+        this.original.save(new Key.From("file4"), Content.EMPTY).join();
         this.blocking.deleteAll(Key.ROOT);
         MatcherAssert.assertThat(
             "Original should not have any more item",
