@@ -9,6 +9,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -23,7 +24,9 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.1
  */
-class BlockingStorageTest {
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+final class BlockingStorageTest {
+
     /**
      * Original storage.
      */
@@ -104,4 +107,58 @@ class BlockingStorageTest {
         );
     }
 
+    @Test
+    @SuppressWarnings("deprecation")
+    void shouldReadSize() {
+        final Key key = new Key.From("hello_world_url");
+        final String page = "<html><h>Hello world</h></html>";
+        this.original.save(
+            key,
+            new Content.From(
+                page.getBytes(StandardCharsets.UTF_8)
+            )
+        ).join();
+        MatcherAssert.assertThat(
+            this.blocking.size(key),
+            new IsEqual<>((long) page.length())
+        );
+    }
+
+    @Test
+    void shouldDeleteAllItemsWithKeyPrefix() {
+        final Key prefix = new Key.From("root1");
+        this.original.save(new Key.From(prefix, "r1a"), Content.EMPTY).join();
+        this.original.save(new Key.From(prefix, "r1b"), Content.EMPTY).join();
+        this.original.save(new Key.From("root2", "r2a"), Content.EMPTY).join();
+        this.original.save(new Key.From("root3"), Content.EMPTY).join();
+        this.blocking.deleteAll(prefix);
+        MatcherAssert.assertThat(
+            "Original should not have items with key prefix",
+            this.original.list(prefix).join().size(),
+            new IsEqual<>(0)
+        );
+        MatcherAssert.assertThat(
+            "Original should list other items",
+            this.original.list(Key.ROOT).join(),
+            Matchers.hasItems(
+                new Key.From("root2", "r2a"),
+                new Key.From("root3")
+            )
+        );
+    }
+
+    @Test
+    void shouldDeleteAllItemsWithRootKey() {
+        final Key prefix = new Key.From("dir1");
+        this.original.save(new Key.From(prefix, "file1"), Content.EMPTY).join();
+        this.original.save(new Key.From(prefix, "file2"), Content.EMPTY).join();
+        this.original.save(new Key.From("dir2/subdir", "file3"), Content.EMPTY).join();
+        this.original.save(new Key.From("file4"), Content.EMPTY).join();
+        this.blocking.deleteAll(Key.ROOT);
+        MatcherAssert.assertThat(
+            "Original should not have any more item",
+            this.original.list(Key.ROOT).join().size(),
+            new IsEqual<>(0)
+        );
+    }
 }
