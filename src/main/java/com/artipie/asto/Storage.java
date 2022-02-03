@@ -199,5 +199,10 @@ public interface Storage {
         ) {
             return this.delegate.exclusively(key, operation);
         }
+
+        @Override
+        public final CompletableFuture<? extends Meta> metadata(final Key key) {
+            return this.delegate.metadata(key);
+        }
     }
 }
