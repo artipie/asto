@@ -121,7 +121,8 @@ final class StorageExtension
                     new SubStorage(Key.ROOT, new FileStorage(Files.createTempDirectory("sub"))),
                     new FileStorage(Files.createTempDirectory("junit")),
                     new VertxFileStorage(Files.createTempDirectory("vtxjunit"), this.vertx),
-                    new BenchmarkStorage(new InMemoryStorage())
+                    new BenchmarkStorage(new InMemoryStorage()),
+                    new StorageWrapped(new InMemoryStorage())
                 )
             );
             if (!SystemUtils.IS_OS_WINDOWS) {
