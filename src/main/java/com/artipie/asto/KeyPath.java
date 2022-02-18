@@ -39,7 +39,7 @@ public final class KeyPath {
      * @param key Key to transform
      */
     public KeyPath(final Path root, final Key key) {
-        this.root = root;
+        this.root = root.normalize();
         this.key = key;
     }
 
@@ -53,13 +53,12 @@ public final class KeyPath {
      * @return Path future
      */
     public Path get() {
-        final Path path = this.root.resolve(this.key.string());
-        final Path pathn = path.normalize();
-        if (pathn.startsWith(this.root)) {
-            return pathn;
+        final Path path = this.root.resolve(this.key.string()).normalize();
+        if (path.startsWith(this.root)) {
+            return path;
         } else {
             throw new ArtipieIOException(
-                String.format("Entry path is out of root location: %s", pathn)
+                String.format("Entry path is out of root location: %s", path)
             );
         }
     }
