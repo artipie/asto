@@ -8,6 +8,7 @@ import com.artipie.ArtipieException;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.KeyPath;
 import com.artipie.asto.Meta;
 import com.artipie.asto.OneTimePublisher;
 import com.artipie.asto.Storage;
@@ -295,16 +296,11 @@ public final class FileStorage implements Storage {
      * @return Path future
      */
     private CompletableFuture<? extends Path> keyPath(final Key key) {
-        final Path path = this.dir.resolve(key.string());
         final CompletableFuture<Path> res = new CompletableFuture<>();
-        if (path.normalize().startsWith(path)) {
-            res.complete(path);
-        } else {
-            res.completeExceptionally(
-                new ArtipieIOException(
-                    String.format("Entry path is out of storage: %s", key)
-                )
-            );
+        try {
+            res.complete(new KeyPath(this.dir, key).get());
+        } catch (final ArtipieIOException aio) {
+            res.completeExceptionally(aio);
         }
         return res;
     }
