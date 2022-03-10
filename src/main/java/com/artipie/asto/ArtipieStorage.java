@@ -123,7 +123,8 @@ public final class ArtipieStorage implements Storage {
                 if (status.success()) {
                     res = CompletableFuture.allOf();
                 } else {
-                    res = CompletableFuture.failedFuture(
+                    res = new CompletableFuture<>();
+                    res.completeExceptionally(
                         new ArtipieIOException(
                             String.format(
                                 "Entry is not created [key=%s, status=%s]",
@@ -195,7 +196,8 @@ public final class ArtipieStorage implements Storage {
                 if (status.success()) {
                     res = CompletableFuture.allOf();
                 } else {
-                    res = CompletableFuture.failedFuture(
+                    res = new CompletableFuture<>();
+                    res.completeExceptionally(
                         new ArtipieIOException(
                             String.format(
                                 "Entry is not deleted [key=%s, status=%s]",
