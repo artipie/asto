@@ -8,11 +8,5 @@ updates:
     labels:
       - "dependencies"
       - "bot"
-    commit-message:
-      prefix: "deps"
-    assignees:
-      - "g4s8"
-    reviewers:
-      - "g4s8"
     schedule:
       interval: "daily"
