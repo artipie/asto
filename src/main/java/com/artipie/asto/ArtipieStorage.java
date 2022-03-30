@@ -14,6 +14,7 @@ import com.artipie.http.client.auth.Authenticator;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.slice.ContentWithSize;
 import io.reactivex.Flowable;
 import java.io.StringReader;
 import java.net.URI;
@@ -32,6 +33,7 @@ import javax.json.JsonString;
  *
  * @since 1.11.0
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle LineLengthCheck (500 lines)
  */
 public final class ArtipieStorage implements Storage {
 
@@ -96,13 +98,14 @@ public final class ArtipieStorage implements Storage {
                     ).string(StandardCharsets.UTF_8)
                         .thenApply(s -> promise.complete(ArtipieStorage.parse(s)));
                 } else {
-                    final String msg = String.format(
-                        "Cannot get lists blobs contained in given path [prefix=%s, status=%s]",
-                        prefix,
-                        status
-                    );
                     promise.completeExceptionally(
-                        new ArtipieIOException(msg)
+                        new ArtipieIOException(
+                            String.format(
+                                "Cannot get lists blobs contained in given path [prefix=%s, status=%s]",
+                                prefix,
+                                status
+                            )
+                        )
                     );
                 }
                 return term;
@@ -123,8 +126,7 @@ public final class ArtipieStorage implements Storage {
                 if (status.success()) {
                     res = CompletableFuture.allOf();
                 } else {
-                    res = new CompletableFuture<>();
-                    res.completeExceptionally(
+                    res = CompletableFuture.failedFuture(
                         new ArtipieIOException(
                             String.format(
                                 "Entry is not created [key=%s, status=%s]",
@@ -161,11 +163,7 @@ public final class ArtipieStorage implements Storage {
                 final CompletableFuture<Void> term = new CompletableFuture<>();
                 if (status.success()) {
                     promise.complete(
-                        new Content.From(
-                            Flowable.fromPublisher(rsbody)
-                                .doOnError(term::completeExceptionally)
-                                .doOnTerminate(() -> term.complete(null))
-                        )
+                        new ContentWithSize(rsbody, rsheaders)
                     );
                 } else {
                     promise.completeExceptionally(
@@ -196,8 +194,7 @@ public final class ArtipieStorage implements Storage {
                 if (status.success()) {
                     res = CompletableFuture.allOf();
                 } else {
-                    res = new CompletableFuture<>();
-                    res.completeExceptionally(
+                    res = CompletableFuture.failedFuture(
                         new ArtipieIOException(
                             String.format(
                                 "Entry is not deleted [key=%s, status=%s]",

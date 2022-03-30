@@ -68,6 +68,7 @@ public final class ArtipieStorageTest {
             )
         ).save(key, content);
         MatcherAssert.assertThat(
+            "Request line to save a value",
             line.get(),
             new IsEqual<>(
                 new RequestLine(
@@ -76,10 +77,12 @@ public final class ArtipieStorageTest {
             )
         );
         MatcherAssert.assertThat(
+            "Content-length header value should be equal to the content length",
             new RqHeaders(headers.get(), "content-length"),
             Matchers.contains(String.valueOf(content.length))
         );
         MatcherAssert.assertThat(
+            "Request body should be equal to the content",
             body.get(),
             new IsEqual<>(content)
         );
@@ -122,6 +125,7 @@ public final class ArtipieStorageTest {
             )
         ).delete(key);
         MatcherAssert.assertThat(
+            "Request line to delete a value",
             line.get(),
             new IsEqual<>(
                 new RequestLine(
