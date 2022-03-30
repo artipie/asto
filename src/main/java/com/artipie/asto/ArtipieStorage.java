@@ -122,11 +122,11 @@ public final class ArtipieStorage implements Storage {
             content
         ).send(
             (status, rsheaders, rsbody) -> {
-                final CompletableFuture<Void> res;
+                final CompletionStage<Void> res;
                 if (status.success()) {
                     res = CompletableFuture.allOf();
                 } else {
-                    res = CompletableFuture.failedFuture(
+                    res = new FailedCompletionStage<>(
                         new ArtipieIOException(
                             String.format(
                                 "Entry is not created [key=%s, status=%s]",
@@ -190,11 +190,11 @@ public final class ArtipieStorage implements Storage {
             Content.EMPTY
         ).send(
             (status, rsheaders, rsbody) -> {
-                final CompletableFuture<Void> res;
+                final CompletionStage<Void> res;
                 if (status.success()) {
                     res = CompletableFuture.allOf();
                 } else {
-                    res = CompletableFuture.failedFuture(
+                    res = new FailedCompletionStage<>(
                         new ArtipieIOException(
                             String.format(
                                 "Entry is not deleted [key=%s, status=%s]",
