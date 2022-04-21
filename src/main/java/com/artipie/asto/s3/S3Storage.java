@@ -167,9 +167,10 @@ public final class S3Storage implements Storage {
     public CompletableFuture<Void> move(final Key source, final Key destination) {
         return this.client.copyObject(
             CopyObjectRequest.builder()
-                .copySource(String.format("%s/%s", this.bucket, source.string()))
-                .bucket(this.bucket)
-                .key(destination.string())
+                .sourceBucket(this.bucket)
+                .sourceKey(source.string())
+                .destinationBucket(this.bucket)
+                .destinationKey(destination.string())
                 .build()
         ).thenCompose(
             copied -> this.client.deleteObject(
