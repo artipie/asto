@@ -239,7 +239,7 @@ public final class FileStorage implements Storage {
     private void deleteEmptyParts(final Path target) {
         final Path dirabs = this.dir.normalize().toAbsolutePath();
         final Path path = target.normalize().toAbsolutePath();
-        if (!dirabs.toString().startsWith(path.toString()) || dirabs.equals(path)) {
+        if (!path.toString().startsWith(dirabs.toString()) || dirabs.equals(path)) {
             return;
         }
         if (Files.isDirectory(path)) {

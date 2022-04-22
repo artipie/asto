@@ -48,6 +48,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  but it makes testing the method difficult.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("deprecation")
 public final class S3Storage implements Storage {
 
     /**
