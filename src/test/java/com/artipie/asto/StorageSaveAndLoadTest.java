@@ -17,8 +17,6 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -29,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.TooManyMethods"})
 @ExtendWith(StorageExtension.class)
-@DisabledOnOs(OS.WINDOWS)
 public final class StorageSaveAndLoadTest {
 
     @TestTemplate

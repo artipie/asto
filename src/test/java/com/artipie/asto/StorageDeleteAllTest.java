@@ -9,8 +9,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -19,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 1.9.1
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-@DisabledOnOs(OS.WINDOWS)
 @ExtendWith(StorageExtension.class)
 public final class StorageDeleteAllTest {
 

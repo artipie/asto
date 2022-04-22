@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.SystemUtils;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
@@ -52,7 +50,6 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidCatchingGenericException")
-@DisabledOnOs(OS.WINDOWS)
 final class StorageExtension
     implements TestTemplateInvocationContextProvider, BeforeAllCallback, AfterAllCallback {
 
@@ -66,13 +63,7 @@ final class StorageExtension
     /**
      * Etcd cluster.
      */
-    private final EtcdClusterExtension etcd = new EtcdClusterExtension(
-        "test-etcd",
-        1,
-        false,
-        "--data-dir",
-        "/data.etcd0"
-    );
+    private EtcdClusterExtension etcd;
 
     /**
      * Vert.x file System.
@@ -82,6 +73,13 @@ final class StorageExtension
     @Override
     public void beforeAll(final ExtensionContext extension) throws Exception {
         if (!SystemUtils.IS_OS_WINDOWS) {
+            this.etcd = new EtcdClusterExtension(
+                "test-etcd",
+                1,
+                false,
+                "--data-dir",
+                "/data.etcd0"
+            );
             final DockerClient client = DockerClientFactory.instance().client();
             client.pullImageCmd(EtcdContainer.ETCD_DOCKER_IMAGE_NAME)
                 .start()
