@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
@@ -50,6 +52,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidCatchingGenericException")
+@DisabledOnOs(OS.WINDOWS)
 final class StorageExtension
     implements TestTemplateInvocationContextProvider, BeforeAllCallback, AfterAllCallback {
 
