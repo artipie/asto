@@ -19,8 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 1.9.1
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-@ExtendWith(StorageExtension.class)
 @DisabledOnOs(OS.WINDOWS)
+@ExtendWith(StorageExtension.class)
 public final class StorageDeleteAllTest {
 
     @TestTemplate
