@@ -12,6 +12,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 0.27
  */
 @ExtendWith(StorageExtension.class)
+@DisabledOnOs(OS.WINDOWS)
 public final class StorageExclusivelyTest {
 
     @TestTemplate

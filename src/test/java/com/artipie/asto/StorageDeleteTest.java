@@ -9,6 +9,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 0.14
  */
 @ExtendWith(StorageExtension.class)
+@DisabledOnOs(OS.WINDOWS)
 public final class StorageDeleteTest {
 
     @TestTemplate

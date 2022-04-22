@@ -12,6 +12,8 @@ import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @SuppressWarnings("deprecation")
 @ExtendWith(StorageExtension.class)
+@DisabledOnOs(OS.WINDOWS)
 public final class StorageSizeTest {
 
     @TestTemplate

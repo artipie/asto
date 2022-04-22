@@ -10,6 +10,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @ExtendWith(StorageExtension.class)
 @Timeout(2)
+@DisabledOnOs(OS.WINDOWS)
 public final class StorageMoveTest {
 
     @TestTemplate

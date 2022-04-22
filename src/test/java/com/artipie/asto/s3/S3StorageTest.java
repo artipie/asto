@@ -32,6 +32,8 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -46,6 +48,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
  * @checkstyle ClassDataAbstractionCouplingCheck (3 lines)
  */
 @SuppressWarnings("PMD.TooManyMethods")
+@DisabledOnOs(OS.WINDOWS)
 class S3StorageTest {
     /**
      * Mock S3 server.

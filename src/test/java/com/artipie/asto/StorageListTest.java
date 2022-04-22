@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @ExtendWith(StorageExtension.class)
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@DisabledOnOs(OS.WINDOWS)
 public final class StorageListTest {
 
     @TestTemplate
