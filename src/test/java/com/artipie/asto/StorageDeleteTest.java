@@ -19,10 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @since 0.14
  */
 @ExtendWith(StorageExtension.class)
-@DisabledOnOs(OS.WINDOWS)
 public final class StorageDeleteTest {
 
     @TestTemplate
+    @DisabledOnOs(OS.WINDOWS)
     void shouldDeleteValue(final Storage storage) throws Exception {
         final Key key = new Key.From("shouldDeleteValue");
         final byte[] data = "data".getBytes();
@@ -36,12 +36,14 @@ public final class StorageDeleteTest {
     }
 
     @TestTemplate
+    @DisabledOnOs(OS.WINDOWS)
     void shouldFailToDeleteNotExistingValue(final Storage storage) {
         final Key key = new Key.From("shouldFailToDeleteNotExistingValue");
         Assertions.assertThrows(Exception.class, () -> storage.delete(key).get());
     }
 
     @TestTemplate
+    @DisabledOnOs(OS.WINDOWS)
     void shouldFailToDeleteParentOfSavedKey(final Storage storage) throws Exception {
         final Key parent = new Key.From("shouldFailToDeleteParentOfSavedKey");
         final Key key = new Key.From(parent, "child");
