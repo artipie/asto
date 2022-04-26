@@ -20,6 +20,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.20.4
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@Disabled
 final class LoggingStorageTest {
 
     /**

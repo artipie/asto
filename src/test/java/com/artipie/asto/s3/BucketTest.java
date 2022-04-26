@@ -16,7 +16,10 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -32,6 +35,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
  *
  * @since 0.15
  */
+@DisabledOnOs(OS.WINDOWS)
 class BucketTest {
 
     /**
@@ -71,6 +75,7 @@ class BucketTest {
     }
 
     @Test
+    @Disabled
     void shouldUploadPartAndCompleteMultipartUpload(final AmazonS3 client) throws Exception {
         final String key = "multipart";
         final String id = client.initiateMultipartUpload(
