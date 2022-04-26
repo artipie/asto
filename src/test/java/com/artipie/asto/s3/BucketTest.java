@@ -16,6 +16,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -74,6 +75,7 @@ class BucketTest {
     }
 
     @Test
+    @Disabled
     void shouldUploadPartAndCompleteMultipartUpload(final AmazonS3 client) throws Exception {
         final String key = "multipart";
         final String id = client.initiateMultipartUpload(
