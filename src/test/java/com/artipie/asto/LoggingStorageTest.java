@@ -6,6 +6,7 @@ package com.artipie.asto;
 
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -13,14 +14,15 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.WriterAppender;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -29,13 +31,17 @@ import org.junit.jupiter.api.Test;
  * @since 0.20.4
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@Disabled
 final class LoggingStorageTest {
 
     /**
      * Memory storage used in tests.
      */
     private InMemoryStorage memsto;
+
+    /**
+     * Logging storage to test.
+     */
+    private LoggingStorage logsto;
 
     /**
      * Log writer.
@@ -45,9 +51,13 @@ final class LoggingStorageTest {
     @BeforeEach
     void setUp() {
         this.memsto = new InMemoryStorage();
+        final Level level = Level.FINE;
+        this.logsto = new LoggingStorage(level, this.memsto);
         this.writer = new StringWriter();
-        Logger.getLogger(this.memsto.getClass())
-            .addAppender(new WriterAppender(new PatternLayout("%m"), this.writer));
+        final Logger logger = LogManager.getLogManager()
+            .getLogger(this.memsto.getClass().getCanonicalName());
+        logger.addHandler(new StringWriterHandler(this.writer));
+        logger.setLevel(level);
     }
 
     @Test
@@ -59,7 +69,7 @@ final class LoggingStorageTest {
         this.memsto.save(key, content).join();
         MatcherAssert.assertThat(
             "Should retrieve key existing in original storage",
-            new LoggingStorage(this.memsto).exists(key).join(),
+            this.logsto.exists(key).join(),
             new IsEqual<>(true)
         );
         MatcherAssert.assertThat(
@@ -79,7 +89,7 @@ final class LoggingStorageTest {
         this.memsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
             "Should read the size",
-            new LoggingStorage(this.memsto).size(key).join(),
+            this.logsto.size(key).join(),
             new IsEqual<>(dlg)
         );
         MatcherAssert.assertThat(
@@ -93,7 +103,7 @@ final class LoggingStorageTest {
     void savesContent() {
         final byte[] data = "01201".getBytes(StandardCharsets.UTF_8);
         final Key key = new Key.From("binary-key");
-        new LoggingStorage(this.memsto).save(key, new Content.From(data)).join();
+        this.logsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
             "Should save content",
             new BlockingStorage(this.memsto).value(key),
@@ -114,9 +124,7 @@ final class LoggingStorageTest {
         this.memsto.save(key, new Content.From(data)).join();
         MatcherAssert.assertThat(
             "Should load content",
-            new BlockingStorage(
-                new LoggingStorage(this.memsto)
-            ).value(key),
+            new BlockingStorage(this.logsto).value(key),
             new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
@@ -136,7 +144,7 @@ final class LoggingStorageTest {
         this.memsto.save(one, Content.EMPTY).join();
         this.memsto.save(two, Content.EMPTY).join();
         final Collection<Key> keys =
-            new LoggingStorage(this.memsto).list(prefix).join();
+            this.logsto.list(prefix).join();
         MatcherAssert.assertThat(
             "Should list items",
             keys,
@@ -155,7 +163,7 @@ final class LoggingStorageTest {
         final Key source = new Key.From("from");
         this.memsto.save(source, new Content.From(data)).join();
         final Key destination = new Key.From("to");
-        new LoggingStorage(this.memsto).move(source, destination).join();
+        this.logsto.move(source, destination).join();
         MatcherAssert.assertThat(
             "Should move content",
             new BlockingStorage(this.memsto).value(destination),
@@ -173,7 +181,7 @@ final class LoggingStorageTest {
         final byte[] data = "my file content".getBytes(StandardCharsets.UTF_8);
         final Key key = new Key.From("filename");
         this.memsto.save(key, new Content.From(data)).join();
-        new LoggingStorage(this.memsto).delete(key).join();
+        this.logsto.delete(key).join();
         MatcherAssert.assertThat(
             "Should delete content",
             new BlockingStorage(this.memsto).exists(key),
@@ -192,7 +200,7 @@ final class LoggingStorageTest {
         final byte[] data = "Wiki content".getBytes(StandardCharsets.UTF_8);
         final long dlg = data.length;
         this.memsto.save(key, new Content.From(data)).join();
-        final Meta metadata = new LoggingStorage(this.memsto).metadata(key).join();
+        final Meta metadata = this.logsto.metadata(key).join();
         MatcherAssert.assertThat(
             "Should retrieve metadata size",
             metadata.read(Meta.OP_SIZE).get(),
@@ -211,8 +219,8 @@ final class LoggingStorageTest {
         final Function<Storage, CompletionStage<Boolean>> operation =
             sto -> CompletableFuture.completedFuture(true);
         this.memsto.save(key, Content.EMPTY).join();
-        final Boolean finished = new LoggingStorage(this.memsto)
-            .exclusively(key, operation).toCompletableFuture().join();
+        final Boolean finished = this.logsto.exclusively(key, operation)
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(
             "Should run exclusively",
             finished,
@@ -223,5 +231,46 @@ final class LoggingStorageTest {
             this.writer.toString(),
             new IsEqual<>(String.format("Exclusively for '%s': %s", key, operation))
         );
+    }
+
+    /**
+     * String writer handler.
+     *
+     * @since 1.11
+     */
+    private final class StringWriterHandler extends Handler {
+
+        /**
+         * String writer.
+         */
+        private final StringWriter writer;
+
+        /**
+         * Ctor.
+         * @param writer String writer
+         */
+        StringWriterHandler(final StringWriter writer) {
+            this.writer = writer;
+        }
+
+        @Override
+        public void publish(final LogRecord record) {
+            this.writer.append(record.getMessage());
+        }
+
+        @Override
+        public void flush() {
+            this.writer.flush();
+        }
+
+        @Override
+        @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
+        public void close() throws SecurityException {
+            try {
+                this.writer.close();
+            } catch (final IOException exe) {
+                throw new RuntimeException(exe);
+            }
+        }
     }
 }
