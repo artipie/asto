@@ -49,7 +49,7 @@ public class Splitting {
         final Publisher<ByteBuffer> res;
         int remaining = this.source.remaining();
         if (remaining > this.size) {
-            final List<ByteBuffer> parts = new ArrayList<>(16);
+            final List<ByteBuffer> parts = new ArrayList<>(remaining / this.size + 1);
             while (remaining > 0) {
                 final byte[] bytes;
                 if (remaining > this.size) {

@@ -95,20 +95,16 @@ final class MultipartUpload {
                     return MultipartUpload.this.uploadPart(
                         pnum,
                         Flowable.just(chunk)
-                    ).<Void>thenApply(
-                        response -> {
-                            this.parts.add(
-                                new UploadedPart(pnum, response.eTag())
-                            );
-                            return null;
-                        }
+                    ).thenAccept(
+                        response -> this.parts.add(
+                            new UploadedPart(pnum, response.eTag())
+                        )
                     );
                 }
             ).reduce(
                 CompletableFuture.allOf(),
                 (acc, stage) -> acc.thenCompose(o -> stage)
             ).to(SingleInterop.get())
-            .toCompletableFuture()
             .thenCompose(Function.identity());
     }
 
