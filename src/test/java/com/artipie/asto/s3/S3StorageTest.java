@@ -30,7 +30,6 @@ import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -92,7 +91,6 @@ class S3StorageTest {
 
     @Test
     @Timeout(15)
-    @Disabled("https://github.com/artipie/asto/issues/421")
     void shouldUploadObjectWhenSaveLargeContent(final AmazonS3 client) throws Exception {
         final int size = 20 * 1024 * 1024;
         final byte[] data = new byte[size];

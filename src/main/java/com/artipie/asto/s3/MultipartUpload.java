@@ -6,20 +6,25 @@ package com.artipie.asto.s3;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Splitting;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import hu.akarnokd.rxjava2.operators.FlowableTransformers;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
-import io.reactivex.functions.Predicate;
 import java.nio.ByteBuffer;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
@@ -31,9 +36,11 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 final class MultipartUpload {
 
     /**
-     * Minimum part size. See https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
+     * Minimum part size.
+     * See <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html">
+     * Amazon S3 multipart upload limits</a>
      */
-    private static final long MIN_PART_SIZE = 5 * 1024 * 1024;
+    private static final int MIN_PART_SIZE = 5 * 1024 * 1024;
 
     /**
      * Bucket.
@@ -51,6 +58,11 @@ final class MultipartUpload {
     private final String id;
 
     /**
+     * Uploaded parts.
+     */
+    private final List<UploadedPart> parts;
+
+    /**
      * Ctor.
      *
      * @param bucket Bucket.
@@ -61,6 +73,7 @@ final class MultipartUpload {
         this.bucket = bucket;
         this.key = key;
         this.id = id;
+        this.parts = new CopyOnWriteArrayList<>();
     }
 
     /**
@@ -70,36 +83,29 @@ final class MultipartUpload {
      * @return Completion stage which is completed when responses received from S3 for all parts.
      */
     public CompletionStage<Void> upload(final Content content) {
-        final AtomicInteger part = new AtomicInteger();
-        return Flowable.fromPublisher(content).compose(
-            FlowableTransformers.bufferWhile(
-                new Predicate<ByteBuffer>() {
-                    private long sum;
-
-                    @Override
-                    public boolean test(final ByteBuffer buffer) {
-                        final int length = buffer.remaining();
-                        final boolean keep;
-                        if (this.sum + length > MultipartUpload.MIN_PART_SIZE) {
-                            this.sum = length;
-                            keep = false;
-                        } else {
-                            this.sum += length;
-                            keep = true;
-                        }
-                        return keep;
-                    }
+        final AtomicInteger counter = new AtomicInteger();
+        return Flowable.fromPublisher(content)
+            .concatMap(
+                buffer -> Flowable.fromPublisher(
+                    new Splitting(buffer, MultipartUpload.MIN_PART_SIZE).publisher()
+                )
+            ).map(
+                chunk -> {
+                    final int pnum = counter.incrementAndGet();
+                    return this.uploadPart(
+                        pnum,
+                        Flowable.just(chunk)
+                    ).thenAccept(
+                        response -> this.parts.add(
+                            new UploadedPart(pnum, response.eTag())
+                        )
+                    );
                 }
-            )
-        ).map(
-            chunk -> this.uploadPart(
-                part.incrementAndGet(),
-                Flowable.fromIterable(chunk)
-            ).<Void>thenApply(ignored -> null)
-        ).reduce(
-            CompletableFuture.allOf(),
-            (acc, stage) -> acc.thenCompose(o -> stage)
-        ).to(SingleInterop.get()).toCompletableFuture().thenCompose(Function.identity());
+            ).reduce(
+                CompletableFuture.allOf(),
+                (acc, stage) -> acc.thenCompose(o -> stage)
+            ).to(SingleInterop.get())
+            .thenCompose(Function.identity());
     }
 
     /**
@@ -112,6 +118,16 @@ final class MultipartUpload {
             CompleteMultipartUploadRequest.builder()
                 .key(this.key.string())
                 .uploadId(this.id)
+                .multipartUpload(
+                    CompletedMultipartUpload.builder()
+                        .parts(
+                            this.parts.stream()
+                                .sorted(Comparator.comparingInt(p -> p.pnum))
+                                .map(
+                                    UploadedPart::completedPart
+                                ).collect(Collectors.toList())
+                        ).build()
+                )
                 .build()
         ).thenApply(ignored -> null);
     }
@@ -155,5 +171,44 @@ final class MultipartUpload {
                     AsyncRequestBody.fromPublisher(content)
                 )
             );
+    }
+
+    /**
+     * Uploaded part.
+     * @since 1.12.0
+     */
+    private static class UploadedPart {
+        /**
+         * Part's number.
+         */
+        private final int pnum;
+
+        /**
+         * Entity tag for the uploaded object.
+         */
+        private final String tag;
+
+        /**
+         * Ctor.
+         *
+         * @param pnum Part's number.
+         * @param tag Entity tag for the uploaded object..
+         */
+        UploadedPart(final int pnum, final String tag) {
+            this.pnum = pnum;
+            this.tag = tag;
+        }
+
+        /**
+         * Builds {@code CompletedPart}.
+         *
+         * @return CompletedPart.
+         */
+        CompletedPart completedPart() {
+            return CompletedPart.builder()
+                .partNumber(this.pnum)
+                .eTag(this.tag)
+                .build();
+        }
     }
 }
