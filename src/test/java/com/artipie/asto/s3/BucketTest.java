@@ -16,10 +16,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -28,6 +25,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 
 /**
@@ -35,7 +34,6 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
  *
  * @since 0.15
  */
-@DisabledOnOs(OS.WINDOWS)
 class BucketTest {
 
     /**
@@ -75,7 +73,6 @@ class BucketTest {
     }
 
     @Test
-    @Disabled
     void shouldUploadPartAndCompleteMultipartUpload(final AmazonS3 client) throws Exception {
         final String key = "multipart";
         final String id = client.initiateMultipartUpload(
@@ -91,10 +88,19 @@ class BucketTest {
                 .build(),
             AsyncRequestBody.fromPublisher(AsyncRequestBody.fromBytes(data))
         ).thenCompose(
-            ignored -> this.bucket.completeMultipartUpload(
+            uploaded -> this.bucket.completeMultipartUpload(
                 CompleteMultipartUploadRequest.builder()
                     .key(key)
                     .uploadId(id)
+                    .multipartUpload(
+                        CompletedMultipartUpload.builder()
+                            .parts(CompletedPart.builder()
+                                .partNumber(1)
+                                .eTag(uploaded.eTag())
+                                .build()
+                            )
+                            .build()
+                    )
                     .build()
             )
         ).join();
@@ -111,11 +117,22 @@ class BucketTest {
         final String id = client.initiateMultipartUpload(
             new InitiateMultipartUploadRequest(this.name, key)
         ).getUploadId();
-        this.bucket.abortMultipartUpload(
-            AbortMultipartUploadRequest.builder()
+        final byte[] data = "abort_test".getBytes();
+        this.bucket.uploadPart(
+            UploadPartRequest.builder()
                 .key(key)
                 .uploadId(id)
-                .build()
+                .partNumber(1)
+                .contentLength((long) data.length)
+                .build(),
+            AsyncRequestBody.fromPublisher(AsyncRequestBody.fromBytes(data))
+        ).thenCompose(
+            ignore -> this.bucket.abortMultipartUpload(
+                AbortMultipartUploadRequest.builder()
+                    .key(key)
+                    .uploadId(id)
+                    .build()
+            )
         ).join();
         MatcherAssert.assertThat(
             client.listMultipartUploads(

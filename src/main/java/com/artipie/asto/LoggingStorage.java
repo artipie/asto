@@ -4,20 +4,25 @@
  */
 package com.artipie.asto;
 
-import com.jcabi.log.Logger;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Storage that logs performed operations.
  *
  * @since 0.20.4
  */
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.LoggerIsNotStaticFinal"})
 public final class LoggingStorage implements Storage {
+
+    /**
+     * Logger.
+     */
+    private final Logger logger;
 
     /**
      * Logging level.
@@ -47,6 +52,9 @@ public final class LoggingStorage implements Storage {
     public LoggingStorage(final Level level, final Storage storage) {
         this.level = level;
         this.storage = storage;
+        this.logger = Logger.getLogger(
+            this.storage.getClass().getCanonicalName()
+        );
     }
 
     @Override
@@ -161,6 +169,6 @@ public final class LoggingStorage implements Storage {
      * @param args Optional arguments for string formatting.
      */
     private void log(final String msg, final Object... args) {
-        Logger.log(this.level, this.storage, msg, args);
+        this.logger.log(this.level, String.format(msg, args));
     }
 }
