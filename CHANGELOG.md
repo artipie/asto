@@ -1,3 +1,15 @@
+# v1.12.0
+
+ - 31454e8 - fix: Wrong implementation of the S3Storage
+ - 066ad5f - fix: fixed BucketTest#shouldUploadPartAndCompleteMultipartUpload test
+ - c0b1d43 test: fix tests for `LoggingStorage`
+ - 6fd5a7f fix: do not use deprecated methods in S3Storage
+ - ac9e4ea Migrate to ppom 1.1
+ - 28915dc deps: bump s3mock from 2.1.19 to 2.4.8 (#404) 
+ - e4adcb2 feat: introduce helper for Meta's standard methods (#394) 
+ - 027eb65 fix(storage): add metadata method to standard decorator (#395) 
+ - a98e79d test: cover BlockingStorage and RxStorageWrapper (#386)
+
 # v1.11.0
 
  - a0e4296 - fix(fs): check path for FS read (#385)
