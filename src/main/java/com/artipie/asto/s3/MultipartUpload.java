@@ -92,7 +92,7 @@ final class MultipartUpload {
             ).map(
                 chunk -> {
                     final int pnum = counter.incrementAndGet();
-                    return MultipartUpload.this.uploadPart(
+                    return this.uploadPart(
                         pnum,
                         Flowable.just(chunk)
                     ).thenAccept(
