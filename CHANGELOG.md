@@ -1,3 +1,7 @@
+# v1.12.1
+ - d65bc72e build(deps): bump jetcd-core from 0.5.11 to 0.7.1
+ - 92307e48 fix: added parts information to `CompleteMultipartUploadRequest`
+
 # v1.12.0
 
  - 31454e8 - fix: Wrong implementation of the S3Storage
