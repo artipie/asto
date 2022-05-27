@@ -133,7 +133,9 @@ public final class StorageValuePipeline<R> {
                                     () -> ref.set(
                                         action.apply(inpfrom, outto)
                                     )
-                                ).handle(inpfrom.map(stream -> new FutureHandler<>(stream, outto)
+                                ).handle(
+                                    inpfrom.map(
+                                        stream -> new FutureHandler<>(stream, outto)
                                     ).orElseGet(() -> new FutureHandler<>(outto))
                                 ),
                                 CompletableFuture.runAsync(
