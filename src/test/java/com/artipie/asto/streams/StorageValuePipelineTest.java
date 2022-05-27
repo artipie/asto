@@ -11,19 +11,25 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
 /**
  * Test for {@link StorageValuePipeline}.
+ *
  * @since 1.5
  * @checkstyle MagicNumberCheck (500 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class StorageValuePipelineTest {
@@ -57,6 +63,46 @@ class StorageValuePipelineTest {
         MatcherAssert.assertThat(
             new String(new BlockingStorage(this.asto).value(key), charset),
             new IsEqual<>("one\ntwo\nthree\nfour\n")
+        );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "key_from,key_to",
+        "key_from,key_from"
+    })
+    void processesExistingLargeSizeItem(
+        final String read, final String write
+    ) {
+        final int size = 4 * 1024;
+        final int bufsize = 128;
+        final byte[] data = new byte[size];
+        new Random().nextBytes(data);
+        final Key kfrom = new Key.From(read);
+        final Key kto = new Key.From(write);
+        this.asto.save(kfrom, new Content.From(data)).join();
+        new StorageValuePipeline<String>(this.asto, kfrom, kto)
+            .processWithResult(
+                (input, out) -> {
+                    final byte[] buffer = new byte[bufsize];
+                    try {
+                        final InputStream stream = input.get();
+                        while (stream.read(buffer) != -1) {
+                            IOUtils.write(buffer, out);
+                            out.flush();
+                        }
+                        new Random().nextBytes(buffer);
+                        IOUtils.write(buffer, out);
+                        out.flush();
+                    } catch (final IOException err) {
+                        throw new ArtipieIOException(err);
+                    }
+                    return "res";
+                }
+            ).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            new BlockingStorage(this.asto).value(kto).length,
+            new IsEqual<>(size + bufsize)
         );
     }
 
