@@ -8,23 +8,21 @@ import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import java.io.Closeable;
+import com.artipie.asto.ext.ContentAs;
+import com.artipie.asto.misc.UncheckedIOConsumer;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Single;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import org.cqfn.rio.Buffers;
-import org.cqfn.rio.WriteGreed;
-import org.cqfn.rio.stream.ReactiveInputStream;
-import org.cqfn.rio.stream.ReactiveOutputStream;
 
 /**
  * Processes storage value content as optional input stream and
@@ -107,89 +105,39 @@ public final class StorageValuePipeline<R> {
     public CompletionStage<R> processWithResult(
         final BiFunction<Optional<InputStream>, OutputStream, R> action
     ) {
+        final AtomicReference<R> res = new AtomicReference<>();
         return this.asto.exists(this.read)
             .thenCompose(
                 exists -> {
-                    try {
-                        final Optional<InputStream> inpfrom;
-                        if (exists) {
-                            final PipedOutputStream outfrom = new PipedOutputStream();
-                            inpfrom = Optional.of(new PipedInputStream(outfrom));
-                            this.asto.value(this.read)
-                                .thenCompose(
-                                    content -> new ReactiveOutputStream(outfrom)
-                                        .write(content, WriteGreed.SYSTEM)
-                                        .toCompletableFuture()
-                                ).handle(new FutureHandler<>(outfrom));
-                        } else {
-                            inpfrom = Optional.empty();
-                        }
-                        final PipedInputStream inpto = new PipedInputStream();
-                        final PipedOutputStream outto = new PipedOutputStream(inpto);
-                        final AtomicReference<R> ref = new AtomicReference<>();
-                        return CompletableFuture
-                            .allOf(
-                                CompletableFuture.runAsync(
-                                    () -> ref.set(
-                                        action.apply(inpfrom, outto)
+                    final CompletionStage<Optional<InputStream>> stage;
+                    if (exists) {
+                        stage = this.asto.value(this.read)
+                            .thenCompose(
+                                content -> ContentAs.BYTES.apply(
+                                    Single.just(
+                                        content
                                     )
-                                ).handle(
-                                    inpfrom.map(
-                                        stream -> new FutureHandler<>(stream, outto)
-                                    ).orElseGet(() -> new FutureHandler<>(outto))
-                                ),
-                                CompletableFuture.runAsync(
-                                    () -> this.asto.save(
-                                        this.write,
-                                        new Content.From(
-                                            new ReactiveInputStream(inpto)
-                                                .read(Buffers.Standard.K8)
-                                        )
-                                    ).join()
-                                )
-                            ).handle(new FutureHandler<>(inpto))
-                            .thenApply(nothing -> ref.get());
+                                ).to(SingleInterop.get())
+                            ).thenApply(
+                                bytes -> Optional.of(new ByteArrayInputStream(bytes))
+                            );
+                    } else {
+                        stage = CompletableFuture.completedFuture(Optional.empty());
+                    }
+                    return stage;
+                }
+            ).thenApply(
+                optional -> {
+                    try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                        res.set(action.apply(optional, output));
+                        return new Content.From(output.toByteArray());
                     } catch (final IOException err) {
                         throw new ArtipieIOException(err);
+                    } finally {
+                        optional.ifPresent(new UncheckedIOConsumer<>(InputStream::close));
                     }
                 }
-            );
-    }
-
-    /**
-     * Future's handler to close streams.
-     *
-     * @param <T> Result type.
-     * @since 1.12.0
-     */
-    private static class FutureHandler<T> implements BiFunction<T, Throwable, T> {
-        /**
-         * Streams to close.
-         */
-        private final Closeable[] streams;
-
-        /**
-         * Ctor.
-         *
-         * @param streams Streams to close.
-         */
-        FutureHandler(final Closeable... streams) {
-            this.streams = Arrays.copyOf(streams, streams.length);
-        }
-
-        @Override
-        public T apply(final T res, final Throwable err) {
-            try {
-                for (final Closeable stream : this.streams) {
-                    stream.close();
-                }
-            } catch (final IOException ioe) {
-                throw new ArtipieIOException(ioe);
-            }
-            if (err != null) {
-                throw new ArtipieIOException(err);
-            }
-            return res;
-        }
+            ).thenCompose(content -> this.asto.save(this.write, content))
+            .thenApply(nothing -> res.get());
     }
 }
