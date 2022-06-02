@@ -1,3 +1,6 @@
+# v1.12.2
+ - 11b03beb fix: `StorageValuePipeline` implemented without reactive IO
+
 # v1.12.1
  - d65bc72e build(deps): bump jetcd-core from 0.5.11 to 0.7.1
  - 92307e48 fix: added parts information to `CompleteMultipartUploadRequest`
