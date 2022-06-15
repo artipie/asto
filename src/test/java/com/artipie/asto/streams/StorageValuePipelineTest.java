@@ -252,7 +252,7 @@ class StorageValuePipelineTest {
                             .flatMap(
                                 buffer -> new Splitting(
                                     buffer,
-                                    random.nextInt(1, 10) * 1024
+                                    (random.nextInt(9) + 1) * 1024
                                 ).publisher()
                             )
                             .delay(random.nextInt(5_000), TimeUnit.MILLISECONDS)
