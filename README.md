@@ -47,8 +47,8 @@ This is the dependency you need:
 ```
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto) for more technical details. If you 
-have any question or suggestions, do not hesitate to create as issue, our roadmap is 
-available [here](https://github.com/orgs/artipie/projects/3/views/1).
+have any question or suggestions, do not hesitate to create as issue or contact us in 
+[Telegram](https://t.me/artipie), our roadmap is available [here](https://github.com/orgs/artipie/projects/3/views/1).
 
 # Usage
 
@@ -88,7 +88,21 @@ future chains (`thenAccept()`, `thenCompose()` etc.) and call blocking methods `
 when necessary.
 
 Other storage implementations (`S3Storage`, `InMemoryStorage`) can be used in the same way, only
-constructors differ. 
+constructors differ, here is an example of how to create `S3Storage` instance:
+
+```java
+final Storage asto = new S3Storage(
+    S3AsyncClient.builder().credentialsProvider(
+        StaticCredentialsProvider.create(
+            AwsBasicCredentials.create("accessKeyId", "secretAccessKey")
+        )
+    ).build(),
+    "bucketName"
+);
+```
+
+To get more details about `S3AsyncClient` builder, check 
+[Java S3 client docs](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/s3/S3AsyncClient.html).
 
 ## How to contribute
 
