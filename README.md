@@ -4,7 +4,6 @@
 [![DevOps By Rultor.com](http://www.rultor.com/b/artipie/asto)](http://www.rultor.com/p/artipie/asto)
 [![We recommend IntelliJ IDEA](https://www.elegantobjects.org/intellij-idea.svg)](https://www.jetbrains.com/idea/)
 
-[![Build Status](https://img.shields.io/travis/artipie/asto/master.svg)](https://travis-ci.org/artipie/asto)
 [![Javadoc](http://www.javadoc.io/badge/com.artipie/asto.svg)](http://www.javadoc.io/doc/com.artipie/asto)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/asto/blob/master/LICENSE.txt)
 [![codecov](https://codecov.io/gh/artipie/asto/branch/master/graph/badge.svg)](https://codecov.io/gh/artipie/asto)
@@ -47,7 +46,7 @@ This is the dependency you need:
 ```
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto) for more technical details. If you 
-have any question or suggestions, do not hesitate to create as issue or contact us in 
+have any question or suggestions, do not hesitate to create an issue or contact us in 
 [Telegram](https://t.me/artipie). Our roadmap is available [here](https://github.com/orgs/artipie/projects/3).
 
 # Usage
