@@ -48,7 +48,7 @@ This is the dependency you need:
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto) for more technical details. If you 
 have any question or suggestions, do not hesitate to create as issue or contact us in 
-[Telegram](https://t.me/artipie), our roadmap is available [here](https://github.com/orgs/artipie/projects/3/views/1).
+[Telegram](https://t.me/artipie). Our roadmap is available [here](https://github.com/orgs/artipie/projects/3).
 
 # Usage
 
@@ -80,7 +80,7 @@ In the example we created local text file `/usr/local/example/hello.txt` contain
 then read and print it into console. Used classes:
 - `Key.From` is implementation of the `Key` interface, keys are strings, separated by `/`
 - `Content.From` implements `Content` interface, allows to create `Content` instances from 
-  byte arrays or publisher
+  byte arrays or [publisher](https://www.reactive-streams.org/reactive-streams-1.0.4-javadoc/org/reactivestreams/Publisher.html) of ByteBuffer's
 - `PublisherAs` class allows to fully read `Content` into memory as byte arrays
 
 Note, that `Storage` is asynchronous and always returns `CompletableFutures` as a result, use 
