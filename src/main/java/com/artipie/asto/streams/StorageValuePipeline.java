@@ -25,6 +25,7 @@ import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -125,7 +126,7 @@ public final class StorageValuePipeline<R> {
                         stage = this.asto.value(this.read)
                             .thenApply(
                                 content -> Optional.of(
-                                    new ContentInputStream(content)
+                                    new ContentAsInputStream(content)
                                         .inputStream()
                                 )
                             );
@@ -160,7 +161,7 @@ public final class StorageValuePipeline<R> {
      *
      * @since 1.12
      */
-    private static class ContentInputStream extends DefaultSubscriber<ByteBuffer> {
+    static class ContentAsInputStream extends DefaultSubscriber<ByteBuffer> {
         /**
          * Content.
          */
@@ -192,7 +193,7 @@ public final class StorageValuePipeline<R> {
          *
          * @param content Content.
          */
-        ContentInputStream(final Content content) {
+        ContentAsInputStream(final Content content) {
             this(content, Schedulers.io());
         }
 
@@ -202,7 +203,7 @@ public final class StorageValuePipeline<R> {
          * @param content Content.
          * @param scheduler Scheduler to perform subscription actions on.
          */
-        ContentInputStream(final Content content, final Scheduler scheduler) {
+        ContentAsInputStream(final Content content, final Scheduler scheduler) {
             this.content = content;
             this.scheduler = scheduler;
             this.out = new PipedOutputStream();
@@ -214,6 +215,7 @@ public final class StorageValuePipeline<R> {
 
         @Override
         public void onNext(final ByteBuffer buffer) {
+            Objects.requireNonNull(buffer);
             UncheckedRunnable.newIoRunnable(
                 () -> {
                     while (buffer.hasRemaining()) {
@@ -256,7 +258,7 @@ public final class StorageValuePipeline<R> {
      *
      * @since 1.12
      */
-    private static class PublishingOutputStream extends OutputStream {
+    static class PublishingOutputStream extends OutputStream {
         /**
          * Default period of time buffer collects bytes before it is emitted to publisher (ms).
          */
