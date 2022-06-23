@@ -18,13 +18,14 @@ import org.reactivestreams.tck.TestEnvironment;
  * @since 1.12
  * @checkstyle MagicNumberCheck (500 lines)
  */
-public final class ContentAsInputStreamWhiteboxVerification
+@SuppressWarnings("PMD.TestClassWithoutTestCases")
+public final class ContentAsInputStreamWhiteboxVerificationTest
     extends SubscriberWhiteboxVerification<ByteBuffer> {
 
     /**
      * Ctor.
      */
-    ContentAsInputStreamWhiteboxVerification() {
+    ContentAsInputStreamWhiteboxVerificationTest() {
         super(new TestEnvironment());
     }
 
