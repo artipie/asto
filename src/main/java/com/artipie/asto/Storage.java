@@ -153,47 +153,47 @@ public interface Storage {
         }
 
         @Override
-        public final CompletableFuture<Boolean> exists(final Key key) {
+        public CompletableFuture<Boolean> exists(final Key key) {
             return this.delegate.exists(key);
         }
 
         @Override
-        public final CompletableFuture<Collection<Key>> list(final Key prefix) {
+        public CompletableFuture<Collection<Key>> list(final Key prefix) {
             return this.delegate.list(prefix);
         }
 
         @Override
-        public final CompletableFuture<Void> save(final Key key, final Content content) {
+        public CompletableFuture<Void> save(final Key key, final Content content) {
             return this.delegate.save(key, content);
         }
 
         @Override
-        public final CompletableFuture<Void> move(final Key source, final Key destination) {
+        public CompletableFuture<Void> move(final Key source, final Key destination) {
             return this.delegate.move(source, destination);
         }
 
         @Override
-        public final CompletableFuture<Long> size(final Key key) {
+        public CompletableFuture<Long> size(final Key key) {
             return this.delegate.size(key);
         }
 
         @Override
-        public final CompletableFuture<Content> value(final Key key) {
+        public CompletableFuture<Content> value(final Key key) {
             return this.delegate.value(key);
         }
 
         @Override
-        public final CompletableFuture<Void> delete(final Key key) {
+        public CompletableFuture<Void> delete(final Key key) {
             return this.delegate.delete(key);
         }
 
         @Override
-        public final CompletableFuture<Void> deleteAll(final Key prefix) {
+        public CompletableFuture<Void> deleteAll(final Key prefix) {
             return this.delegate.deleteAll(prefix);
         }
 
         @Override
-        public final <T> CompletionStage<T> exclusively(
+        public <T> CompletionStage<T> exclusively(
             final Key key,
             final Function<Storage, CompletionStage<T>> operation
         ) {
@@ -201,7 +201,7 @@ public interface Storage {
         }
 
         @Override
-        public final CompletableFuture<? extends Meta> metadata(final Key key) {
+        public CompletableFuture<? extends Meta> metadata(final Key key) {
             return this.delegate.metadata(key);
         }
     }

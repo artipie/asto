@@ -5,24 +5,36 @@
 package com.artipie.asto.streams;
 
 import com.artipie.asto.ArtipieIOException;
+import com.artipie.asto.ByteArray;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.ContentAs;
 import com.artipie.asto.misc.UncheckedIOConsumer;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Single;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import com.artipie.asto.misc.UncheckedIOSupplier;
+import com.artipie.asto.misc.UncheckedRunnable;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.processors.UnicastProcessor;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subscribers.DefaultSubscriber;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 /**
  * Processes storage value content as optional input stream and
@@ -112,32 +124,218 @@ public final class StorageValuePipeline<R> {
                     final CompletionStage<Optional<InputStream>> stage;
                     if (exists) {
                         stage = this.asto.value(this.read)
-                            .thenCompose(
-                                content -> ContentAs.BYTES.apply(
-                                    Single.just(
-                                        content
-                                    )
-                                ).to(SingleInterop.get())
-                            ).thenApply(
-                                bytes -> Optional.of(new ByteArrayInputStream(bytes))
+                            .thenApply(
+                                content -> Optional.of(
+                                    new ContentAsInputStream(content)
+                                        .inputStream()
+                                )
                             );
                     } else {
                         stage = CompletableFuture.completedFuture(Optional.empty());
                     }
                     return stage;
                 }
-            ).thenApply(
+            ).thenCompose(
                 optional -> {
-                    try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                    try (PublishingOutputStream output = new PublishingOutputStream()) {
                         res.set(action.apply(optional, output));
-                        return new Content.From(output.toByteArray());
+                        return this.asto.save(this.write, new Content.From(output.publisher()));
                     } catch (final IOException err) {
                         throw new ArtipieIOException(err);
                     } finally {
                         optional.ifPresent(new UncheckedIOConsumer<>(InputStream::close));
                     }
                 }
-            ).thenCompose(content -> this.asto.save(this.write, content))
-            .thenApply(nothing -> res.get());
+            ).thenApply(nothing -> res.get());
+    }
+
+    /**
+     * Represents {@link Content} as {@link InputStream}.
+     * <p/>
+     * This class is a {@link Subscriber}, that subscribes to the {@link Content}.
+     * Subscription actions are performed on a {@link Scheduler} that is passed to the constructor.
+     * Content data are written to the {@code channel}, that {@code channel} be constructed to write
+     * bytes to the {@link PipedOutputStream} connected with {@link PipedInputStream},
+     * the last stream is the resulting {@link InputStream}. When publisher complete,
+     * {@link PipedOutputStream} is closed.
+     *
+     * @since 1.12
+     */
+    static class ContentAsInputStream extends DefaultSubscriber<ByteBuffer> {
+        /**
+         * Content.
+         */
+        private final Content content;
+
+        /**
+         * Scheduler to perform subscription actions on.
+         */
+        private final Scheduler scheduler;
+
+        /**
+         * {@code PipedOutputStream} to which bytes are to be written from {@code channel}.
+         */
+        private final PipedOutputStream out;
+
+        /**
+         * {@code PipedInputStream} connected to {@link #out},
+         * it's used as the result {@code InputStream}.
+         */
+        private final PipedInputStream input;
+
+        /**
+         * {@code Channel} to write bytes from the {@link #content} to {@link #out}.
+         */
+        private final WritableByteChannel channel;
+
+        /**
+         * Ctor.
+         *
+         * @param content Content.
+         */
+        ContentAsInputStream(final Content content) {
+            this(content, Schedulers.io());
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param content Content.
+         * @param scheduler Scheduler to perform subscription actions on.
+         */
+        ContentAsInputStream(final Content content, final Scheduler scheduler) {
+            this.content = content;
+            this.scheduler = scheduler;
+            this.out = new PipedOutputStream();
+            this.input = new UncheckedIOSupplier<>(
+                () -> new PipedInputStream(this.out)
+            ).get();
+            this.channel = Channels.newChannel(this.out);
+        }
+
+        @Override
+        public void onNext(final ByteBuffer buffer) {
+            Objects.requireNonNull(buffer);
+            UncheckedRunnable.newIoRunnable(
+                () -> {
+                    while (buffer.hasRemaining()) {
+                        this.channel.write(buffer);
+                    }
+                }
+            ).run();
+        }
+
+        @Override
+        public void onError(final Throwable err) {
+            UncheckedRunnable.newIoRunnable(this.input::close).run();
+        }
+
+        @Override
+        public void onComplete() {
+            UncheckedRunnable.newIoRunnable(this.out::close).run();
+        }
+
+        /**
+         * {@code Content} as {@code InputStream}.
+         *
+         * @return InputStream.
+         */
+        InputStream inputStream() {
+            Flowable.fromPublisher(this.content)
+                .subscribeOn(this.scheduler)
+                .subscribe(this);
+            return this.input;
+        }
+    }
+
+    /**
+     * Transfers {@link OutputStream} to {@code Publisher<ByteBuffer>}.
+     * <p/>
+     * Written to {@link OutputStream} bytes are accumulated in the buffer.
+     * Buffer collects bytes during the period of time in ms or until the
+     * number of bytes achieve a defined size. Then the buffer emits bytes
+     * to the resulting publisher.
+     *
+     * @since 1.12
+     */
+    static class PublishingOutputStream extends OutputStream {
+        /**
+         * Default period of time buffer collects bytes before it is emitted to publisher (ms).
+         */
+        private static final long DEFAULT_TIMESPAN = 100L;
+
+        /**
+         * Default maximum size of each buffer before it is emitted.
+         */
+        private static final int DEFAULT_BUF_SIZE = 4 * 1024;
+
+        /**
+         * Resulting publisher.
+         */
+        private final UnicastProcessor<ByteBuffer> pub;
+
+        /**
+         * Buffer processor to collect bytes.
+         */
+        private final UnicastProcessor<Byte> bufproc;
+
+        /**
+         * Ctor.
+         */
+        PublishingOutputStream() {
+            this(
+                PublishingOutputStream.DEFAULT_TIMESPAN,
+                TimeUnit.MILLISECONDS,
+                PublishingOutputStream.DEFAULT_BUF_SIZE
+            );
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param timespan The period of time buffer collects bytes
+         *  before it is emitted to publisher.
+         * @param unit The unit of time which applies to the timespan argument.
+         * @param count The maximum size of each buffer before it is emitted.
+         */
+        @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
+        PublishingOutputStream(
+            final long timespan,
+            final TimeUnit unit,
+            final int count
+        ) {
+            this.pub = UnicastProcessor.create();
+            this.bufproc = UnicastProcessor.create();
+            this.bufproc.buffer(timespan, unit, count)
+                .doOnNext(
+                    list -> this.pub.onNext(
+                        ByteBuffer.wrap(new ByteArray(list).primitiveBytes())
+                    )
+                )
+                .subscribeOn(Schedulers.io())
+                .doOnComplete(this.pub::onComplete)
+                .subscribe();
+        }
+
+        // @checkstyle ParameterNameCheck (5 line)
+        @Override
+        public void write(final int b) throws IOException {
+            this.bufproc.onNext((byte) b);
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
+            this.bufproc.onComplete();
+        }
+
+        /**
+         * Resulting publisher.
+         *
+         * @return Publisher.
+         */
+        Publisher<ByteBuffer> publisher() {
+            return this.pub;
+        }
     }
 }
