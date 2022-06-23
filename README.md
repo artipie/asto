@@ -1,4 +1,6 @@
-<img src="https://www.artipie.com/logo.svg" width="64px" height="64px"/>
+<a href="http://artipie.com"><img src="https://www.artipie.com/logo.svg" width="64px" height="64px"/></a>
+
+[![Join our Telegramm group](https://img.shields.io/badge/Join%20us-Telegram-blue?&logo=telegram&?link=http://right&link=http://t.me/artipie)](http://t.me/artipie)
 
 [![EO principles respected here](https://www.elegantobjects.org/badge.svg)](https://www.elegantobjects.org)
 [![DevOps By Rultor.com](http://www.rultor.com/b/artipie/asto)](http://www.rultor.com/p/artipie/asto)
@@ -45,9 +47,10 @@ This is the dependency you need:
 </dependency>
 ```
 
-Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto) for more technical details. If you 
-have any question or suggestions, do not hesitate to create an issue or contact us in 
-[Telegram](https://t.me/artipie). Our roadmap is available [here](https://github.com/orgs/artipie/projects/3).
+Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto) for more technical details. 
+If you have any question or suggestions, do not hesitate to [create an issue](https://github.com/artipie/asto/issues/new) or contact us in
+[Telegram](https://t.me/artipie).  
+Artipie [roadmap](https://github.com/orgs/artipie/projects/3).
 
 # Usage
 
@@ -104,6 +107,8 @@ To get more details about `S3AsyncClient` builder, check
 [Java S3 client docs](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/s3/S3AsyncClient.html).
 
 ## How to contribute
+
+Please read [contributing rules](https://github.com/artipie/artipie/blob/master/CONTRIBUTING.md).
 
 Fork repository, make changes, send us a pull request. We will review
 your changes and apply them to the `master` branch shortly, provided
