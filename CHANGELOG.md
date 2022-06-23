@@ -1,3 +1,8 @@
+# v1.12.3
+ - c72d5e2 - feat: 'StorageValuePipeline' should process large-size content without buffering it all in memory (#433)
+ - 93846af - fix: readme corrections (#435)
+ - d5962d8 - fix: extended README.md (#434)
+
 # v1.12.2
  - 11b03beb fix: `StorageValuePipeline` implemented without reactive IO
 
