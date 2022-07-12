@@ -99,6 +99,16 @@ SOFTWARE.
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.amihaiemil.web</groupId>
+      <artifactId>eo-yaml</artifactId>
+      <version>5.1.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+      <version>0.10.2</version>
+    </dependency>
     <!-- Vert.x dependencies -->
     <dependency>
       <groupId>io.vertx</groupId>
@@ -197,12 +207,6 @@ SOFTWARE.
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
       <version>5.6.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.reactivestreams</groupId>
-      <artifactId>reactive-streams-tck</artifactId>
-      <version>1.0.3</version>
       <scope>test</scope>
     </dependency>
     <!-- s3 mocks deps -->
