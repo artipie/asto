@@ -29,6 +29,8 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.redisson.Redisson;
 import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
@@ -41,6 +43,7 @@ import org.testcontainers.containers.GenericContainer;
  * @since 0.1
  */
 @SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
+@DisabledOnOs(OS.WINDOWS)
 public final class RedisStorageTest {
 
     /**
