@@ -23,5 +23,19 @@
             <version>3.17.4</version>
         </dependency>
     </dependencies>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <useFile>false</useFile>
+                        <failIfNoTests>false</failIfNoTests>
+                        <!--<failIfNoSpecifiedTests>true</failIfNoSpecifiedTests>-->
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>
