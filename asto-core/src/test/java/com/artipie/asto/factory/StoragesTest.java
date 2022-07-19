@@ -28,7 +28,7 @@ public final class StoragesTest {
     @Test
     void shouldCreateFileStorage() {
         MatcherAssert.assertThat(
-            Storages.newStorages()
+            new Storages()
                 .newStorage(
                     "fs",
                     Yaml.createYamlMappingBuilder()
@@ -47,7 +47,7 @@ public final class StoragesTest {
     @Test
     void shouldCreateS3Storage() {
         MatcherAssert.assertThat(
-            Storages.newStorages()
+            new Storages()
                 .newStorage(
                     "s3",
                     Yaml.createYamlMappingBuilder()
@@ -71,7 +71,7 @@ public final class StoragesTest {
     @Test
     void shouldCreateEtcdStorage() {
         MatcherAssert.assertThat(
-            Storages.newStorages()
+            new Storages()
                 .newStorage(
                     "etcd",
                     Yaml.createYamlMappingBuilder()
@@ -95,8 +95,8 @@ public final class StoragesTest {
     @Test
     void shouldThrowExceptionWhenTypeIsWrong() {
         Assertions.assertThrows(
-            StorageFactoryNotFoundException.class,
-            () -> Storages.newStorages()
+            StorageNotFoundException.class,
+            () -> new Storages()
                 .newStorage(
                     "wrong-storage-type",
                     Yaml.createYamlMappingBuilder().build()
@@ -108,7 +108,7 @@ public final class StoragesTest {
     void shouldThrowExceptionWhenReadTwoFactoryWithTheSameName() {
         Assertions.assertThrows(
             ArtipieException.class,
-            () -> Storages.newStorages(
+            () -> new Storages(
                 Collections.singletonMap(
                     Storages.SCAN_PACK,
                     "com.third.party.factory.first;com.third.party.factory.first2"
@@ -124,7 +124,7 @@ public final class StoragesTest {
     @Test
     void shouldScanAdditionalPackageFromEnv() {
         MatcherAssert.assertThat(
-            Storages.newStorages(
+            new Storages(
                 Collections.singletonMap(
                     Storages.SCAN_PACK,
                     "com.third.party.factory.first"
@@ -137,7 +137,7 @@ public final class StoragesTest {
     @Test
     void shouldScanSeveralPackagesFromEnv() {
         MatcherAssert.assertThat(
-            Storages.newStorages(
+            new Storages(
                 Collections.singletonMap(
                     Storages.SCAN_PACK,
                     "com.third.party.factory.first;com.third.party.factory.second"

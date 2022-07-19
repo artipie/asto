@@ -8,10 +8,12 @@ import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.ArtipieException;
 import com.artipie.asto.Storage;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.jcabi.log.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.reflections.Reflections;
@@ -35,46 +37,24 @@ public final class Storages {
     private static final String DEFAULT_PACKAGE = "com.artipie.asto";
 
     /**
-     * Environment parameters.
-     */
-    private final Map<String, String> env;
-
-    /**
      * Storage factories.
      */
     private final Map<String, StorageFactory> factories;
 
     /**
      * Ctor.
-     *
-     * @param env Environment parameters.
      */
-    private Storages(final Map<String, String> env) {
-        this.env = env;
-        this.factories = new HashMap<>();
+    public Storages() {
+        this(System.getenv());
     }
 
     /**
-     * Factory method to get instance of {@code Storages}.
-     *
-     * @return Storages.
-     */
-    @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
-    public static Storages newStorages() {
-        return newStorages(System.getenv());
-    }
-
-    /**
-     * Factory method to get instance of {@code Storages}.
+     * Ctor.
      *
      * @param env Environment parameters.
-     * @return Storages.
      */
-    @SuppressWarnings("PMD.ProhibitPublicStaticMethods")
-    public static Storages newStorages(final Map<String, String> env) {
-        final Storages res = new Storages(env);
-        res.init();
-        return res;
+    public Storages(final Map<String, String> env) {
+        this.factories = init(env);
     }
 
     /**
@@ -87,7 +67,7 @@ public final class Storages {
     public Storage newStorage(final String type, final YamlMapping cfg) {
         final StorageFactory factory = this.factories.get(type);
         if (factory == null) {
-            throw new StorageFactoryNotFoundException(type);
+            throw new StorageNotFoundException(type);
         }
         return factory.newStorage(cfg);
     }
@@ -102,27 +82,20 @@ public final class Storages {
     }
 
     /**
-     * Fills {@code factories} map.
-     */
-    private void init() {
-        this.initiateFrom(Storages.DEFAULT_PACKAGE);
-        final String pgs = this.env.get(Storages.SCAN_PACK);
-        if (!Strings.isNullOrEmpty(pgs)) {
-            this.initiateFrom(pgs.split(";"));
-        }
-    }
-
-    /**
-     * Finds and initiates annotated classes in passed packages.
-     * <p>
-     * Cannot use {@code ConfigurationBuilder} due to
-     * <a href="https://github.com/ronmamo/reflections/issues/378">bug</a>.
+     * Finds and initiates annotated classes in default and env packages.
      *
-     * @param pkgs Packages.
+     * @param env Environment parameters.
+     * @return Map of StorageFactories.
      */
-    private void initiateFrom(final String... pkgs) {
-        for (final String pkg : pkgs) {
-            new Reflections(pkg)
+    private static Map<String, StorageFactory> init(final Map<String, String> env) {
+        final List<String> pkgs = Lists.newArrayList(Storages.DEFAULT_PACKAGE);
+        final String pgs = env.get(Storages.SCAN_PACK);
+        if (!Strings.isNullOrEmpty(pgs)) {
+            pkgs.addAll(Arrays.asList(pgs.split(";")));
+        }
+        final Map<String, StorageFactory> res = new HashMap<>();
+        pkgs.forEach(
+            pkg -> new Reflections(pkg)
                 .get(Scanners.TypesAnnotated.with(ArtipieStorageFactory.class).asClass())
                 .forEach(
                     clazz -> {
@@ -134,7 +107,7 @@ public final class Storages {
                                 // @checkstyle LineLengthCheck (3 lines)
                                 () -> new ArtipieException("Annotation 'ArtipieStorageFactory' should have a not empty value")
                             );
-                        final StorageFactory existed = this.factories.get(type);
+                        final StorageFactory existed = res.get(type);
                         if (existed != null) {
                             throw new ArtipieException(
                                 String.format(
@@ -144,12 +117,12 @@ public final class Storages {
                             );
                         }
                         try {
-                            this.factories.put(
+                            res.put(
                                 type,
                                 (StorageFactory) clazz.getDeclaredConstructor().newInstance()
                             );
                             Logger.info(
-                                this,
+                                Storages.class,
                                 "Initiated storage factory [type=%s, class=%s]",
                                 type, clazz.getSimpleName()
                             );
@@ -158,8 +131,8 @@ public final class Storages {
                             throw new ArtipieException(err);
                         }
                     }
-                );
-        }
+                )
+        );
+        return res;
     }
-
 }

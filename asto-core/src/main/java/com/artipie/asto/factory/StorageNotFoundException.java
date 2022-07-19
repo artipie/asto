@@ -11,7 +11,7 @@ import com.artipie.ArtipieException;
  *
  * @since 1.13.0
  */
-public class StorageFactoryNotFoundException extends ArtipieException {
+public class StorageNotFoundException extends ArtipieException {
 
     private static final long serialVersionUID = 0L;
 
@@ -20,7 +20,7 @@ public class StorageFactoryNotFoundException extends ArtipieException {
      *
      * @param type Storage type
      */
-    public StorageFactoryNotFoundException(final String type) {
+    public StorageNotFoundException(final String type) {
         super(String.format("Storage with type '%s' is not found.", type));
     }
 }
