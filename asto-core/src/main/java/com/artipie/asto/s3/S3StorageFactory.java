@@ -4,11 +4,10 @@
  */
 package com.artipie.asto.s3;
 
-import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
+import com.artipie.asto.factory.StorageConfig;
 import com.artipie.asto.factory.StorageFactory;
-import com.artipie.asto.factory.StrictYamlMapping;
 import java.net.URI;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -24,10 +23,11 @@ import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 @ArtipieStorageFactory("s3")
 public final class S3StorageFactory implements StorageFactory {
     @Override
-    public Storage newStorage(final YamlMapping cfg) {
+    public Storage newStorage(final StorageConfig cfg) {
         return new S3Storage(
             S3StorageFactory.s3Client(cfg),
-            new StrictYamlMapping(cfg).string("bucket"),
+            new StorageConfig.StrictStorageConfig(cfg)
+                .string("bucket"),
             !"false".equals(cfg.string("multipart"))
         );
     }
@@ -39,7 +39,7 @@ public final class S3StorageFactory implements StorageFactory {
      * @return Built S3 client.
      * @checkstyle MethodNameCheck (3 lines)
      */
-    private static S3AsyncClient s3Client(final YamlMapping cfg) {
+    private static S3AsyncClient s3Client(final StorageConfig cfg) {
         final S3AsyncClientBuilder builder = S3AsyncClient.builder();
         final String region = cfg.string("region");
         if (region != null) {
@@ -52,25 +52,26 @@ public final class S3StorageFactory implements StorageFactory {
         return builder
             .credentialsProvider(
                 S3StorageFactory.credentials(
-                    new StrictYamlMapping(cfg).yamlMapping("credentials")
+                    new StorageConfig.StrictStorageConfig(cfg)
+                        .config("credentials")
                 )
             )
             .build();
     }
 
     /**
-     * Creates {@link StaticCredentialsProvider} instance based on YAML config.
+     * Creates {@link StaticCredentialsProvider} instance based on config.
      *
-     * @param yaml Credentials config YAML.
+     * @param cred Credentials config.
      * @return Credentials provider.
      */
-    private static StaticCredentialsProvider credentials(final YamlMapping yaml) {
-        final String type = yaml.string("type");
+    private static StaticCredentialsProvider credentials(final StorageConfig cred) {
+        final String type = cred.string("type");
         if ("basic".equals(type)) {
             return StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(
-                    yaml.string("accessKeyId"),
-                    yaml.string("secretAccessKey")
+                    cred.string("accessKeyId"),
+                    cred.string("secretAccessKey")
                 )
             );
         } else {

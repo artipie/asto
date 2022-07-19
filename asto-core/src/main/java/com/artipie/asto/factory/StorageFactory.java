@@ -20,5 +20,17 @@ public interface StorageFactory {
      * @param cfg Storage configuration.
      * @return Storage
      */
-    Storage newStorage(YamlMapping cfg);
+    Storage newStorage(StorageConfig cfg);
+
+    /**
+     * Create new storage.
+     *
+     * @param cfg Storage configuration.
+     * @return Storage
+     */
+    default Storage newStorage(YamlMapping cfg) {
+        return this.newStorage(
+            new StorageConfig.YamlStorageConfig(cfg)
+        );
+    }
 }

@@ -7,7 +7,6 @@ package com.artipie.asto.redis;
 import com.amihaiemil.eoyaml.Yaml;
 import com.amihaiemil.eoyaml.YamlMapping;
 import com.amihaiemil.eoyaml.YamlMappingBuilder;
-import com.amihaiemil.eoyaml.YamlNodeNotFoundException;
 import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.factory.Storages;
@@ -61,7 +60,7 @@ public final class RedisStorageFactoryTest {
     @Test
     void shouldThrowExceptionWhenConfigIsNotDefined() {
         Assertions.assertThrows(
-            YamlNodeNotFoundException.class,
+            NullPointerException.class,
             () -> new Storages()
                 .newStorage(
                     "redis",

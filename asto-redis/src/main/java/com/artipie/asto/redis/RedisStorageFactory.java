@@ -4,12 +4,11 @@
  */
 package com.artipie.asto.redis;
 
-import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
+import com.artipie.asto.factory.StorageConfig;
 import com.artipie.asto.factory.StorageFactory;
-import com.artipie.asto.factory.StrictYamlMapping;
 import java.io.IOException;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
@@ -28,7 +27,7 @@ public final class RedisStorageFactory implements StorageFactory {
     public static final String DEF_OBJ_NAME = "artipie-redis";
 
     @Override
-    public Storage newStorage(final YamlMapping cfg) {
+    public Storage newStorage(final StorageConfig cfg) {
         try {
             String name = cfg.string("name");
             if (name == null) {
@@ -36,8 +35,8 @@ public final class RedisStorageFactory implements StorageFactory {
             }
             final RedissonClient redisson = Redisson.create(
                 Config.fromYAML(
-                    new StrictYamlMapping(cfg)
-                        .yamlMapping("config").toString()
+                    new StorageConfig.StrictStorageConfig(cfg)
+                        .string("config")
                 )
             );
             return new RedisStorage(redisson.getMap(name));

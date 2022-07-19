@@ -4,11 +4,10 @@
  */
 package com.artipie.asto.etcd;
 
-import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
+import com.artipie.asto.factory.StorageConfig;
 import com.artipie.asto.factory.StorageFactory;
-import com.artipie.asto.factory.StrictYamlMapping;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
 import java.time.Duration;
@@ -20,16 +19,14 @@ import java.time.Duration;
 @ArtipieStorageFactory("etcd")
 public final class EtcdStorageFactory implements StorageFactory {
     @Override
-    public Storage newStorage(final YamlMapping cfg) {
-        final YamlMapping yaml = new StrictYamlMapping(cfg).yamlMapping("connection");
+    public Storage newStorage(final StorageConfig cfg) {
+        final StorageConfig connection = new StorageConfig.StrictStorageConfig(cfg)
+            .config("connection");
         final ClientBuilder builder = Client.builder()
             .endpoints(
-                yaml.yamlSequence("endpoints").values()
-                    .stream()
-                    .map(node -> node.asScalar().value())
-                    .toArray(String[]::new)
+                connection.sequence("endpoints").toArray(new String[0])
             );
-        final String sto = yaml.string("timeout");
+        final String sto = connection.string("timeout");
         if (sto != null) {
             builder.connectTimeout(Duration.ofMillis(Integer.parseInt(sto)));
         }
