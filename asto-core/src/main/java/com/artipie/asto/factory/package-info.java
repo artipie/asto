@@ -6,7 +6,7 @@
 /**
  * Storage factory.
  *
- * @since 0.10
+ * @since 1.13.0
  */
 package com.artipie.asto.factory;
 

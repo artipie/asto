@@ -106,12 +106,12 @@ public final class RedisStorage implements Storage {
                             .thenAccept(
                                 bytes -> this.data.fastPutAsync(destination.string(), bytes)
                             ).thenAccept(
-                                unused -> this.data.fastRemoveAsync(source.string())
+                                unused -> this.data.fastRemoveAsync(src)
                             );
                     } else {
                         res = new CompletableFutureSupport.Failed<Void>(
                             new ArtipieIOException(
-                                String.format("No value for source key: %s", source.string())
+                                String.format("No value for source key: %s", src)
                             )
                         ).get();
                     }
