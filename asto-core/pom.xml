@@ -12,7 +12,7 @@
     <artifactId>asto-core</artifactId>
 
     <properties>
-        <vertx.version>4.2.1</vertx.version>
+        <vertx.version>4.3.2</vertx.version>
     </properties>
 
     <dependencies>
