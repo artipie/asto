@@ -14,7 +14,7 @@ jobs:
       - uses: FantasticFiasco/action-update-license-year@v2
         with:
           token: ${{ secrets.LICENSE_SECRET }}
-          path: | #add new path with glob pattern https://www.npmjs.com/package/glob
+          path: | # Add new path with glob pattern https://www.npmjs.com/package/glob
             **/LICENSE*
             **/*.java
             **/*.rb
