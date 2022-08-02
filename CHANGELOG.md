@@ -1,3 +1,6 @@
+# v1.13.0
+- 5776ac19 - feat: asto as multiple modules project (#444)
+
 # v1.12.3
  - c72d5e2 - feat: 'StorageValuePipeline' should process large-size content without buffering it all in memory (#433)
  - 93846af - fix: readme corrections (#435)

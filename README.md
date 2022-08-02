@@ -1,16 +1,16 @@
 <a href="http://artipie.com"><img src="https://www.artipie.com/logo.svg" width="64px" height="64px"/></a>
 
-[![Join our Telegramm group](https://img.shields.io/badge/Join%20us-Telegram-blue?&logo=telegram&?link=http://right&link=http://t.me/artipie)](http://t.me/artipie)
+[![Join our Telegram group](https://img.shields.io/badge/Join%20us-Telegram-blue?&logo=telegram&?link=http://right&link=http://t.me/artipie)](http://t.me/artipie)
 
 [![EO principles respected here](https://www.elegantobjects.org/badge.svg)](https://www.elegantobjects.org)
 [![DevOps By Rultor.com](http://www.rultor.com/b/artipie/asto)](http://www.rultor.com/p/artipie/asto)
 [![We recommend IntelliJ IDEA](https://www.elegantobjects.org/intellij-idea.svg)](https://www.jetbrains.com/idea/)
 
-[![Javadoc](http://www.javadoc.io/badge/com.artipie/asto.svg)](http://www.javadoc.io/doc/com.artipie/asto)
+[![Javadoc](http://www.javadoc.io/badge/com.artipie/asto-core.svg)](http://www.javadoc.io/doc/com.artipie/asto-core)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/asto/blob/master/LICENSE.txt)
 [![codecov](https://codecov.io/gh/artipie/asto/branch/master/graph/badge.svg)](https://codecov.io/gh/artipie/asto)
 [![Hits-of-Code](https://hitsofcode.com/github/artipie/asto)](https://hitsofcode.com/view/github/artipie/asto)
-[![Maven Central](https://img.shields.io/maven-central/v/com.artipie/asto.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/asto-core)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/asto)](http://www.0pdd.com/p?name=artipie/asto)
 
 Asto stands for Abstract Storage, an abstraction over physical data storage system.
@@ -35,6 +35,7 @@ The list of back-ends supported:
  - S3Storage - uses S3 compatible HTTP web-server as storage, uses keys as names and blobs for content
  - EtcdStorage - uses ETCD cluster as storage back-end
  - InMemoryStorage - storage uses `HashMap` to store data
+ - RedisStorage - storage based on [Redisson](https://github.com/redisson/redisson)
 
 
 This is the dependency you need:
@@ -42,14 +43,24 @@ This is the dependency you need:
 ```xml
 <dependency>
   <groupId>com.artipie</groupId>
-  <artifactId>asto</artifactId>
+  <artifactId>asto-core</artifactId>
   <version>[...]</version>
 </dependency>
 ```
 
-Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto) for more technical details. 
-If you have any question or suggestions, do not hesitate to [create an issue](https://github.com/artipie/asto/issues/new) or contact us in
-[Telegram](https://t.me/artipie).  
+The following dependency allows using RedisStorage:
+
+```xml
+<dependency>
+  <groupId>com.artipie</groupId>
+  <artifactId>asto-redis</artifactId>
+  <version>[...]</version>
+</dependency>
+```
+
+Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/asto-core) for more technical details. 
+If you have any question or suggestions, do not hesitate to [create an issue](https://github.com/artipie/asto/issues/new) 
+or contact us in [Telegram](https://t.me/artipie).  
 Artipie [roadmap](https://github.com/orgs/artipie/projects/3).
 
 # Usage
@@ -89,7 +100,7 @@ Note, that `Storage` is asynchronous and always returns `CompletableFutures` as 
 future chains (`thenAccept()`, `thenCompose()` etc.) and call blocking methods `get()` or `join()` 
 when necessary.
 
-Other storage implementations (`S3Storage`, `InMemoryStorage`) can be used in the same way, only
+Other storage implementations (`S3Storage`, `InMemoryStorage`, `RedisStorage`) can be used in the same way, only
 constructors differ, here is an example of how to create `S3Storage` instance:
 
 ```java
