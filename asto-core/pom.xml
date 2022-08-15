@@ -165,11 +165,6 @@
             <scope>test</scope>
         </dependency>
         <!-- end s3 mocks deps -->
-        <dependency>
-            <groupId>wtf.g4s8</groupId>
-            <artifactId>tuples</artifactId>
-            <version>0.1.2</version>
-        </dependency>
         <!-- TestNG compatibility layer with Junit5 -->
         <dependency>
             <groupId>org.reactivestreams</groupId>
@@ -178,5 +173,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
