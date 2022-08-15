@@ -34,8 +34,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.cqfn.rio.file.File;
-import wtf.g4s8.tuples.Pair;
 
 /**
  * Simple storage, in files.
@@ -128,11 +128,13 @@ public final class FileStorage implements Storage {
                     String.format("%s.%s.tmp", key.string(), UUID.randomUUID())
                 );
                 tmp.getParent().toFile().mkdirs();
-                return Pair.of(path, tmp);
+                return ImmutablePair.of(path, tmp);
             }
         ).thenCompose(
-            pair -> pair.apply(
-                (path, tmp) -> new File(tmp).write(
+            pair -> {
+                final Path path = pair.getKey();
+                final Path tmp = pair.getValue();
+                return new File(tmp).write(
                     new OneTimePublisher<>(content),
                     StandardOpenOption.WRITE,
                     StandardOpenOption.CREATE,
@@ -143,21 +145,21 @@ public final class FileStorage implements Storage {
                     (nothing, throwable) -> {
                         tmp.toFile().delete();
                         if (throwable == null) {
-                            return (Void) null;
+                            return null;
                         } else {
                             throw new ArtipieIOException(throwable);
                         }
                     }
-                )
-            )
+                );
+            }
         );
     }
 
     @Override
     public CompletableFuture<Void> move(final Key source, final Key destination) {
         return this.keyPath(source).thenCompose(
-            src -> this.keyPath(destination).thenApply(dst -> Pair.of(src, dst))
-        ).thenCompose(pair -> pair.apply(FileStorage::move));
+            src -> this.keyPath(destination).thenApply(dst -> ImmutablePair.of(src, dst))
+        ).thenCompose(pair -> FileStorage.move(pair.getKey(), pair.getValue()));
     }
 
     @Override
@@ -211,12 +213,10 @@ public final class FileStorage implements Storage {
                     )
                 )
             ).thenCompose(
-                size -> this.keyPath(key).thenApply(path -> Pair.of(path, size))
+                size -> this.keyPath(key).thenApply(path -> ImmutablePair.of(path, size))
             ).thenApply(
-                pair -> pair.apply(
-                    (path, size) -> new Content.OneTime(
-                        new Content.From(size, new File(path).content())
-                    )
+                pair -> new Content.OneTime(
+                    new Content.From(pair.getValue(), new File(pair.getKey()).content())
                 )
             );
         }
