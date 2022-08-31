@@ -59,11 +59,6 @@ public final class VertxFileStorageVerificationTest extends StorageWhiteboxVerif
 
     @Override
     protected Optional<Storage> newBaseForRootSubStorage() {
-        // @checkstyle MethodBodyCommentsCheck (5 lines)
-        //todo #445 fix VertxFileStorage verification tests for case root sub storage.
-        // list_shouldListAllItemsByRootKey,
-        // saveAndLoad_loadDoesNotSupportRootKey,
-        // deleteAll_shouldDeleteAllItemsWithKeyPrefix
         return Optional.empty();
     }
 
