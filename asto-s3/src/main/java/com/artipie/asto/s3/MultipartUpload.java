@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 /**
  * Multipart upload of S3 object.
  *
- * @since 0.15
+ * @since 0.1
  */
 final class MultipartUpload {
 

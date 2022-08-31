@@ -43,7 +43,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 /**
  * Tests for {@link S3Storage}.
  *
- * @since 0.15
+ * @since 0.1
  * @checkstyle MagicNumberCheck (500 lines)
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */

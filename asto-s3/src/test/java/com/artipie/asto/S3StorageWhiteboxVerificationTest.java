@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * S3 storage verification test.
  *
  * @checkstyle ProtectedMethodInFinalClassCheck (500 lines)
- * @since 1.14.0
+ * @since 0.1
  */
 @SuppressWarnings("PMD.TestClassWithoutTestCases")
 public final class S3StorageWhiteboxVerificationTest extends StorageWhiteboxVerification {

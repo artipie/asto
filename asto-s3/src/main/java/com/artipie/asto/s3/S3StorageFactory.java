@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 /**
  * Factory to create S3 storage.
  *
- * @since 1.13.0
+ * @since 0.1
  */
 @ArtipieStorageFactory("s3")
 public final class S3StorageFactory implements StorageFactory {

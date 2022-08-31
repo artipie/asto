@@ -111,22 +111,6 @@ SOFTWARE.
       <artifactId>resilience4j-retry</artifactId>
       <version>1.7.1</version>
     </dependency>
-    <!-- S3 client -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3</artifactId>
-      <version>2.17.165</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
-          <artifactId>jackson-dataformat-xml</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <!-- etcd client -->
     <dependency>
       <groupId>io.etcd</groupId>
@@ -150,49 +134,6 @@ SOFTWARE.
       <artifactId>testng</artifactId>
       <version>7.3.0</version>
     </dependency>
-    <!-- tests -->
-    <!-- s3 mocks deps -->
-    <dependency>
-      <groupId>com.adobe.testing</groupId>
-      <artifactId>s3mock</artifactId>
-      <version>2.4.9</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
-          <artifactId>jackson-dataformat-xml</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-http</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.adobe.testing</groupId>
-      <artifactId>s3mock-junit5</artifactId>
-      <version>2.4.9</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
-          <artifactId>jackson-dataformat-xml</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-xml</artifactId>
-      <version>2.11.4</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-http</artifactId>
-      <version>9.4.45.v20220203</version>
-      <scope>test</scope>
-    </dependency>
-    <!-- end s3 mocks deps -->
     <!-- TestNG compatibility layer with Junit5 -->
     <dependency>
       <groupId>org.reactivestreams</groupId>
