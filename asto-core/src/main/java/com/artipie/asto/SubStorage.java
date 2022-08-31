@@ -1,5 +1,5 @@
 /*
- * The MIT License (MIT) Copyright (c) 2020-2021 artipie.com
+ * The MIT License (MIT) Copyright (c) 2020-2022 artipie.com
  * https://github.com/artipie/asto/LICENSE.txt
  */
 package com.artipie.asto;
@@ -19,10 +19,6 @@ import java.util.stream.Collectors;
  * It decorates origin storage and proxies all calls by appending prefix key.
  * </p>
  * @since 0.21
- * @todo #139:30min Implement prefixed transaction support.
- *  Transaction extends storage, so it's needed to implement all transactions method
- *  with prefixed key too. Also, create unit tests for sub storage to verify that
- *  all methods uses prefixed keys.
  */
 public final class SubStorage implements Storage {
 
