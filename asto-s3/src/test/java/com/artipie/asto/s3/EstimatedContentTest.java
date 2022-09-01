@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link EstimatedContentCompliment}.
  *
- * @since 0.34
+ * @since 0.1
  */
 final class EstimatedContentTest {
     @Test

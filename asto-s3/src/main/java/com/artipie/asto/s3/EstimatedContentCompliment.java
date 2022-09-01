@@ -25,7 +25,7 @@ import org.cqfn.rio.file.File;
  * If end of content has not been reached by reading `limit` of bytes
  * then original content is returned.
  *
- * @since 0.34
+ * @since 0.1
  */
 final class EstimatedContentCompliment {
     /**

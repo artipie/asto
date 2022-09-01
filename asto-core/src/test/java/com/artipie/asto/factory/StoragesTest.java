@@ -8,7 +8,6 @@ import com.amihaiemil.eoyaml.Yaml;
 import com.artipie.ArtipieException;
 import com.artipie.asto.etcd.EtcdStorage;
 import com.artipie.asto.fs.FileStorage;
-import com.artipie.asto.s3.S3Storage;
 import com.third.party.factory.first2.TestFirst2StorageFactory;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
@@ -36,35 +35,6 @@ public final class StoragesTest {
                         .build()
                 ),
             new IsInstanceOf(FileStorage.class)
-        );
-    }
-
-    /**
-     * Test for S3 storage factory.
-     *
-     * @checkstyle MethodNameCheck (3 lines)
-     */
-    @Test
-    void shouldCreateS3Storage() {
-        MatcherAssert.assertThat(
-            new Storages()
-                .newStorage(
-                    "s3",
-                    Yaml.createYamlMappingBuilder()
-                        .add("region", "us-east-1")
-                        .add("bucket", "aaa")
-                        .add("endpoint", "http://localhost")
-                        .add(
-                            "credentials",
-                            Yaml.createYamlMappingBuilder()
-                                .add("type", "basic")
-                                .add("accessKeyId", "foo")
-                                .add("secretAccessKey", "bar")
-                                .build()
-                        )
-                        .build()
-                ),
-            new IsInstanceOf(S3Storage.class)
         );
     }
 
@@ -130,7 +100,7 @@ public final class StoragesTest {
                     "com.third.party.factory.first"
                 )
             ).types(),
-            Matchers.containsInAnyOrder("fs", "s3", "etcd", "test-first")
+            Matchers.containsInAnyOrder("fs", "etcd", "test-first")
         );
     }
 
@@ -143,7 +113,7 @@ public final class StoragesTest {
                     "com.third.party.factory.first;com.third.party.factory.second"
                 )
             ).types(),
-            Matchers.containsInAnyOrder("fs", "s3", "etcd", "test-first", "test-second")
+            Matchers.containsInAnyOrder("fs", "etcd", "test-first", "test-second")
         );
     }
 }

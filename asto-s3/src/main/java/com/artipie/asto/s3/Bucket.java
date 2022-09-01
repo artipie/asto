@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 /**
  * S3 client targeted at specific bucket.
  *
- * @since 0.15
+ * @since 0.1
  */
 final class Bucket {
 

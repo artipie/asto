@@ -82,6 +82,7 @@ SOFTWARE.
   <modules>
     <module>asto-core</module>
     <module>asto-redis</module>
+    <module>asto-s3</module>
   </modules>
   <properties>
     <qulice.license>${project.basedir}/../LICENSE.header</qulice.license>

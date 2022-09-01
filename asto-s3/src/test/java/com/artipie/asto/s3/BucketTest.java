@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 /**
  * Tests for {@link Bucket}.
  *
- * @since 0.15
+ * @since 0.1
  */
 class BucketTest {
 

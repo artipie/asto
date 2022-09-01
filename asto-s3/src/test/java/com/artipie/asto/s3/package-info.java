@@ -4,8 +4,9 @@
  */
 
 /**
- * Implementation of storage that holds data in S3.
+ * Tests for S3 storage related classes.
  *
- * @since 0.15
+ * @since 0.1
  */
 package com.artipie.asto.s3;
+

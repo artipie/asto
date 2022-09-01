@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 /**
  * Metadata from S3 object.
- * @since 1.9
+ * @since 0.1
  */
 final class S3HeadMeta implements Meta {
 

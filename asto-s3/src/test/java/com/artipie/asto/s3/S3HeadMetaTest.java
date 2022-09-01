@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 /**
  * Test case for {@link S3HeadMeta}.
- * @since 1.9
+ * @since 0.1
  */
 final class S3HeadMetaTest {
 
