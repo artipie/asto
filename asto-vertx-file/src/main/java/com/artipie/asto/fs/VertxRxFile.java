@@ -24,7 +24,7 @@ import java.nio.file.Path;
  * <p>
  * The implementation is based on Vert.x {@link io.vertx.reactivex.core.file.AsyncFile}.
  *
- * @since 0.12
+ * @since 0.1
  */
 public class VertxRxFile {
 
