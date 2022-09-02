@@ -2,9 +2,10 @@
  * The MIT License (MIT) Copyright (c) 2020-2022 artipie.com
  * https://github.com/artipie/asto/LICENSE.txt
  */
-package com.artipie.asto.factory;
+package com.artipie.asto;
 
 import com.amihaiemil.eoyaml.Yaml;
+import com.artipie.asto.factory.Storages;
 import com.artipie.asto.s3.S3Storage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsInstanceOf;
@@ -16,7 +17,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.1
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-public final class StoragesTest {
+public final class S3StorageFactoryTest {
 
     /**
      * Test for S3 storage factory.

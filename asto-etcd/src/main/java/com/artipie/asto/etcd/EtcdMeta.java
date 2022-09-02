@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Metadata from Etcd key value.
- * @since 1.9
+ * @since 0.1
  */
 final class EtcdMeta implements Meta {
 

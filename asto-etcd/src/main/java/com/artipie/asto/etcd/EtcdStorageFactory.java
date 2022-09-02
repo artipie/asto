@@ -14,7 +14,7 @@ import java.time.Duration;
 
 /**
  * Etcd storage factory.
- * @since 1.13.0
+ * @since 0.1
  */
 @ArtipieStorageFactory("etcd")
 public final class EtcdStorageFactory implements StorageFactory {

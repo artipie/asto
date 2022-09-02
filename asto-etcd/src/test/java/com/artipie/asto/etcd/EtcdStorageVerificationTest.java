@@ -2,9 +2,9 @@
  * The MIT License (MIT) Copyright (c) 2020-2022 artipie.com
  * https://github.com/artipie/asto/LICENSE.txt
  */
-package com.artipie.asto;
+package com.artipie.asto.etcd;
 
-import com.artipie.asto.etcd.EtcdStorage;
+import com.artipie.asto.Storage;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.test.EtcdClusterExtension;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.condition.OS;
  * ETCD storage verification test.
  *
  * @checkstyle ProtectedMethodInFinalClassCheck (500 lines)
- * @since 1.14.0
+ * @since 0.1
  */
 @SuppressWarnings("PMD.TestClassWithoutTestCases")
 @DisabledOnOs(OS.WINDOWS)

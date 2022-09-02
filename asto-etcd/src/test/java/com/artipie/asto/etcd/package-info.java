@@ -4,8 +4,9 @@
  */
 
 /**
- * Tests for ectd storage.
- * @since 0.20
+ * EtcdStorage tests.
+ *
+ * @since 0.1
  */
 package com.artipie.asto.etcd;
 

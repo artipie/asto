@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * it has content size limitation for 10Mb. So it requires the client to
  * provide sized content.
  * </p>
- * @since 1.0
+ * @since 0.1
  * @checkstyle ReturnCountCheck (200 lines)
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
