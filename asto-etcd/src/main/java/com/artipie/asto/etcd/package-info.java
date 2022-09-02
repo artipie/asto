@@ -5,7 +5,7 @@
 
 /**
  * Etcd based storage.
- * @since 0.20
+ * @since 0.1
  */
 package com.artipie.asto.etcd;
 

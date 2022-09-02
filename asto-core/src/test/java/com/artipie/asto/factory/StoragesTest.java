@@ -6,7 +6,6 @@ package com.artipie.asto.factory;
 
 import com.amihaiemil.eoyaml.Yaml;
 import com.artipie.ArtipieException;
-import com.artipie.asto.etcd.EtcdStorage;
 import com.artipie.asto.fs.FileStorage;
 import com.third.party.factory.first2.TestFirst2StorageFactory;
 import java.util.Collections;
@@ -35,30 +34,6 @@ public final class StoragesTest {
                         .build()
                 ),
             new IsInstanceOf(FileStorage.class)
-        );
-    }
-
-    @Test
-    void shouldCreateEtcdStorage() {
-        MatcherAssert.assertThat(
-            new Storages()
-                .newStorage(
-                    "etcd",
-                    Yaml.createYamlMappingBuilder()
-                        .add(
-                            "connection",
-                            Yaml.createYamlMappingBuilder()
-                                .add(
-                                    "endpoints",
-                                    Yaml.createYamlSequenceBuilder()
-                                        .add("http://localhost")
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .build()
-                ),
-            new IsInstanceOf(EtcdStorage.class)
         );
     }
 
@@ -100,7 +75,7 @@ public final class StoragesTest {
                     "com.third.party.factory.first"
                 )
             ).types(),
-            Matchers.containsInAnyOrder("fs", "etcd", "test-first")
+            Matchers.containsInAnyOrder("fs", "test-first")
         );
     }
 
@@ -113,7 +88,7 @@ public final class StoragesTest {
                     "com.third.party.factory.first;com.third.party.factory.second"
                 )
             ).types(),
-            Matchers.containsInAnyOrder("fs", "etcd", "test-first", "test-second")
+            Matchers.containsInAnyOrder("fs", "test-first", "test-second")
         );
     }
 }

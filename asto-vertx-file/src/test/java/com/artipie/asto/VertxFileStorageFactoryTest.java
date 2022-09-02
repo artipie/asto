@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.1
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-public final class StoragesTest {
+public final class VertxFileStorageFactoryTest {
 
     @Test
     void shouldCreateVertxFileStorage() {
