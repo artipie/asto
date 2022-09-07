@@ -103,10 +103,11 @@ public final class RedisStorage implements Storage {
                     final CompletionStage<Void> res;
                     if (exists) {
                         res = this.data.getAsync(src)
-                            .thenAccept(
+                            .thenCompose(
                                 bytes -> this.data.fastPutAsync(destination.string(), bytes)
-                            ).thenAccept(
+                            ).thenCompose(
                                 unused -> this.data.fastRemoveAsync(src)
+                                    .thenRun(() -> { })
                             );
                     } else {
                         res = new CompletableFutureSupport.Failed<Void>(
