@@ -59,7 +59,9 @@ public final class VertxFileStorageVerificationTest extends StorageWhiteboxVerif
 
     @Override
     protected Optional<Storage> newBaseForRootSubStorage() {
-        return Optional.empty();
+        return Optional.of(
+            new VertxFileStorage(this.temp.resolve("root-sub-storage"), this.vertx)
+        );
     }
 
     @Override
