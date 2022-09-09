@@ -85,10 +85,10 @@ public final class FileStorage implements Storage {
                 final Collection<Key> keys;
                 if (Files.exists(path)) {
                     final int dirnamelen;
-                    if (Key.ROOT.string().equals(prefix.string())) {
+                    if (Key.ROOT.equals(prefix)) {
                         dirnamelen = path.toString().length() + 1;
                     } else {
-                        dirnamelen = path.toString().length() - prefix.string().length();
+                        dirnamelen = path.toString().length() - prefix.string().length() + 1;
                     }
                     try {
                         keys = Files.walk(path)

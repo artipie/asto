@@ -54,10 +54,38 @@ public interface Key {
     List<String> parts();
 
     /**
+     * Base key class.
+     * @since 1.14.0
+     */
+    abstract class BaseKey implements Key {
+        @Override
+        public boolean equals(final Object another) {
+            if (this == another) {
+                return true;
+            }
+            if (!(another instanceof Key)) {
+                return false;
+            }
+            final Key from = (Key) another;
+            return Objects.equals(this.parts(), from.parts());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.parts());
+        }
+
+        @Override
+        public String toString() {
+            return this.string();
+        }
+    }
+
+    /**
      * Default decorator.
      * @since 0.7
      */
-    abstract class Wrap implements Key {
+    abstract class Wrap extends BaseKey {
 
         /**
          * Origin key.
@@ -107,7 +135,7 @@ public interface Key {
      * Key from something.
      * @since 0.6
      */
-    final class From implements Key {
+    final class From extends BaseKey {
 
         /**
          * Parts.
@@ -202,28 +230,6 @@ public interface Key {
         @Override
         public List<String> parts() {
             return Collections.unmodifiableList(this.parts);
-        }
-
-        @Override
-        public boolean equals(final Object another) {
-            if (this == another) {
-                return true;
-            }
-            if (another == null || getClass() != another.getClass()) {
-                return false;
-            }
-            final From from = (From) another;
-            return Objects.equals(this.parts, from.parts);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(this.parts);
-        }
-
-        @Override
-        public String toString() {
-            return this.string();
         }
     }
 
