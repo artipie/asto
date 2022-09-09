@@ -57,7 +57,7 @@ public interface Key {
      * Base key class.
      * @since 1.14.0
      */
-    abstract class BaseKey implements Key {
+    abstract class Base implements Key {
         @Override
         public boolean equals(final Object another) {
             if (this == another) {
@@ -85,7 +85,7 @@ public interface Key {
      * Default decorator.
      * @since 0.7
      */
-    abstract class Wrap extends BaseKey {
+    abstract class Wrap extends Base {
 
         /**
          * Origin key.
@@ -135,7 +135,7 @@ public interface Key {
      * Key from something.
      * @since 0.6
      */
-    final class From extends BaseKey {
+    final class From extends Base {
 
         /**
          * Parts.
