@@ -40,11 +40,11 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http-client</artifactId>
-      <version>0.3.6</version>
+      <version>0.3.9</version>
       <exclusions>
         <exclusion>
           <groupId>com.artipie</groupId>
-          <artifactId>asto</artifactId>
+          <artifactId>asto-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
