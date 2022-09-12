@@ -31,7 +31,7 @@ import javax.json.JsonString;
 /**
  * Proxy storage for a file-adapter via HTTP.
  *
- * @since 1.11.0
+ * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines)
  */
