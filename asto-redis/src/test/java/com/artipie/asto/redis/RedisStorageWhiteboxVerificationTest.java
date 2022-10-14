@@ -11,6 +11,8 @@ import com.artipie.asto.factory.Storages;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.GenericContainer;
 
 /**
@@ -20,6 +22,7 @@ import org.testcontainers.containers.GenericContainer;
  * @since 0.1
  */
 @SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.AvoidDuplicateLiterals"})
+@DisabledOnOs(OS.WINDOWS)
 public final class RedisStorageWhiteboxVerificationTest extends StorageWhiteboxVerification {
 
     /**
