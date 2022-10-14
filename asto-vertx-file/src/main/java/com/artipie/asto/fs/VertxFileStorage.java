@@ -88,7 +88,7 @@ public final class VertxFileStorage implements Storage {
                     if (Key.ROOT.equals(prefix)) {
                         dirnamelen = path.toString().length() + 1;
                     } else {
-                        dirnamelen = path.toString().length() - prefix.string().length() + 1;
+                        dirnamelen = path.toString().length() - prefix.string().length();
                     }
                     try {
                         keys = Files.walk(path)
