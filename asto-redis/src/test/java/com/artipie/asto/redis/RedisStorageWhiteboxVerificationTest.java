@@ -9,8 +9,8 @@ import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.Storages;
 import com.artipie.asto.test.StorageWhiteboxVerification;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
 
 /**
@@ -30,30 +30,31 @@ public final class RedisStorageWhiteboxVerificationTest extends StorageWhiteboxV
     /**
      * Redis test container.
      */
-    private GenericContainer<?> redis;
+    private static GenericContainer<?> redis;
 
     /**
      * Redis storage.
      */
-    private Storage storage;
-
-    @Before
-    public void setUp() {
-        this.redis = new GenericContainer<>("redis:3-alpine")
-            .withExposedPorts(RedisStorageWhiteboxVerificationTest.DEF_PORT);
-        this.redis.start();
-        this.storage = new Storages()
-            .newStorage("redis", config(this.redis.getFirstMappedPort()));
-    }
-
-    @After
-    public void tearDown() {
-        this.redis.stop();
-    }
+    private static Storage storage;
 
     @Override
     protected Storage newStorage() {
-        return this.storage;
+        return RedisStorageWhiteboxVerificationTest.storage;
+    }
+
+    @BeforeAll
+    static void setUp() {
+        RedisStorageWhiteboxVerificationTest.redis = new GenericContainer<>("redis:3-alpine")
+            .withExposedPorts(RedisStorageWhiteboxVerificationTest.DEF_PORT);
+        RedisStorageWhiteboxVerificationTest.redis.start();
+        RedisStorageWhiteboxVerificationTest.storage = new Storages().newStorage(
+            "redis", config(RedisStorageWhiteboxVerificationTest.redis.getFirstMappedPort())
+        );
+    }
+
+    @AfterAll
+    static void tearDown() {
+        RedisStorageWhiteboxVerificationTest.redis.stop();
     }
 
     private static YamlMapping config(final Integer port) {

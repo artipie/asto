@@ -9,8 +9,8 @@ import com.artipie.asto.test.StorageWhiteboxVerification;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.test.EtcdClusterExtension;
 import java.util.Optional;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -28,23 +28,6 @@ public final class EtcdStorageVerificationTest extends StorageWhiteboxVerificati
      */
     private static EtcdClusterExtension etcd;
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        EtcdStorageVerificationTest.etcd = new EtcdClusterExtension(
-            "test-etcd",
-            1,
-            false,
-            "--data-dir",
-            "/data.etcd0"
-        );
-        EtcdStorageVerificationTest.etcd.beforeAll(null);
-    }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
-        EtcdStorageVerificationTest.etcd.afterAll(null);
-    }
-
     @Override
     protected Storage newStorage() throws Exception {
         return new EtcdStorage(
@@ -57,5 +40,22 @@ public final class EtcdStorageVerificationTest extends StorageWhiteboxVerificati
     @Override
     protected Optional<Storage> newBaseForRootSubStorage() {
         return Optional.empty();
+    }
+
+    @BeforeAll
+    static void beforeClass() throws Exception {
+        EtcdStorageVerificationTest.etcd = new EtcdClusterExtension(
+            "test-etcd",
+            1,
+            false,
+            "--data-dir",
+            "/data.etcd0"
+        );
+        EtcdStorageVerificationTest.etcd.beforeAll(null);
+    }
+
+    @AfterAll
+    static void afterClass() throws Exception {
+        EtcdStorageVerificationTest.etcd.afterAll(null);
     }
 }
