@@ -7,13 +7,10 @@ package com.artipie.asto;
 import com.artipie.asto.fs.VertxFileStorage;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import io.vertx.reactivex.core.Vertx;
-import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.stream.Stream;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Vertx file storage verification test.
@@ -25,50 +22,45 @@ import org.junit.Before;
 public final class VertxFileStorageVerificationTest extends StorageWhiteboxVerification {
 
     /**
-     * Temp dir.
-     */
-    private Path temp;
-
-    /**
      * Vert.x file System.
      */
-    private Vertx vertx;
+    private static final Vertx VERTX = Vertx.vertx();
 
-    @Before
-    public void setUp() throws Exception {
-        this.vertx = Vertx.vertx();
-        this.temp = Files.createTempDirectory("vtx_junit");
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        this.vertx.close();
-        try (Stream<Path> walk = Files.walk(this.temp)) {
-            walk.map(Path::toFile)
-                .forEach(File::delete);
-        }
-    }
+    /**
+     * Temp dir.
+     */
+    @TempDir
+    private Path temp;
 
     @Override
     protected Storage newStorage() throws Exception {
         return new VertxFileStorage(
             this.temp.resolve("base"),
-            this.vertx
+            VertxFileStorageVerificationTest.VERTX
         );
     }
 
     @Override
     protected Optional<Storage> newBaseForRootSubStorage() {
         return Optional.of(
-            new VertxFileStorage(this.temp.resolve("root-sub-storage"), this.vertx)
+            new VertxFileStorage(
+                this.temp.resolve("root-sub-storage"), VertxFileStorageVerificationTest.VERTX
+            )
         );
     }
 
     @Override
     protected Optional<Storage> newBaseForSubStorage() {
         return Optional.of(
-            new VertxFileStorage(this.temp.resolve("sub-storage"), this.vertx)
+            new VertxFileStorage(
+                this.temp.resolve("sub-storage"), VertxFileStorageVerificationTest.VERTX
+            )
         );
+    }
+
+    @AfterAll
+    static void tearDown() throws Exception {
+        VertxFileStorageVerificationTest.VERTX.close();
     }
 
 }

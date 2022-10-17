@@ -6,13 +6,9 @@ package com.artipie.asto;
 
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.test.StorageWhiteboxVerification;
-import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.stream.Stream;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * File storage verification test.
@@ -26,20 +22,8 @@ public final class FileStorageWhiteboxVerificationTest extends StorageWhiteboxVe
     /**
      * Temp test dir.
      */
+    @TempDir
     private Path temp;
-
-    @Before
-    public void setUp() throws Exception {
-        this.temp = Files.createTempDirectory("junit");
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        try (Stream<Path> walk = Files.walk(this.temp)) {
-            walk.map(Path::toFile)
-                .forEach(File::delete);
-        }
-    }
 
     @Override
     protected Storage newStorage() {
