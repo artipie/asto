@@ -223,6 +223,11 @@ public final class VertxFileStorage implements Storage {
         return CompletableFuture.completedFuture(Meta.EMPTY);
     }
 
+    @Override
+    public String identifier() {
+        return String.format("Vertx FS: %s", this.dir.toString());
+    }
+
     /**
      * Resolves key to file system path.
      *

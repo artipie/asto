@@ -11,6 +11,7 @@ import com.artipie.asto.factory.StorageFactory;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
 import java.time.Duration;
+import java.util.Arrays;
 
 /**
  * Etcd storage factory.
@@ -22,14 +23,12 @@ public final class EtcdStorageFactory implements StorageFactory {
     public Storage newStorage(final StorageConfig cfg) {
         final StorageConfig connection = new StorageConfig.StrictStorageConfig(cfg)
             .config("connection");
-        final ClientBuilder builder = Client.builder()
-            .endpoints(
-                connection.sequence("endpoints").toArray(new String[0])
-            );
+        final String[] endpoints = connection.sequence("endpoints").toArray(new String[0]);
+        final ClientBuilder builder = Client.builder().endpoints(endpoints);
         final String sto = connection.string("timeout");
         if (sto != null) {
             builder.connectTimeout(Duration.ofMillis(Integer.parseInt(sto)));
         }
-        return new EtcdStorage(builder.build());
+        return new EtcdStorage(builder.build(), Arrays.toString(endpoints));
     }
 }

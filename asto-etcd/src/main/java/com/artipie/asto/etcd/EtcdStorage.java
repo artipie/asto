@@ -61,11 +61,19 @@ public final class EtcdStorage implements Storage {
     private final Client client;
 
     /**
-     * Ctor.
-     * @param client Etcd client
+     * Endpoints of this storage etcd client.
      */
-    public EtcdStorage(final Client client) {
+    private final String endpoints;
+
+    /**
+     * Ctor.
+     *
+     * @param client Etcd client
+     * @param endpoints Endpoints of this storage etcd client
+     */
+    public EtcdStorage(final Client client, final String endpoints) {
         this.client = client;
+        this.endpoints = endpoints;
     }
 
     @Override
@@ -176,6 +184,11 @@ public final class EtcdStorage implements Storage {
     public <T> CompletionStage<T> exclusively(final Key key,
         final Function<Storage, CompletionStage<T>> operation) {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
+    }
+
+    @Override
+    public String identifier() {
+        return String.format("Etcd: %s", this.endpoints);
     }
 
     /**

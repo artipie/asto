@@ -37,6 +37,7 @@ public final class S3StorageWhiteboxVerificationTest extends StorageWhiteboxVeri
 
     @Override
     protected Storage newStorage() {
+        final String endpoint = String.format("http://localhost:%d", MOCK.getHttpPort());
         final S3AsyncClient client = S3AsyncClient.builder()
             .region(Region.of("us-east-1"))
             .credentialsProvider(
@@ -44,13 +45,11 @@ public final class S3StorageWhiteboxVerificationTest extends StorageWhiteboxVeri
                     AwsBasicCredentials.create("foo", "bar")
                 )
             )
-            .endpointOverride(
-                URI.create(String.format("http://localhost:%d", MOCK.getHttpPort()))
-            )
+            .endpointOverride(URI.create(endpoint))
             .build();
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
-        return new S3Storage(client, bucket);
+        return new S3Storage(client, bucket, endpoint);
     }
 
     @BeforeAll

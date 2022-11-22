@@ -162,6 +162,11 @@ public final class LoggingStorage implements Storage {
         );
     }
 
+    @Override
+    public String identifier() {
+        return String.format("Logging: %s", this.storage.identifier());
+    }
+
     /**
      * Log message.
      *

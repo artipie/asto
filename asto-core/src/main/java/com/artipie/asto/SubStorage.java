@@ -108,6 +108,13 @@ public final class SubStorage implements Storage {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
+    @Override
+    public String identifier() {
+        return String.format(
+            "SubStorage: prefix=%s, origin=%s", this.prefix, this.origin.identifier()
+        );
+    }
+
     /**
      * Key with prefix.
      * @since 0.21

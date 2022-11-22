@@ -231,6 +231,11 @@ public final class FileStorage implements Storage {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
     }
 
+    @Override
+    public String identifier() {
+        return String.format("FS: %s", this.dir.toString());
+    }
+
     /**
      * Removes empty key parts (directories).
      * @param target Directory path

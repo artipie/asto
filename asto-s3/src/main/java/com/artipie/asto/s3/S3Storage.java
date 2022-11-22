@@ -48,6 +48,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *  but it makes testing the method difficult.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class S3Storage implements Storage {
 
     /**
@@ -71,13 +72,19 @@ public final class S3Storage implements Storage {
     private final boolean multipart;
 
     /**
+     * Endpoint of the storage S3 client.
+     */
+    private final String endpoint;
+
+    /**
      * Ctor.
      *
      * @param client S3 client.
      * @param bucket Bucket name.
+     * @param endpoint S3 client endpoint
      */
-    public S3Storage(final S3AsyncClient client, final String bucket) {
-        this(client, bucket, true);
+    public S3Storage(final S3AsyncClient client, final String bucket, final String endpoint) {
+        this(client, bucket, true, endpoint);
     }
 
     /**
@@ -88,11 +95,15 @@ public final class S3Storage implements Storage {
      * @param multipart Multipart allowed flag.
      *  <code>true</code> - if multipart feature is allowed for larger blobs,
      *  <code>false</code> otherwise.
+     * @param endpoint S3 client endpoint
+     * @checkstyle ParameterNumberCheck (5 lines)
      */
-    public S3Storage(final S3AsyncClient client, final String bucket, final boolean multipart) {
+    public S3Storage(final S3AsyncClient client, final String bucket, final boolean multipart,
+        final String endpoint) {
         this.client = client;
         this.bucket = bucket;
         this.multipart = multipart;
+        this.endpoint = endpoint;
     }
 
     @Override
@@ -250,6 +261,11 @@ public final class S3Storage implements Storage {
         final Function<Storage, CompletionStage<T>> operation
     ) {
         return new UnderLockOperation<>(new StorageLock(this, key), operation).perform(this);
+    }
+
+    @Override
+    public String identifier() {
+        return String.format("S3: %s %s", this.endpoint, this.bucket);
     }
 
     /**

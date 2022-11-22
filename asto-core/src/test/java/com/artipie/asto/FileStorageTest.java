@@ -305,6 +305,14 @@ final class FileStorageTest {
         );
     }
 
+    @Test
+    void returnsIdentifier() {
+        MatcherAssert.assertThat(
+            this.storage.identifier(),
+            Matchers.stringContainsInOrder("FS", this.tmp.toString())
+        );
+    }
+
     /**
      * Create a directory.
      * @param parent Directory parent path

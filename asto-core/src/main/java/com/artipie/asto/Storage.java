@@ -21,6 +21,7 @@ import java.util.function.Function;
  *
  * @since 0.1
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public interface Storage {
 
     /**
@@ -132,6 +133,16 @@ public interface Storage {
     );
 
     /**
+     * Get storage identifier. Returned string should allow identifying storage and provide some
+     * unique storage information allowing to concrete determine storage instance. For example, for
+     * file system storage, it could provide the type and path, for s3 - base url and username.
+     * @return String storage identifier
+     */
+    default String identifier() {
+        return getClass().getSimpleName();
+    }
+
+    /**
      * Forwarding decorator for {@link Storage}.
      *
      * @since 0.18
@@ -203,6 +214,11 @@ public interface Storage {
         @Override
         public CompletableFuture<? extends Meta> metadata(final Key key) {
             return this.delegate.metadata(key);
+        }
+
+        @Override
+        public String identifier() {
+            return this.delegate.identifier();
         }
     }
 }
