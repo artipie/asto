@@ -56,6 +56,11 @@ public final class VertxFileStorage implements Storage {
     private final Vertx vertx;
 
     /**
+     * Storage identifier string (name and path).
+     */
+    private final String id;
+
+    /**
      * Ctor.
      *
      * @param path The path to the dir
@@ -64,6 +69,7 @@ public final class VertxFileStorage implements Storage {
     public VertxFileStorage(final Path path, final Vertx vertx) {
         this.dir = path;
         this.vertx = vertx;
+        this.id = String.format("Vertx FS: %s", this.dir.toString());
     }
 
     @Override
@@ -225,7 +231,7 @@ public final class VertxFileStorage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format("Vertx FS: %s", this.dir.toString());
+        return this.id;
     }
 
     /**

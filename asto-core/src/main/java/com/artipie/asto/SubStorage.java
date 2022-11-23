@@ -33,6 +33,11 @@ public final class SubStorage implements Storage {
     private final Storage origin;
 
     /**
+     * Storage string identifier.
+     */
+    private final String id;
+
+    /**
      * Sub storage with prefix.
      * @param prefix Prefix key
      * @param origin Origin key
@@ -40,6 +45,9 @@ public final class SubStorage implements Storage {
     public SubStorage(final Key prefix, final Storage origin) {
         this.prefix = prefix;
         this.origin = origin;
+        this.id = String.format(
+            "SubStorage: prefix=%s, origin=%s", this.prefix, this.origin.identifier()
+        );
     }
 
     @Override
@@ -110,9 +118,7 @@ public final class SubStorage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format(
-            "SubStorage: prefix=%s, origin=%s", this.prefix, this.origin.identifier()
-        );
+        return this.id;
     }
 
     /**

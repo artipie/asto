@@ -52,6 +52,11 @@ public final class FileStorage implements Storage {
     private final Path dir;
 
     /**
+     * Storage string identifier (name and path).
+     */
+    private final String id;
+
+    /**
      * Ctor.
      * @param path The path to the dir
      * @param nothing Just for compatibility
@@ -69,6 +74,7 @@ public final class FileStorage implements Storage {
      */
     public FileStorage(final Path path) {
         this.dir = path;
+        this.id = String.format("FS: %s", this.dir.toString());
     }
 
     @Override
@@ -233,7 +239,7 @@ public final class FileStorage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format("FS: %s", this.dir.toString());
+        return this.id;
     }
 
     /**

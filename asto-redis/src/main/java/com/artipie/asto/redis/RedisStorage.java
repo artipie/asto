@@ -42,7 +42,7 @@ public final class RedisStorage implements Storage {
     private final RMapAsync<String, byte[]> data;
 
     /**
-     * Redisson instance id, example: b0d9b09f-7c45-4a22-a8b7-c4979b65476a.
+     * Storage identifier is redisson instance id, example: b0d9b09f-7c45-4a22-a8b7-c4979b65476a.
      */
     private final String id;
 
@@ -54,7 +54,7 @@ public final class RedisStorage implements Storage {
      */
     public RedisStorage(final RMapAsync<String, byte[]> data, final String id) {
         this.data = data;
-        this.id = id;
+        this.id = String.format("Radis: id=%s", id);
     }
 
     @Override
@@ -188,7 +188,7 @@ public final class RedisStorage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format("Radis: id=%s", this.id);
+        return this.id;
     }
 
     /**

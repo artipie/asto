@@ -72,9 +72,9 @@ public final class S3Storage implements Storage {
     private final boolean multipart;
 
     /**
-     * Endpoint of the storage S3 client.
+     * S3 storage identifier: endpoint of the storage S3 client and bucket id.
      */
-    private final String endpoint;
+    private final String id;
 
     /**
      * Ctor.
@@ -103,7 +103,7 @@ public final class S3Storage implements Storage {
         this.client = client;
         this.bucket = bucket;
         this.multipart = multipart;
-        this.endpoint = endpoint;
+        this.id = String.format("S3: %s %s", endpoint, this.bucket);
     }
 
     @Override
@@ -265,7 +265,7 @@ public final class S3Storage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format("S3: %s %s", this.endpoint, this.bucket);
+        return this.id;
     }
 
     /**

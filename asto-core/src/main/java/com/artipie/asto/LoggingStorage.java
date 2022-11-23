@@ -35,6 +35,11 @@ public final class LoggingStorage implements Storage {
     private final Storage storage;
 
     /**
+     * Storage string identifier.
+     */
+    private final String id;
+
+    /**
      * Ctor.
      *
      * @param storage Delegate storage.
@@ -55,6 +60,7 @@ public final class LoggingStorage implements Storage {
         this.logger = Logger.getLogger(
             this.storage.getClass().getCanonicalName()
         );
+        this.id = String.format("Logging: %s", this.storage.identifier());
     }
 
     @Override
@@ -164,7 +170,7 @@ public final class LoggingStorage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format("Logging: %s", this.storage.identifier());
+        return this.id;
     }
 
     /**

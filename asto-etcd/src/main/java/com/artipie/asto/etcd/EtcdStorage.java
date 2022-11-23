@@ -61,9 +61,9 @@ public final class EtcdStorage implements Storage {
     private final Client client;
 
     /**
-     * Endpoints of this storage etcd client.
+     * Storage identifier: endpoints of this storage etcd client.
      */
-    private final String endpoints;
+    private final String id;
 
     /**
      * Ctor.
@@ -73,7 +73,7 @@ public final class EtcdStorage implements Storage {
      */
     public EtcdStorage(final Client client, final String endpoints) {
         this.client = client;
-        this.endpoints = endpoints;
+        this.id = String.format("Etcd: %s", endpoints);
     }
 
     @Override
@@ -188,7 +188,7 @@ public final class EtcdStorage implements Storage {
 
     @Override
     public String identifier() {
-        return String.format("Etcd: %s", this.endpoints);
+        return this.id;
     }
 
     /**
