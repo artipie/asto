@@ -242,6 +242,16 @@ class S3StorageTest {
         );
     }
 
+    @Test
+    void returnsIdentifier() {
+        MatcherAssert.assertThat(
+            this.storage().identifier(),
+            Matchers.stringContainsInOrder(
+                "S3", "http://localhost", String.valueOf(MOCK.getHttpPort()), this.bucket
+            )
+        );
+    }
+
     private byte[] download(final AmazonS3 client, final String key) throws IOException {
         try (S3Object s3Object = client.getObject(this.bucket, key)) {
             return ByteStreams.toByteArray(s3Object.getObjectContent());
@@ -249,15 +259,14 @@ class S3StorageTest {
     }
 
     private S3Storage storage() {
+        final String endpoint = String.format("http://localhost:%d", MOCK.getHttpPort());
         final S3AsyncClient client = S3AsyncClient.builder()
             .region(Region.of("us-east-1"))
             .credentialsProvider(
                 StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
             )
-            .endpointOverride(
-                URI.create(String.format("http://localhost:%d", MOCK.getHttpPort()))
-            )
+            .endpointOverride(URI.create(endpoint))
             .build();
-        return new S3Storage(client, this.bucket);
+        return new S3Storage(client, this.bucket, endpoint);
     }
 }

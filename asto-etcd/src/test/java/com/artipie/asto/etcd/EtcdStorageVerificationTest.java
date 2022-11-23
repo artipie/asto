@@ -8,7 +8,10 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.test.EtcdClusterExtension;
+import java.net.URI;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -29,11 +32,11 @@ public final class EtcdStorageVerificationTest extends StorageWhiteboxVerificati
     private static EtcdClusterExtension etcd;
 
     @Override
-    protected Storage newStorage() throws Exception {
+    protected Storage newStorage() {
+        final List<URI> endpoints = EtcdStorageVerificationTest.etcd.getClientEndpoints();
         return new EtcdStorage(
-            Client.builder()
-                .endpoints(EtcdStorageVerificationTest.etcd.getClientEndpoints())
-                .build()
+            Client.builder().endpoints(endpoints).build(),
+            endpoints.stream().map(URI::toString).collect(Collectors.joining())
         );
     }
 

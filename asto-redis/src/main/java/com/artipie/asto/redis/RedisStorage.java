@@ -42,12 +42,19 @@ public final class RedisStorage implements Storage {
     private final RMapAsync<String, byte[]> data;
 
     /**
+     * Storage identifier is redisson instance id, example: b0d9b09f-7c45-4a22-a8b7-c4979b65476a.
+     */
+    private final String id;
+
+    /**
      * Ctor.
      *
      * @param data Async interface for Redis.
+     * @param id Redisson instance id
      */
-    public RedisStorage(final RMapAsync<String, byte[]> data) {
+    public RedisStorage(final RMapAsync<String, byte[]> data, final String id) {
         this.data = data;
+        this.id = String.format("Radis: id=%s", id);
     }
 
     @Override
@@ -177,6 +184,11 @@ public final class RedisStorage implements Storage {
                     throw new ValueNotFoundException(key);
                 }
             ).toCompletableFuture();
+    }
+
+    @Override
+    public String identifier() {
+        return this.id;
     }
 
     /**

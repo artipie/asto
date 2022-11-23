@@ -223,6 +223,14 @@ public final class RedisStorageTest {
         );
     }
 
+    @Test
+    void returnsIdentifier() {
+        MatcherAssert.assertThat(
+            this.storage.identifier(),
+            Matchers.stringContainsInOrder("Radis", "id=")
+        );
+    }
+
     private static YamlMapping config(final Integer port) {
         return Yaml.createYamlMappingBuilder()
             .add("type", "redis")

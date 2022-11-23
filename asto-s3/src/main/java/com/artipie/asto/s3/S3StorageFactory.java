@@ -9,6 +9,7 @@ import com.artipie.asto.factory.ArtipieStorageFactory;
 import com.artipie.asto.factory.StorageConfig;
 import com.artipie.asto.factory.StorageFactory;
 import java.net.URI;
+import java.util.Optional;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -28,7 +29,8 @@ public final class S3StorageFactory implements StorageFactory {
             S3StorageFactory.s3Client(cfg),
             new StorageConfig.StrictStorageConfig(cfg)
                 .string("bucket"),
-            !"false".equals(cfg.string("multipart"))
+            !"false".equals(cfg.string("multipart")),
+            endpoint(cfg).orElse("def endpoint")
         );
     }
 
@@ -41,14 +43,8 @@ public final class S3StorageFactory implements StorageFactory {
      */
     private static S3AsyncClient s3Client(final StorageConfig cfg) {
         final S3AsyncClientBuilder builder = S3AsyncClient.builder();
-        final String region = cfg.string("region");
-        if (region != null) {
-            builder.region(Region.of(region));
-        }
-        final String endpoint = cfg.string("endpoint");
-        if (endpoint != null) {
-            builder.endpointOverride(URI.create(endpoint));
-        }
+        Optional.ofNullable(cfg.string("region")).ifPresent(val -> builder.region(Region.of(val)));
+        endpoint(cfg).ifPresent(val -> builder.endpointOverride(URI.create(val)));
         return builder
             .credentialsProvider(
                 S3StorageFactory.credentials(
@@ -79,5 +75,14 @@ public final class S3StorageFactory implements StorageFactory {
                 String.format("Unsupported S3 credentials type: %s", type)
             );
         }
+    }
+
+    /**
+     * Obtain endpoint from storage config. The parameter is optional.
+     * @param cfg Storage config
+     * @return Endpoint value is present
+     */
+    private static Optional<String> endpoint(final StorageConfig cfg) {
+        return Optional.ofNullable(cfg.string("endpoint"));
     }
 }
