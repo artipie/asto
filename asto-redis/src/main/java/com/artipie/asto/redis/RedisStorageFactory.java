@@ -39,7 +39,7 @@ public final class RedisStorageFactory implements StorageFactory {
                         .string("config")
                 )
             );
-            return new RedisStorage(redisson.getMap(name));
+            return new RedisStorage(redisson.getMap(name), redisson.getId());
         } catch (final IOException err) {
             throw new ArtipieIOException(err);
         }

@@ -14,17 +14,19 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test for {@link SubStorage}.
  * @since 1.9
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @todo #352:30min Continue to add more tests for {@link SubStorage}.
  *  All the methods of the class should be verified, do not forget to
  *  add tests with different prefixes, including {@link Key#ROOT} as prefix.
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
 class SubStorageTest {
 
     /**
@@ -35,6 +37,20 @@ class SubStorageTest {
     @BeforeEach
     void init() {
         this.asto = new InMemoryStorage();
+    }
+
+    @Test
+    void prefixedKeyEquals() {
+        MatcherAssert.assertThat(
+            Key.ROOT,
+            Matchers.equalTo(new SubStorage.PrefixedKed(Key.ROOT, Key.ROOT))
+        );
+        MatcherAssert.assertThat(
+            Key.ROOT,
+            Matchers.not(
+                Matchers.equalTo(new SubStorage.PrefixedKed(Key.ROOT, new Key.From("1")))
+            )
+        );
     }
 
     @ParameterizedTest
@@ -163,7 +179,7 @@ class SubStorageTest {
     void readsSize(final String pref) {
         final Key prefix = new Key.From(pref);
         final byte[] data = "012004407".getBytes(StandardCharsets.UTF_8);
-        final Long datalgt = Long.valueOf(data.length);
+        final Long datalgt = (long) data.length;
         final Key keyres = new Key.From("resource");
         this.asto.save(new Key.From(prefix, keyres), new Content.From(data)).join();
         MatcherAssert.assertThat(

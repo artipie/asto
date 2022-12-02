@@ -30,8 +30,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 /**
@@ -446,18 +446,22 @@ public abstract class StorageWhiteboxVerification {
                 final FakeOperation operation = new FakeOperation();
                 storage.exclusively(key, operation);
                 operation.started.join();
-                final CompletionException completion = Assertions.assertThrows(
-                    CompletionException.class,
-                    () -> storage.exclusively(key, new FakeOperation())
-                        .toCompletableFuture()
-                        .join(),
-                    pair.getKey()
-                );
-                MatcherAssert.assertThat(
-                    pair.getKey(),
-                    completion.getCause(),
-                    new IsInstanceOf(ArtipieIOException.class)
-                );
+                try {
+                    final CompletionException completion = Assertions.assertThrows(
+                        CompletionException.class,
+                        () -> storage.exclusively(key, new FakeOperation())
+                            .toCompletableFuture()
+                            .join(),
+                        pair.getKey()
+                    );
+                    MatcherAssert.assertThat(
+                        pair.getKey(),
+                        completion.getCause(),
+                        new IsInstanceOf(ArtipieIOException.class)
+                    );
+                } finally {
+                    operation.finished.complete(null);
+                }
             }
         );
     }
@@ -472,12 +476,16 @@ public abstract class StorageWhiteboxVerification {
                 final FakeOperation operation = new FakeOperation();
                 storage.exclusively(one, operation);
                 operation.started.join();
-                Assertions.assertDoesNotThrow(
-                    () -> storage.exclusively(two, new FakeOperation(CompletableFuture.allOf()))
-                        .toCompletableFuture()
-                        .join(),
-                    pair.getKey()
-                );
+                try {
+                    Assertions.assertDoesNotThrow(
+                        () -> storage.exclusively(two, new FakeOperation(CompletableFuture.allOf()))
+                            .toCompletableFuture()
+                            .join(),
+                        pair.getKey()
+                    );
+                } finally {
+                    operation.finished.complete(null);
+                }
             }
         );
     }

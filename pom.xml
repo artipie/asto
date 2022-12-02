@@ -85,6 +85,7 @@ SOFTWARE.
     <module>asto-s3</module>
     <module>asto-vertx-file</module>
     <module>asto-etcd</module>
+    <module>asto-artipie</module>
   </modules>
   <properties>
     <qulice.license>${project.basedir}/../LICENSE.header</qulice.license>

@@ -1,3 +1,11 @@
+# v1.15.0
+ - cbed477d - fix: verification base tests corrected and file storage fixed (#479)
+ - 9a53db7c - feat: storage identifier (#481)
+
+# v1.14.0
+ - a5a70b2c - feat: create test framework for testing new storage implementations #445
+ - 2f03422e - Remove `wtf.g4s8:tuples` dependency (#460)
+
 # v1.13.0
 - 5776ac19 - feat: asto as multiple modules project (#444)
 

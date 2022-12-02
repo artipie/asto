@@ -8,9 +8,12 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.test.EtcdClusterExtension;
+import java.net.URI;
+import java.util.List;
 import java.util.Optional;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -28,8 +31,22 @@ public final class EtcdStorageVerificationTest extends StorageWhiteboxVerificati
      */
     private static EtcdClusterExtension etcd;
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    @Override
+    protected Storage newStorage() {
+        final List<URI> endpoints = EtcdStorageVerificationTest.etcd.getClientEndpoints();
+        return new EtcdStorage(
+            Client.builder().endpoints(endpoints).build(),
+            endpoints.stream().map(URI::toString).collect(Collectors.joining())
+        );
+    }
+
+    @Override
+    protected Optional<Storage> newBaseForRootSubStorage() {
+        return Optional.empty();
+    }
+
+    @BeforeAll
+    static void beforeClass() throws Exception {
         EtcdStorageVerificationTest.etcd = new EtcdClusterExtension(
             "test-etcd",
             1,
@@ -40,22 +57,8 @@ public final class EtcdStorageVerificationTest extends StorageWhiteboxVerificati
         EtcdStorageVerificationTest.etcd.beforeAll(null);
     }
 
-    @AfterClass
-    public static void afterClass() throws Exception {
+    @AfterAll
+    static void afterClass() throws Exception {
         EtcdStorageVerificationTest.etcd.afterAll(null);
-    }
-
-    @Override
-    protected Storage newStorage() throws Exception {
-        return new EtcdStorage(
-            Client.builder()
-                .endpoints(EtcdStorageVerificationTest.etcd.getClientEndpoints())
-                .build()
-        );
-    }
-
-    @Override
-    protected Optional<Storage> newBaseForRootSubStorage() {
-        return Optional.empty();
     }
 }

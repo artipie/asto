@@ -13,8 +13,11 @@ import com.github.dockerjava.api.DockerClient;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.launcher.EtcdContainer;
 import io.etcd.jetcd.test.EtcdClusterExtension;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -70,8 +73,10 @@ final class EtcdStorageITCase {
 
     @BeforeEach
     void setUp() {
+        final List<URI> endpoints = ETCD.getClientEndpoints();
         this.storage = new EtcdStorage(
-            Client.builder().endpoints(ETCD.getClientEndpoints()).build()
+            Client.builder().endpoints(endpoints).build(),
+            endpoints.stream().map(URI::toString).collect(Collectors.joining())
         );
     }
 
@@ -172,6 +177,17 @@ final class EtcdStorageITCase {
         MatcherAssert.assertThat(
             cex.getCause().getCause().getMessage(),
             new IsEqual<>(String.format("No value for key: %s", key))
+        );
+    }
+
+    @Test
+    void returnsIdentifier() {
+        MatcherAssert.assertThat(
+            this.storage.identifier(),
+            Matchers.stringContainsInOrder(
+                "Etcd",
+                ETCD.getClientEndpoints().stream().map(URI::toString).collect(Collectors.joining())
+            )
         );
     }
 }

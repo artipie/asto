@@ -9,8 +9,10 @@ import com.artipie.asto.s3.S3Storage;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import java.net.URI;
 import java.util.UUID;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -24,27 +26,18 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * @since 0.1
  */
 @SuppressWarnings("PMD.TestClassWithoutTestCases")
+@DisabledOnOs(OS.WINDOWS)
 public final class S3StorageWhiteboxVerificationTest extends StorageWhiteboxVerification {
 
     /**
      * S3 mock server extension.
      */
-    private final S3MockExtension mock = S3MockExtension.builder()
-        .withSecureConnection(false)
-        .build();
-
-    @Before
-    public void setUp() throws Exception {
-        this.mock.beforeAll(null);
-    }
-
-    @After
-    public void tearDown() {
-        this.mock.afterAll(null);
-    }
+    private static final S3MockExtension MOCK = S3MockExtension.builder()
+        .withSecureConnection(false).build();
 
     @Override
     protected Storage newStorage() {
+        final String endpoint = String.format("http://localhost:%d", MOCK.getHttpPort());
         final S3AsyncClient client = S3AsyncClient.builder()
             .region(Region.of("us-east-1"))
             .credentialsProvider(
@@ -52,12 +45,21 @@ public final class S3StorageWhiteboxVerificationTest extends StorageWhiteboxVeri
                     AwsBasicCredentials.create("foo", "bar")
                 )
             )
-            .endpointOverride(
-                URI.create(String.format("http://localhost:%d", this.mock.getHttpPort()))
-            )
+            .endpointOverride(URI.create(endpoint))
             .build();
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
-        return new S3Storage(client, bucket);
+        return new S3Storage(client, bucket, endpoint);
     }
+
+    @BeforeAll
+    static void setUp() throws Exception {
+        S3StorageWhiteboxVerificationTest.MOCK.beforeAll(null);
+    }
+
+    @AfterAll
+    static void tearDown() {
+        S3StorageWhiteboxVerificationTest.MOCK.afterAll(null);
+    }
+
 }
