@@ -12,11 +12,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Storage config.
+ * Factory config.
  *
  * @since 1.13.0
  */
-public interface StorageConfig {
+public interface Config {
 
     /**
      * Gets string value.
@@ -40,26 +40,26 @@ public interface StorageConfig {
      * @param key Key.
      * @return Config.
      */
-    StorageConfig config(String key);
+    Config config(String key);
 
     /**
      * Strict storage config throws {@code NullPointerException} when value is not exist.
      *
      * @since 1.13.0
      */
-    class StrictStorageConfig implements StorageConfig {
+    class StrictStorageConfig implements Config {
 
         /**
          * Original config.
          */
-        private final StorageConfig original;
+        private final Config original;
 
         /**
          * Ctor.
          *
          * @param original Original config.
          */
-        public StrictStorageConfig(final StorageConfig original) {
+        public StrictStorageConfig(final Config original) {
             this.original = original;
         }
 
@@ -80,7 +80,7 @@ public interface StorageConfig {
         }
 
         @Override
-        public StorageConfig config(final String key) {
+        public Config config(final String key) {
             return Objects.requireNonNull(
                 this.original.config(key),
                 String.format("No config found for key %s", key)
@@ -93,7 +93,7 @@ public interface StorageConfig {
      *
      * @since 1.13.0
      */
-    class YamlStorageConfig implements StorageConfig {
+    class YamlStorageConfig implements Config {
         /**
          * Original {@code YamlMapping}.
          */
@@ -145,8 +145,13 @@ public interface StorageConfig {
         }
 
         @Override
-        public StorageConfig config(final String key) {
+        public Config config(final String key) {
             return new YamlStorageConfig(this.original.yamlMapping(key));
+        }
+
+        @Override
+        public String toString() {
+            return this.original.toString();
         }
     }
 }

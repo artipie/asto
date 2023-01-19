@@ -5,9 +5,9 @@
 package com.artipie.asto.redis;
 
 import com.amihaiemil.eoyaml.Yaml;
-import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.asto.Storage;
-import com.artipie.asto.factory.Storages;
+import com.artipie.asto.factory.Config;
+import com.artipie.asto.factory.StoragesLoader;
 import com.artipie.asto.test.StorageWhiteboxVerification;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,7 +50,7 @@ public final class RedisStorageWhiteboxVerificationTest extends StorageWhiteboxV
         RedisStorageWhiteboxVerificationTest.redis = new GenericContainer<>("redis:3-alpine")
             .withExposedPorts(RedisStorageWhiteboxVerificationTest.DEF_PORT);
         RedisStorageWhiteboxVerificationTest.redis.start();
-        RedisStorageWhiteboxVerificationTest.storage = new Storages().newStorage(
+        RedisStorageWhiteboxVerificationTest.storage = new StoragesLoader().newObject(
             "redis", config(RedisStorageWhiteboxVerificationTest.redis.getFirstMappedPort())
         );
     }
@@ -60,20 +60,22 @@ public final class RedisStorageWhiteboxVerificationTest extends StorageWhiteboxV
         RedisStorageWhiteboxVerificationTest.redis.stop();
     }
 
-    private static YamlMapping config(final Integer port) {
-        return Yaml.createYamlMappingBuilder()
-            .add("type", "redis")
-            .add(
-                "config",
-                Yaml.createYamlMappingBuilder()
-                    .add(
-                        "singleServerConfig",
-                        Yaml.createYamlMappingBuilder()
-                            .add(
-                                "address",
-                                String.format("redis://127.0.0.1:%d", port)
-                            ).build()
-                    ).build()
-            ).build();
+    private static Config config(final Integer port) {
+        return new Config.YamlStorageConfig(
+            Yaml.createYamlMappingBuilder()
+                .add("type", "redis")
+                .add(
+                    "config",
+                    Yaml.createYamlMappingBuilder()
+                        .add(
+                            "singleServerConfig",
+                            Yaml.createYamlMappingBuilder()
+                                .add(
+                                    "address",
+                                    String.format("redis://127.0.0.1:%d", port)
+                                ).build()
+                        ).build()
+                ).build()
+        );
     }
 }

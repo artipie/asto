@@ -5,7 +5,8 @@
 package com.artipie.asto;
 
 import com.amihaiemil.eoyaml.Yaml;
-import com.artipie.asto.factory.Storages;
+import com.artipie.asto.factory.Config;
+import com.artipie.asto.factory.StoragesLoader;
 import com.artipie.asto.s3.S3Storage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsInstanceOf;
@@ -27,22 +28,24 @@ public final class S3StorageFactoryTest {
     @Test
     void shouldCreateS3Storage() {
         MatcherAssert.assertThat(
-            new Storages()
-                .newStorage(
+            new StoragesLoader()
+                .newObject(
                     "s3",
-                    Yaml.createYamlMappingBuilder()
-                        .add("region", "us-east-1")
-                        .add("bucket", "aaa")
-                        .add("endpoint", "http://localhost")
-                        .add(
-                            "credentials",
-                            Yaml.createYamlMappingBuilder()
-                                .add("type", "basic")
-                                .add("accessKeyId", "foo")
-                                .add("secretAccessKey", "bar")
-                                .build()
-                        )
-                        .build()
+                    new Config.YamlStorageConfig(
+                        Yaml.createYamlMappingBuilder()
+                            .add("region", "us-east-1")
+                            .add("bucket", "aaa")
+                            .add("endpoint", "http://localhost")
+                            .add(
+                                "credentials",
+                                Yaml.createYamlMappingBuilder()
+                                    .add("type", "basic")
+                                    .add("accessKeyId", "foo")
+                                    .add("secretAccessKey", "bar")
+                                    .build()
+                            )
+                            .build()
+                    )
                 ),
             new IsInstanceOf(S3Storage.class)
         );

@@ -5,7 +5,8 @@
 package com.artipie.asto.etcd;
 
 import com.amihaiemil.eoyaml.Yaml;
-import com.artipie.asto.factory.Storages;
+import com.artipie.asto.factory.Config;
+import com.artipie.asto.factory.StoragesLoader;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
@@ -20,11 +21,11 @@ public final class EtcdStorageFactoryTest {
     @Test
     void shouldCreateEtcdStorage() {
         MatcherAssert.assertThat(
-            new Storages()
-                .newStorage(
+            new StoragesLoader()
+                .newObject(
                     "etcd",
-                    Yaml.createYamlMappingBuilder()
-                        .add(
+                    new Config.YamlStorageConfig(
+                        Yaml.createYamlMappingBuilder().add(
                             "connection",
                             Yaml.createYamlMappingBuilder()
                                 .add(
@@ -36,6 +37,7 @@ public final class EtcdStorageFactoryTest {
                                 .build()
                         )
                         .build()
+                    )
                 ),
             new IsInstanceOf(EtcdStorage.class)
         );

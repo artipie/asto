@@ -7,12 +7,11 @@ package com.artipie.asto.redis;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
-import com.artipie.asto.factory.StorageConfig;
+import com.artipie.asto.factory.Config;
 import com.artipie.asto.factory.StorageFactory;
 import java.io.IOException;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
 
 /**
  * Redis storage factory.
@@ -27,15 +26,15 @@ public final class RedisStorageFactory implements StorageFactory {
     public static final String DEF_OBJ_NAME = "artipie-redis";
 
     @Override
-    public Storage newStorage(final StorageConfig cfg) {
+    public Storage newStorage(final Config cfg) {
         try {
             String name = cfg.string("name");
             if (name == null) {
                 name = RedisStorageFactory.DEF_OBJ_NAME;
             }
             final RedissonClient redisson = Redisson.create(
-                Config.fromYAML(
-                    new StorageConfig.StrictStorageConfig(cfg)
+                org.redisson.config.Config.fromYAML(
+                    new Config.StrictStorageConfig(cfg)
                         .string("config")
                 )
             );

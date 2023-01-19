@@ -6,7 +6,7 @@ package com.artipie.asto.etcd;
 
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
-import com.artipie.asto.factory.StorageConfig;
+import com.artipie.asto.factory.Config;
 import com.artipie.asto.factory.StorageFactory;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
@@ -20,8 +20,8 @@ import java.util.Arrays;
 @ArtipieStorageFactory("etcd")
 public final class EtcdStorageFactory implements StorageFactory {
     @Override
-    public Storage newStorage(final StorageConfig cfg) {
-        final StorageConfig connection = new StorageConfig.StrictStorageConfig(cfg)
+    public Storage newStorage(final Config cfg) {
+        final Config connection = new Config.StrictStorageConfig(cfg)
             .config("connection");
         final String[] endpoints = connection.sequence("endpoints").toArray(new String[0]);
         final ClientBuilder builder = Client.builder().endpoints(endpoints);

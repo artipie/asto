@@ -21,17 +21,18 @@ import org.junit.jupiter.api.Test;
  * @since 1.13.0
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-public final class StoragesTest {
+public final class StoragesLoaderTest {
 
     @Test
     void shouldCreateFileStorage() {
         MatcherAssert.assertThat(
-            new Storages()
-                .newStorage(
+            new StoragesLoader()
+                .newObject(
                     "fs",
-                    Yaml.createYamlMappingBuilder()
+                    new Config.YamlStorageConfig(Yaml.createYamlMappingBuilder()
                         .add("path", "")
                         .build()
+                    )
                 ),
             new IsInstanceOf(FileStorage.class)
         );
@@ -41,10 +42,10 @@ public final class StoragesTest {
     void shouldThrowExceptionWhenTypeIsWrong() {
         Assertions.assertThrows(
             StorageNotFoundException.class,
-            () -> new Storages()
-                .newStorage(
+            () -> new StoragesLoader()
+                .newObject(
                     "wrong-storage-type",
-                    Yaml.createYamlMappingBuilder().build()
+                    new Config.YamlStorageConfig(Yaml.createYamlMappingBuilder().build())
                 )
         );
     }
@@ -53,9 +54,9 @@ public final class StoragesTest {
     void shouldThrowExceptionWhenReadTwoFactoryWithTheSameName() {
         Assertions.assertThrows(
             ArtipieException.class,
-            () -> new Storages(
+            () -> new StoragesLoader(
                 Collections.singletonMap(
-                    Storages.SCAN_PACK,
+                    StoragesLoader.SCAN_PACK,
                     "com.third.party.factory.first;com.third.party.factory.first2"
                 )
             ),
@@ -69,9 +70,9 @@ public final class StoragesTest {
     @Test
     void shouldScanAdditionalPackageFromEnv() {
         MatcherAssert.assertThat(
-            new Storages(
+            new StoragesLoader(
                 Collections.singletonMap(
-                    Storages.SCAN_PACK,
+                    StoragesLoader.SCAN_PACK,
                     "com.third.party.factory.first"
                 )
             ).types(),
@@ -82,9 +83,9 @@ public final class StoragesTest {
     @Test
     void shouldScanSeveralPackagesFromEnv() {
         MatcherAssert.assertThat(
-            new Storages(
+            new StoragesLoader(
                 Collections.singletonMap(
-                    Storages.SCAN_PACK,
+                    StoragesLoader.SCAN_PACK,
                     "com.third.party.factory.first;com.third.party.factory.second"
                 )
             ).types(),
