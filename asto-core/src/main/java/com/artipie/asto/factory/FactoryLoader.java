@@ -52,14 +52,14 @@ public abstract class FactoryLoader<F, A, C, O> {
      * Default package name.
      * @return The name of the default scan package
      */
-    abstract String defPackage();
+    public abstract String defPackage();
 
     /**
      * Environment parameter to define packages to find factories.
      * Package names should be separated by semicolon ';'.
      * @return Env param name
      */
-    abstract String scanPackagesEnv();
+    public abstract String scanPackagesEnv();
 
     /**
      * Find factory by name and create object.
@@ -67,7 +67,7 @@ public abstract class FactoryLoader<F, A, C, O> {
      * @param config Configuration
      * @return The object
      */
-    abstract O newObject(String name, C config);
+    public abstract O newObject(String name, C config);
 
     /**
      * Get the name of the factory from provided element. Call {@link Class#getAnnotations()}
@@ -75,7 +75,7 @@ public abstract class FactoryLoader<F, A, C, O> {
      * @param element Element to get annotations from
      * @return The name of the factory
      */
-    abstract String getFactoryName(Class<?> element);
+    public abstract String getFactoryName(Class<?> element);
 
     /**
      * Finds and initiates annotated classes in default and env packages.
