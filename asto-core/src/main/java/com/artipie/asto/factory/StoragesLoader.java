@@ -69,7 +69,7 @@ public final class StoragesLoader
     }
 
     @Override
-    String getFactoryName(final Class<?> element) {
+    public String getFactoryName(final Class<?> element) {
         return Arrays.stream(element.getAnnotations())
             .filter(ArtipieStorageFactory.class::isInstance)
             .map(a -> ((ArtipieStorageFactory) a).value())
