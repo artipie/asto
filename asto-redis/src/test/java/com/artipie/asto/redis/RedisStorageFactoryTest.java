@@ -5,11 +5,11 @@
 package com.artipie.asto.redis;
 
 import com.amihaiemil.eoyaml.Yaml;
-import com.amihaiemil.eoyaml.YamlMapping;
 import com.amihaiemil.eoyaml.YamlMappingBuilder;
 import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
-import com.artipie.asto.factory.Storages;
+import com.artipie.asto.factory.Config;
+import com.artipie.asto.factory.StoragesLoader;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
@@ -51,8 +51,8 @@ public final class RedisStorageFactoryTest {
     @Test
     void shouldCreateRedisStorage() {
         MatcherAssert.assertThat(
-            new Storages()
-                .newStorage("redis", redisConfig(this.redis.getFirstMappedPort())),
+            new StoragesLoader()
+                .newObject("redis", redisConfig(this.redis.getFirstMappedPort())),
             new IsInstanceOf(RedisStorage.class)
         );
     }
@@ -61,12 +61,12 @@ public final class RedisStorageFactoryTest {
     void shouldThrowExceptionWhenConfigIsNotDefined() {
         Assertions.assertThrows(
             NullPointerException.class,
-            () -> new Storages()
-                .newStorage(
+            () -> new StoragesLoader()
+                .newObject(
                     "redis",
-                    Yaml.createYamlMappingBuilder()
-                        .add("type", "redis")
-                        .build()
+                    new Config.YamlStorageConfig(
+                        Yaml.createYamlMappingBuilder().add("type", "redis").build()
+                    )
                 )
         );
     }
@@ -76,13 +76,13 @@ public final class RedisStorageFactoryTest {
         final Key key = new Key.From("test_key");
         final byte[] data = "test_data".getBytes();
         new BlockingStorage(
-            new Storages()
-                .newStorage("redis", redisConfig(this.redis.getFirstMappedPort()))
+            new StoragesLoader()
+                .newObject("redis", redisConfig(this.redis.getFirstMappedPort()))
         ).save(key, data);
         MatcherAssert.assertThat(
             new BlockingStorage(
-                new Storages()
-                    .newStorage(
+                new StoragesLoader()
+                    .newObject(
                         "redis",
                         redisConfig(
                             this.redis.getFirstMappedPort(),
@@ -99,16 +99,16 @@ public final class RedisStorageFactoryTest {
         final Key key = new Key.From("test_key");
         final byte[] data = "test_data".getBytes();
         new BlockingStorage(
-            new Storages()
-                .newStorage(
+            new StoragesLoader()
+                .newObject(
                     "redis", redisConfig(this.redis.getFirstMappedPort(), "redis_obj_1")
                 )
         ).save(key, data);
         MatcherAssert.assertThat(
             "Should create RedisStorage based on an object with name 'redis_obj_1'",
             new BlockingStorage(
-                new Storages()
-                    .newStorage(
+                new StoragesLoader()
+                    .newObject(
                         "redis",
                         redisConfig(
                             this.redis.getFirstMappedPort(),
@@ -121,8 +121,8 @@ public final class RedisStorageFactoryTest {
         MatcherAssert.assertThat(
             "Should not exist in RedisStorage based on an object with name 'redis_obj_2'",
             new BlockingStorage(
-                new Storages()
-                    .newStorage(
+                new StoragesLoader()
+                    .newObject(
                         "redis",
                         redisConfig(
                             this.redis.getFirstMappedPort(),
@@ -134,13 +134,11 @@ public final class RedisStorageFactoryTest {
         );
     }
 
-    private static YamlMapping redisConfig(final Integer port) {
+    private static Config redisConfig(final Integer port) {
         return redisConfig(port, null);
     }
 
-    private static YamlMapping redisConfig(
-        final Integer port,
-        final String name) {
+    private static Config redisConfig(final Integer port, final String name) {
         YamlMappingBuilder builder = Yaml.createYamlMappingBuilder()
             .add("type", "redis")
             .add(
@@ -158,7 +156,7 @@ public final class RedisStorageFactoryTest {
         if (name != null) {
             builder = builder.add("name", name);
         }
-        return builder.build();
+        return new Config.YamlStorageConfig(builder.build());
     }
 
 }

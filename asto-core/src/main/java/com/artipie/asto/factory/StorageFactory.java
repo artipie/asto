@@ -20,7 +20,7 @@ public interface StorageFactory {
      * @param cfg Storage configuration.
      * @return Storage
      */
-    Storage newStorage(StorageConfig cfg);
+    Storage newStorage(Config cfg);
 
     /**
      * Create new storage.
@@ -30,7 +30,7 @@ public interface StorageFactory {
      */
     default Storage newStorage(YamlMapping cfg) {
         return this.newStorage(
-            new StorageConfig.YamlStorageConfig(cfg)
+            new Config.YamlStorageConfig(cfg)
         );
     }
 }

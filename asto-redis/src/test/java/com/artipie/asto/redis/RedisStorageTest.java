@@ -5,7 +5,6 @@
 package com.artipie.asto.redis;
 
 import com.amihaiemil.eoyaml.Yaml;
-import com.amihaiemil.eoyaml.YamlMapping;
 import com.artipie.asto.ArtipieIOException;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
@@ -13,7 +12,7 @@ import com.artipie.asto.Meta;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.ext.ContentAs;
-import com.artipie.asto.factory.Storages;
+import com.artipie.asto.factory.StoragesLoader;
 import io.reactivex.Single;
 import java.io.IOException;
 import java.util.Arrays;
@@ -60,8 +59,8 @@ public final class RedisStorageTest {
         this.redis = new GenericContainer<>("redis:3-alpine")
             .withExposedPorts(6379);
         this.redis.start();
-        this.storage = new Storages()
-            .newStorage("redis", config(this.redis.getFirstMappedPort()));
+        this.storage = new StoragesLoader()
+            .newObject("redis", config(this.redis.getFirstMappedPort()));
     }
 
     @Test
@@ -231,28 +230,29 @@ public final class RedisStorageTest {
         );
     }
 
-    private static YamlMapping config(final Integer port) {
-        return Yaml.createYamlMappingBuilder()
-            .add("type", "redis")
-            .add(
-                "config",
-                Yaml.createYamlMappingBuilder()
-                    .add(
-                        "singleServerConfig",
-                        Yaml.createYamlMappingBuilder()
-                            .add(
-                                "address",
-                                String.format("redis://127.0.0.1:%d", port)
-                            ).build()
-                    ).build()
-            ).build();
+    private static com.artipie.asto.factory.Config config(final Integer port) {
+        return new com.artipie.asto.factory.Config.YamlStorageConfig(
+            Yaml.createYamlMappingBuilder().add("type", "redis")
+                .add(
+                    "config",
+                    Yaml.createYamlMappingBuilder()
+                        .add(
+                            "singleServerConfig",
+                            Yaml.createYamlMappingBuilder()
+                                .add(
+                                    "address",
+                                    String.format("redis://127.0.0.1:%d", port)
+                                ).build()
+                        ).build()
+                ).build()
+        );
     }
 
     private byte[] download(final String key) {
         try {
             final Map<String, byte[]> map = Redisson.create(
                 Config.fromYAML(
-                    config(this.redis.getFirstMappedPort()).value("config").toString()
+                    config(this.redis.getFirstMappedPort()).config("config").toString()
                 )
             ).getMap(RedisStorageFactory.DEF_OBJ_NAME);
             return map.get(key);
@@ -265,7 +265,7 @@ public final class RedisStorageTest {
         try {
             final Map<String, byte[]> map = Redisson.create(
                 Config.fromYAML(
-                    config(this.redis.getFirstMappedPort()).value("config").toString()
+                    config(this.redis.getFirstMappedPort()).config("config").toString()
                 )
             ).getMap(RedisStorageFactory.DEF_OBJ_NAME);
             map.put(key, data);

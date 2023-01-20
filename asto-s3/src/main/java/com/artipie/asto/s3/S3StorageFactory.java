@@ -6,7 +6,7 @@ package com.artipie.asto.s3;
 
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
-import com.artipie.asto.factory.StorageConfig;
+import com.artipie.asto.factory.Config;
 import com.artipie.asto.factory.StorageFactory;
 import java.net.URI;
 import java.util.Optional;
@@ -24,10 +24,10 @@ import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 @ArtipieStorageFactory("s3")
 public final class S3StorageFactory implements StorageFactory {
     @Override
-    public Storage newStorage(final StorageConfig cfg) {
+    public Storage newStorage(final Config cfg) {
         return new S3Storage(
             S3StorageFactory.s3Client(cfg),
-            new StorageConfig.StrictStorageConfig(cfg)
+            new Config.StrictStorageConfig(cfg)
                 .string("bucket"),
             !"false".equals(cfg.string("multipart")),
             endpoint(cfg).orElse("def endpoint")
@@ -41,14 +41,14 @@ public final class S3StorageFactory implements StorageFactory {
      * @return Built S3 client.
      * @checkstyle MethodNameCheck (3 lines)
      */
-    private static S3AsyncClient s3Client(final StorageConfig cfg) {
+    private static S3AsyncClient s3Client(final Config cfg) {
         final S3AsyncClientBuilder builder = S3AsyncClient.builder();
         Optional.ofNullable(cfg.string("region")).ifPresent(val -> builder.region(Region.of(val)));
         endpoint(cfg).ifPresent(val -> builder.endpointOverride(URI.create(val)));
         return builder
             .credentialsProvider(
                 S3StorageFactory.credentials(
-                    new StorageConfig.StrictStorageConfig(cfg)
+                    new Config.StrictStorageConfig(cfg)
                         .config("credentials")
                 )
             )
@@ -61,7 +61,7 @@ public final class S3StorageFactory implements StorageFactory {
      * @param cred Credentials config.
      * @return Credentials provider.
      */
-    private static StaticCredentialsProvider credentials(final StorageConfig cred) {
+    private static StaticCredentialsProvider credentials(final Config cred) {
         final String type = cred.string("type");
         if ("basic".equals(type)) {
             return StaticCredentialsProvider.create(
@@ -82,7 +82,7 @@ public final class S3StorageFactory implements StorageFactory {
      * @param cfg Storage config
      * @return Endpoint value is present
      */
-    private static Optional<String> endpoint(final StorageConfig cfg) {
+    private static Optional<String> endpoint(final Config cfg) {
         return Optional.ofNullable(cfg.string("endpoint"));
     }
 }

@@ -5,7 +5,8 @@
 package com.artipie.asto;
 
 import com.amihaiemil.eoyaml.Yaml;
-import com.artipie.asto.factory.Storages;
+import com.artipie.asto.factory.Config;
+import com.artipie.asto.factory.StoragesLoader;
 import com.artipie.asto.fs.VertxFileStorage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsInstanceOf;
@@ -22,12 +23,12 @@ public final class VertxFileStorageFactoryTest {
     @Test
     void shouldCreateVertxFileStorage() {
         MatcherAssert.assertThat(
-            new Storages()
-                .newStorage(
+            new StoragesLoader()
+                .newObject(
                     "vertx-file",
-                    Yaml.createYamlMappingBuilder()
-                        .add("path", "")
-                        .build()
+                    new Config.YamlStorageConfig(
+                        Yaml.createYamlMappingBuilder().add("path", "").build()
+                    )
                 ),
             new IsInstanceOf(VertxFileStorage.class)
         );

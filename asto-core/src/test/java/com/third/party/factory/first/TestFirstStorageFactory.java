@@ -6,7 +6,7 @@ package com.third.party.factory.first;
 
 import com.artipie.asto.Storage;
 import com.artipie.asto.factory.ArtipieStorageFactory;
-import com.artipie.asto.factory.StorageConfig;
+import com.artipie.asto.factory.Config;
 import com.artipie.asto.factory.StorageFactory;
 import com.artipie.asto.memory.InMemoryStorage;
 
@@ -18,7 +18,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 @ArtipieStorageFactory("test-first")
 public final class TestFirstStorageFactory implements StorageFactory {
     @Override
-    public Storage newStorage(final StorageConfig cfg) {
+    public Storage newStorage(final Config cfg) {
         return new InMemoryStorage();
     }
 }
