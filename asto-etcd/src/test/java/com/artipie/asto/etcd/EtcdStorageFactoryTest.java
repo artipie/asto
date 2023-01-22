@@ -1,5 +1,5 @@
 /*
- * The MIT License (MIT) Copyright (c) 2020-2022 artipie.com
+ * The MIT License (MIT) Copyright (c) 2020-2023 artipie.com
  * https://github.com/artipie/asto/LICENSE.txt
  */
 package com.artipie.asto.etcd;
