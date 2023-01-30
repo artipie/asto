@@ -95,7 +95,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.etcd</groupId>
       <artifactId>jetcd-test</artifactId>
-      <version>0.5.11</version>
+      <version>0.7.5</version>
       <scope>test</scope>
     </dependency>
     <dependency>
