@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 
@@ -49,10 +50,10 @@ public abstract class FactoryLoader<F, A, C, O> {
     }
 
     /**
-     * Default package name.
-     * @return The name of the default scan package
+     * Default packages names.
+     * @return The names of the default scan package
      */
-    public abstract String defPackage();
+    public abstract Set<String> defPackages();
 
     /**
      * Environment parameter to define packages to find factories.
@@ -84,7 +85,7 @@ public abstract class FactoryLoader<F, A, C, O> {
      * @return Map of StorageFactories.
      */
     private Map<String, F> init(final Map<String, String> env) {
-        final List<String> pkgs = Lists.newArrayList(this.defPackage());
+        final List<String> pkgs = Lists.newArrayList(this.defPackages());
         final String pgs = env.get(this.scanPackagesEnv());
         if (!Strings.isNullOrEmpty(pgs)) {
             pkgs.addAll(Arrays.asList(pgs.split(";")));
