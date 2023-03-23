@@ -7,6 +7,7 @@ package com.artipie.asto.factory;
 import com.artipie.ArtipieException;
 import com.artipie.asto.Storage;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,8 +60,8 @@ public final class StoragesLoader
     }
 
     @Override
-    public String defPackage() {
-        return "com.artipie.asto";
+    public Set<String> defPackages() {
+        return Collections.singleton("com.artipie.asto");
     }
 
     @Override
