@@ -26,7 +26,7 @@ public final class S3StorageFactoryTest {
      * @checkstyle MethodNameCheck (3 lines)
      */
     @Test
-    void shouldCreateS3Storage() {
+    void shouldCreateS3StorageConfigHasCredentials() {
         MatcherAssert.assertThat(
             new StoragesLoader()
                 .newObject(
@@ -44,6 +44,29 @@ public final class S3StorageFactoryTest {
                                     .add("secretAccessKey", "bar")
                                     .build()
                             )
+                            .build()
+                    )
+                ),
+            new IsInstanceOf(S3Storage.class)
+        );
+    }
+
+    /**
+     * Test for S3 storage factory.
+     *
+     * @checkstyle MethodNameCheck (3 lines)
+     */
+    @Test
+    void shouldCreateS3StorageConfigDoesNotHaveCredentials() {
+        MatcherAssert.assertThat(
+            new StoragesLoader()
+                .newObject(
+                    "s3",
+                    new Config.YamlStorageConfig(
+                        Yaml.createYamlMappingBuilder()
+                            .add("region", "us-east-1")
+                            .add("bucket", "aaa")
+                            .add("endpoint", "http://localhost")
                             .build()
                     )
                 ),
