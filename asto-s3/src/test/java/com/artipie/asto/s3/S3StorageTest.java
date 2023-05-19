@@ -10,15 +10,18 @@ import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
 import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amihaiemil.eoyaml.Yaml;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Meta;
+import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.factory.Config;
+import com.artipie.asto.factory.StoragesLoader;
 import com.google.common.io.ByteStreams;
 import io.reactivex.Flowable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -35,10 +38,6 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 /**
  * Tests for {@link S3Storage}.
@@ -258,15 +257,25 @@ class S3StorageTest {
         }
     }
 
-    private S3Storage storage() {
-        final String endpoint = String.format("http://localhost:%d", MOCK.getHttpPort());
-        final S3AsyncClient client = S3AsyncClient.builder()
-            .region(Region.of("us-east-1"))
-            .credentialsProvider(
-                StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
-            )
-            .endpointOverride(URI.create(endpoint))
-            .build();
-        return new S3Storage(client, this.bucket, endpoint);
+    private Storage storage() {
+        return new StoragesLoader()
+            .newObject(
+                "s3",
+                new Config.YamlStorageConfig(
+                    Yaml.createYamlMappingBuilder()
+                        .add("region", "us-east-1")
+                        .add("bucket", this.bucket)
+                        .add("endpoint", String.format("http://localhost:%d", MOCK.getHttpPort()))
+                        .add(
+                            "credentials",
+                            Yaml.createYamlMappingBuilder()
+                                .add("type", "basic")
+                                .add("accessKeyId", "foo")
+                                .add("secretAccessKey", "bar")
+                                .build()
+                        )
+                        .build()
+                )
+            );
     }
 }
