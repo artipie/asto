@@ -4,14 +4,12 @@
  */
 package com.artipie.asto.events;
 
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.quartz.SchedulerException;
-import org.quartz.impl.StdSchedulerFactory;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 /**
@@ -34,9 +32,8 @@ class QuartsServiceTest {
 
     @Test
     void runsQuartsJobs() throws SchedulerException, InterruptedException {
-        final EventQueue<Character> queue = new EventQueue<>();
         final TestConsumer consumer = new TestConsumer();
-        this.service.addPeriodicEventsProcessor(queue, consumer, 1);
+        final EventQueue<Character> queue = this.service.addPeriodicEventsProcessor(consumer, 3, 1);
         this.service.start();
         for (char sym = 'a'; sym <= 'z'; sym++) {
             queue.put(sym);
@@ -47,20 +44,11 @@ class QuartsServiceTest {
         Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> consumer.cnt.get() == 26);
     }
 
-    @Test
-    void stopsJobIfDataAreNotPresent() throws SchedulerException {
-        this.service.addPeriodicEventsProcessor(null, new TestConsumer(), 1);
-        this.service.start();
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).until(
-            () -> new StdSchedulerFactory().getScheduler().getCurrentlyExecutingJobs().isEmpty()
-        );
-    }
-
     /**
      * Test consumer.
      * @since 1.17
      */
-    static final class TestConsumer implements Consumer<Collection<Character>> {
+    static final class TestConsumer implements Consumer<Character> {
 
         /**
          * Count for accept method call.
@@ -68,8 +56,8 @@ class QuartsServiceTest {
         private final AtomicInteger cnt = new AtomicInteger();
 
         @Override
-        public void accept(final Collection<Character> strings) {
-            strings.forEach(ignored -> this.cnt.incrementAndGet());
+        public void accept(final Character strings) {
+            this.cnt.incrementAndGet();
         }
     }
 

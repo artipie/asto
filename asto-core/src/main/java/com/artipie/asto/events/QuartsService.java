@@ -6,7 +6,7 @@ package com.artipie.asto.events;
 
 import com.artipie.ArtipieException;
 import com.jcabi.log.Logger;
-import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import org.quartz.JobBuilder;
@@ -14,6 +14,7 @@ import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -54,32 +55,46 @@ public final class QuartsService {
 
     /**
      * Adds event processor to the quarts job. The job is repeating forever every
-     * given seconds.
-     * @param queue Queue to get data from
+     * given seconds. If given parallel value is bigger than thread pool size, parallel jobs mode is
+     * limited to thread pool size.
      * @param consumer How to consume the data collection
+     * @param parallel How many jobs to run in parallel
      * @param seconds Seconds interval for scheduling
      * @param <T> Data item object type
+     * @return Queue to add the events into
      * @throws SchedulerException On error
      */
-    public <T> void addPeriodicEventsProcessor(
-        final EventQueue<T> queue, final Consumer<Collection<T>> consumer, final int seconds
+    public <T> EventQueue<T> addPeriodicEventsProcessor(
+        final Consumer<T> consumer, final int parallel, final int seconds
     ) throws SchedulerException {
+        final EventQueue<T> queue = new EventQueue<>();
         final JobDataMap data = new JobDataMap();
         data.put("elements", queue);
-        data.put("action", consumer);
+        data.put("action", Objects.requireNonNull(consumer));
         final String id = String.join(
             "-", EventsProcessor.class.getSimpleName(), UUID.randomUUID().toString()
         );
-        this.scheduler.scheduleJob(
-            JobBuilder.newJob(EventsProcessor.class)
-                .withIdentity(String.join("-", "job", id))
-                .setJobData(data).build(),
-            TriggerBuilder.newTrigger()
-                .withIdentity(String.join("-", "trigger", id))
-                .startNow()
-                .withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(seconds))
-                .build()
-        );
+        final TriggerBuilder<SimpleTrigger> trigger = TriggerBuilder.newTrigger()
+            .startNow().withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(seconds));
+        final JobBuilder job = JobBuilder.newJob(EventsProcessor.class).setJobData(data);
+        final int count = Math.min(this.scheduler.getMetaData().getThreadPoolSize(), parallel);
+        if (parallel > count) {
+            // @checkstyle LineLengthCheck (1 line)
+            Logger.warn(this, String.format("Parallel quartz jobs amount is limited to thread pool size %s instead of requested %s", count, parallel));
+        }
+        for (int item = 0; item < count; item = item + 1) {
+            this.scheduler.scheduleJob(
+                job.withIdentity(
+                    String.join("-", "job", id, String.valueOf(item)),
+                    EventsProcessor.class.getSimpleName()
+                ).build(),
+                trigger.withIdentity(
+                    String.join("-", "trigger", id, String.valueOf(item)),
+                    EventsProcessor.class.getSimpleName()
+                ).build()
+            );
+        }
+        return queue;
     }
 
     /**
