@@ -45,40 +45,43 @@ public final class S3StorageFactory implements StorageFactory {
         final S3AsyncClientBuilder builder = S3AsyncClient.builder();
         Optional.ofNullable(cfg.string("region")).ifPresent(val -> builder.region(Region.of(val)));
         endpoint(cfg).ifPresent(val -> builder.endpointOverride(URI.create(val)));
-        return builder
-            .credentialsProvider(
-                S3StorageFactory.credentials(
-                    new Config.StrictStorageConfig(cfg)
-                        .config("credentials")
-                )
-            )
-            .build();
+        setCredentialsProvider(builder, cfg);
+        return builder.build();
     }
 
     /**
-     * Creates {@link StaticCredentialsProvider} instance based on config.
+     * Sets a credentials provider into the passed builder.
      *
-     * @param cred Credentials config.
-     * @return Credentials provider.
+     * @param builder Builder.
+     * @param cfg S3 storage configuration.
      */
-    private static StaticCredentialsProvider credentials(final Config cred) {
-        final String type = cred.string("type");
-        if ("basic".equals(type)) {
-            return StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(
-                    cred.string("accessKeyId"),
-                    cred.string("secretAccessKey")
-                )
-            );
-        } else {
-            throw new IllegalArgumentException(
-                String.format("Unsupported S3 credentials type: %s", type)
-            );
+    private static void setCredentialsProvider(
+        final S3AsyncClientBuilder builder,
+        final Config cfg
+    ) {
+        final Config credentials = cfg.config("credentials");
+        if (!credentials.isEmpty()) {
+            final String type = credentials.string("type");
+            if ("basic".equals(type)) {
+                builder.credentialsProvider(
+                    StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(
+                            credentials.string("accessKeyId"),
+                            credentials.string("secretAccessKey")
+                        )
+                    )
+                );
+            } else {
+                throw new IllegalArgumentException(
+                    String.format("Unsupported S3 credentials type: %s", type)
+                );
+            }
         }
     }
 
     /**
      * Obtain endpoint from storage config. The parameter is optional.
+     *
      * @param cfg Storage config
      * @return Endpoint value is present
      */

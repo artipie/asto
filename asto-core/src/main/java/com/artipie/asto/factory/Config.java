@@ -43,6 +43,13 @@ public interface Config {
     Config config(String key);
 
     /**
+     * Checks that there is a config data.
+     *
+     * @return True if no config data.
+     */
+    boolean isEmpty();
+
+    /**
      * Strict storage config throws {@code NullPointerException} when value is not exist.
      *
      * @since 1.13.0
@@ -85,6 +92,11 @@ public interface Config {
                 this.original.config(key),
                 String.format("No config found for key %s", key)
             );
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return this.original == null || this.original.isEmpty();
         }
     }
 
@@ -147,6 +159,11 @@ public interface Config {
         @Override
         public Config config(final String key) {
             return new YamlStorageConfig(this.original.yamlMapping(key));
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return this.original == null || this.original.isEmpty();
         }
 
         @Override
