@@ -9,6 +9,7 @@ import com.artipie.asto.ByteArray;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.misc.UncheckedIOConsumer;
 import com.artipie.asto.misc.UncheckedIOSupplier;
 import com.artipie.asto.misc.UncheckedRunnable;
@@ -107,6 +108,28 @@ public final class StorageValuePipeline<R> {
     }
 
     /**
+     * Process storage item and save it back.
+     *
+     * @param action Action to perform with storage content if exists and write back as
+     *  output stream.
+     * @return Completion action
+     * @throws ArtipieIOException On Error
+     */
+    public CompletionStage<Void> processData(
+        final BiConsumer<Optional<byte[]>, OutputStream> action
+    ) {
+        return this.processWithBytesResult(
+            (opt, input) -> {
+                action.accept(opt, input);
+                return null;
+            }
+        ).thenAccept(
+            nothing -> {
+            }
+        );
+    }
+
+    /**
      * Process storage item, save it back and return some result.
      *
      * @param action Action to perform with storage content if exists and write back as
@@ -144,6 +167,44 @@ public final class StorageValuePipeline<R> {
                         throw new ArtipieIOException(err);
                     } finally {
                         optional.ifPresent(new UncheckedIOConsumer<>(InputStream::close));
+                    }
+                }
+            ).thenApply(nothing -> res.get());
+    }
+
+    /**
+     * Process storage item, save it back and return some result.
+     *
+     * @param action Action to perform with storage content if exists and write back as
+     *  output stream.
+     * @return Completion action with the result
+     * @throws ArtipieIOException On Error
+     */
+    public CompletionStage<R> processWithBytesResult(
+        final BiFunction<Optional<byte[]>, OutputStream, R> action
+    ) {
+        final AtomicReference<R> res = new AtomicReference<>();
+        return this.asto.exists(this.read)
+            .thenCompose(
+                exists -> {
+                    final CompletionStage<Optional<byte[]>> stage;
+                    if (exists) {
+                        stage = this.asto.value(this.read)
+                            .thenCompose(
+                                content -> new PublisherAs(content).bytes()
+                            ).thenApply(bytes -> Optional.of(bytes));
+                    } else {
+                        stage = CompletableFuture.completedFuture(Optional.empty());
+                    }
+                    return stage;
+                }
+            ).thenCompose(
+                optional -> {
+                    try (PublishingOutputStream output = new PublishingOutputStream()) {
+                        res.set(action.apply(optional, output));
+                        return this.asto.save(this.write, new Content.From(output.publisher()));
+                    } catch (final IOException err) {
+                        throw new ArtipieIOException(err);
                     }
                 }
             ).thenApply(nothing -> res.get());
